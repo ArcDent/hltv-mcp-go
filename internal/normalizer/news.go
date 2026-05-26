@@ -8,20 +8,27 @@ import (
 )
 
 // NormalizeNews parses archive news items from HLTV news page HTML
+// HLTV structure: .newstext div contains the title text directly (no <a> inside)
+// The link is in a parent <a> tag wrapping the entire news block
 func NormalizeNews(doc *goquery.Document) []types.NewsItem {
 	var items []types.NewsItem
-	doc.Find(".news-item, article, .newstext").Each(func(_ int, s *goquery.Selection) {
-		a := s.Find("a").First()
-		title := strings.TrimSpace(a.Text())
+	doc.Find(".newstext").Each(func(_ int, s *goquery.Selection) {
+		title := cleanText(s.Text())
 		if title == "" {
 			return
 		}
-		link, _ := a.Attr("href")
+		// Look for link in ancestors or sibling containers
+		link, _ := s.Parent().Find("a").First().Attr("href")
+		if link == "" {
+			// Try climbing up to the parent container
+			link, _ = s.Parent().Parent().Find("a").Attr("href")
+		}
+		// Date is in sibling .newstc > .newsrecent
+		date := cleanText(s.Parent().Find(".newsrecent").First().Text())
 		items = append(items, types.NewsItem{
 			Title:       title,
 			Link:        link,
-			PublishedAt: strings.TrimSpace(s.Find(".news-date, time, .date").First().Text()),
-			Tag:         strings.TrimSpace(s.Find(".news-tag, .tag, .category").First().Text()),
+			PublishedAt: date,
 		})
 	})
 	return items
@@ -30,19 +37,21 @@ func NormalizeNews(doc *goquery.Document) []types.NewsItem {
 // NormalizeRealtimeNews parses realtime news items from HLTV homepage HTML
 func NormalizeRealtimeNews(doc *goquery.Document) []types.RealtimeNewsItem {
 	var items []types.RealtimeNewsItem
-	doc.Find(".news-item, article, .realtime-news-item, .con-news").Each(func(_ int, s *goquery.Selection) {
-		a := s.Find("a").First()
-		title := strings.TrimSpace(a.Text())
+	// HLTV homepage has news links in various containers
+	doc.Find("a[href*='/news/']").Each(func(_ int, s *goquery.Selection) {
+		title := cleanText(s.Text())
 		if title == "" {
 			return
 		}
-		link, _ := a.Attr("href")
+		link, _ := s.Attr("href")
+		// Only include actual news links (not navigation)
+		if !strings.HasPrefix(link, "/news/") {
+			return
+		}
 		items = append(items, types.RealtimeNewsItem{
-			Section:      "latest",
-			Title:        title,
-			Link:         link,
-			RelativeTime: strings.TrimSpace(s.Find(".time, .relative-time, .news-time").First().Text()),
-			Comments:     strings.TrimSpace(s.Find(".comments, .comment-count").First().Text()),
+			Section: "latest",
+			Title:   title,
+			Link:    link,
 		})
 	})
 	return items

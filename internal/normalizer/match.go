@@ -10,36 +10,46 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
-// NormalizeMatches parses goquery selections into NormalizedMatch slices
+// NormalizeMatches parses HLTV HTML result/match rows into NormalizedMatch slices.
+// Use ".result-con" for results, ".upcoming-match" or ".match-box" for upcoming.
 func NormalizeMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
+	return normalizeResultsCon(doc, perspective)
+}
+
+// normalizeResultsCon handles the "/results" page structure
+func normalizeResultsCon(doc *goquery.Document, perspective string) []types.NormalizedMatch {
 	var matches []types.NormalizedMatch
-	doc.Find(".result-con, .match-box, .upcoming-match, .matches .match, table tbody tr").Each(func(_ int, s *goquery.Selection) {
-		m := types.NormalizedMatch{Result: types.OutcomeScheduled}
-		s.Find(".team, .team-cell, .team-name").Each(func(i int, team *goquery.Selection) {
-			name := strings.TrimSpace(team.Text())
-			if i == 0 {
-				m.Team1 = name
-			} else if i == 1 {
-				m.Team2 = name
-			}
-		})
-		if score := strings.TrimSpace(s.Find(".result-score, .score, .score-cell").Text()); score != "" {
+	doc.Find(".result-con").Each(func(_ int, s *goquery.Selection) {
+		m := types.NormalizedMatch{Result: types.OutcomeUnknown}
+
+		// Extract team names from dedicated .team divs within .line-align containers
+		m.Team1 = cleanText(s.Find(".line-align.team1 .team").First().Text())
+		m.Team2 = cleanText(s.Find(".line-align.team2 .team").First().Text())
+
+		// Score from .result-score
+		if score := cleanText(s.Find(".result-score").First().Text()); score != "" {
 			m.Score = score
-			m.Result = types.OutcomeUnknown
 		}
-		m.Event = strings.TrimSpace(s.Find(".event-name, .event, .event-cell").Text())
-		if t := strings.TrimSpace(s.Find(".time, .date, .match-time").Text()); t != "" {
-			if m.Result == types.OutcomeScheduled {
-				m.ScheduledAt = t
-			} else {
-				m.PlayedAt = t
-			}
-		}
-		if href, ok := s.Find("a").Attr("href"); ok {
+
+		// Event name from the event-cell or map-text
+		m.Event = cleanText(s.Find(".event-name, .map-text, .stars").First().Text())
+
+		// Match link with ID
+		if href, ok := s.Find("a.a-reset").First().Attr("href"); ok && href != "" {
 			if id := parseMatchID(href); id > 0 {
 				m.MatchID = id
 			}
 		}
+
+		// Time/date
+		if t := cleanText(s.Find(".time, .date").First().Text()); t != "" {
+			if m.Score != "" {
+				m.PlayedAt = t
+			} else {
+				m.ScheduledAt = t
+			}
+		}
+
 		if perspective != "" {
 			if m.Team1 == perspective {
 				m.Opponent = m.Team2
@@ -47,9 +57,49 @@ func NormalizeMatches(doc *goquery.Document, perspective string) []types.Normali
 				m.Opponent = m.Team1
 			}
 		}
-		matches = append(matches, m)
+
+		// Only include if we have at least one team identified
+		if m.Team1 != "" || m.Team2 != "" {
+			matches = append(matches, m)
+		}
 	})
 	return matches
+}
+
+// NormalizeUpcomingMatches handles the "/matches" page structure (after Cloudflare bypass)
+func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
+	var matches []types.NormalizedMatch
+	doc.Find(".upcoming-match, .match-box, .matchCard").Each(func(_ int, s *goquery.Selection) {
+		m := types.NormalizedMatch{Result: types.OutcomeScheduled}
+
+		m.Team1 = cleanText(s.Find(".team1 .team, .matchTeam1 .team, .team-1").First().Text())
+		m.Team2 = cleanText(s.Find(".team2 .team, .matchTeam2 .team, .team-2").First().Text())
+		m.Event = cleanText(s.Find(".matchEventName, .event-name, .event").First().Text())
+		m.ScheduledAt = cleanText(s.Find(".matchTime, .time, .date").First().Text())
+
+		if href, ok := s.Find("a").First().Attr("href"); ok {
+			if id := parseMatchID(href); id > 0 {
+				m.MatchID = id
+			}
+		}
+
+		if perspective != "" {
+			if m.Team1 == perspective {
+				m.Opponent = m.Team2
+			} else if m.Team2 == perspective {
+				m.Opponent = m.Team1
+			}
+		}
+
+		if m.Team1 != "" || m.Team2 != "" {
+			matches = append(matches, m)
+		}
+	})
+	return matches
+}
+
+func cleanText(s string) string {
+	return strings.TrimSpace(s)
 }
 
 func parseMatchID(href string) int {
