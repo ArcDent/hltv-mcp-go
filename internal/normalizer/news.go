@@ -40,6 +40,7 @@ func NormalizeRealtimeNews(doc *goquery.Document) []types.RealtimeNewsItem {
 	// HLTV homepage has news links in various containers
 	doc.Find("a[href*='/news/']").Each(func(_ int, s *goquery.Selection) {
 		title := cleanText(s.Text())
+		title = strings.Join(strings.Fields(title), " ")
 		if title == "" {
 			return
 		}

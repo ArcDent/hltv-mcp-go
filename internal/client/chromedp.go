@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
@@ -33,6 +34,7 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 
 	if chromedpAllocCtx == nil {
 		chromePath, _ := findChromePath(c.cfg.ChromePath)
+		userDir, _ := os.MkdirTemp("", "hltv-chrome-*")
 		opts := append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.ExecPath(chromePath),
 			chromedp.Flag("headless", true),
@@ -40,7 +42,10 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 			chromedp.Flag("no-sandbox", true),
 			chromedp.Flag("disable-dev-shm-usage", true),
 			chromedp.Flag("disable-blink-features", "AutomationControlled"),
+			chromedp.Flag("disable-features", "TranslateUI,BlinkGenPropertyTrees"),
+			chromedp.Flag("window-size", "1920,1080"),
 			chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"),
+			chromedp.UserDataDir(userDir),
 		)
 		chromedpAllocCtx, chromedpAllocCancel = chromedp.NewExecAllocator(context.Background(), opts...)
 	}

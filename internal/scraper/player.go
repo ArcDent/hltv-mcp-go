@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
+	"strconv"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
+
+var playerLinkRE = regexp.MustCompile(`/player/(\d+)/(.+)`)
 
 type PlayerScraper struct{ cli *client.HltvClient }
 
@@ -25,12 +29,26 @@ func (s *PlayerScraper) Search(ctx context.Context, name string) ([]types.Resolv
 		return nil, err
 	}
 	var players []types.ResolvedPlayer
-	doc.Find(".player-search-result, .player-col, table tbody tr").Each(func(_ int, sel *goquery.Selection) {
-		name := cleanText(sel.Find(".player-name, a, td").First().Text())
-		if name == "" {
+	doc.Find("table tbody tr").Each(func(_ int, sel *goquery.Selection) {
+		link := sel.Find("a[href*='/player/']")
+		if link.Length() == 0 {
 			return
 		}
-		players = append(players, types.ResolvedPlayer{Type: "player", Name: name, Slug: slugify(name)})
+		href, _ := link.Attr("href")
+		m := playerLinkRE.FindStringSubmatch(href)
+		if len(m) < 3 {
+			return
+		}
+		id, _ := strconv.Atoi(m[1])
+		slug := m[2]
+		name := cleanText(link.Text())
+		if name == "" || id == 0 {
+			return
+		}
+		players = append(players, types.ResolvedPlayer{
+			Type: "player", ID: id, Name: name, Slug: slug,
+			Aliases: []string{name, slug},
+		})
 	})
 	return players, nil
 }

@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"regexp"
+	"strconv"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
+
+var teamLinkRE = regexp.MustCompile(`/team/(\d+)/(.+)`)
 
 type TeamScraper struct{ cli *client.HltvClient }
 
@@ -25,18 +29,26 @@ func (s *TeamScraper) Search(ctx context.Context, name string) ([]types.Resolved
 		return nil, err
 	}
 	var teams []types.ResolvedTeam
-	doc.Find(".team-search-result, .team-col, table tbody tr").Each(func(_ int, sel *goquery.Selection) {
-		link, _ := sel.Find("a").Attr("href")
-		name := sel.Find(".team-name, a, td").First().Text()
-		name = cleanText(name)
-		if name == "" {
+	doc.Find("table tbody tr").Each(func(_ int, sel *goquery.Selection) {
+		link := sel.Find("a[href*='/team/']")
+		if link.Length() == 0 {
 			return
 		}
-		t := types.ResolvedTeam{Type: "team", Name: name, Slug: slugify(name)}
-		if link != "" {
-			_ = link // extract ID from link if possible
+		href, _ := link.Attr("href")
+		m := teamLinkRE.FindStringSubmatch(href)
+		if len(m) < 3 {
+			return
 		}
-		teams = append(teams, t)
+		id, _ := strconv.Atoi(m[1])
+		slug := m[2]
+		name := cleanText(link.Text())
+		if name == "" || id == 0 {
+			return
+		}
+		teams = append(teams, types.ResolvedTeam{
+			Type: "team", ID: id, Name: name, Slug: slug,
+			Aliases: []string{name, slug},
+		})
 	})
 	return teams, nil
 }

@@ -59,7 +59,7 @@ func (f *HltvFacade) GetUpcomingMatches(query types.UpcomingMatchesQuery) *types
 		if err != nil {
 			return nil, err
 		}
-		items := normalizer.NormalizeMatches(doc, "")
+		items := normalizer.NormalizeUpcomingMatches(doc, "")
 		normalizer.SortByScheduledAtAsc(items)
 		if todayOnly {
 			items = filterToday(items)

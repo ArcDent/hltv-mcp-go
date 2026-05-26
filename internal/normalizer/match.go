@@ -66,22 +66,59 @@ func normalizeResultsCon(doc *goquery.Document, perspective string) []types.Norm
 	return matches
 }
 
-// NormalizeUpcomingMatches handles the "/matches" page structure (after Cloudflare bypass)
+// NormalizeUpcomingMatches handles the "/matches" page (React-rendered, fetched via chromedp)
+// HLTV React component structure:
+//   div.match > a.match-top (event) + div.match-bottom > a.match-info (time) + a.match-teams (teams)
 func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
 	var matches []types.NormalizedMatch
-	doc.Find(".upcoming-match, .match-box, .matchCard").Each(func(_ int, s *goquery.Selection) {
+
+	// Strategy: parse from .match containers
+	doc.Find(".match").Each(func(_ int, s *goquery.Selection) {
 		m := types.NormalizedMatch{Result: types.OutcomeScheduled}
 
-		m.Team1 = cleanText(s.Find(".team1 .team, .matchTeam1 .team, .team-1").First().Text())
-		m.Team2 = cleanText(s.Find(".team2 .team, .matchTeam2 .team, .team-2").First().Text())
-		m.Event = cleanText(s.Find(".matchEventName, .event-name, .event").First().Text())
-		m.ScheduledAt = cleanText(s.Find(".matchTime, .time, .date").First().Text())
+		// Event from .match-top link
+		m.Event = cleanText(s.Find(".match-top").First().Text())
 
-		if href, ok := s.Find("a").First().Attr("href"); ok {
-			if id := parseMatchID(href); id > 0 {
-				m.MatchID = id
+		// Time from .match-info link
+		infoText := cleanText(s.Find(".match-info").First().Text())
+		// Extract time portion (e.g., "09:00 bo3" → "09:00")
+		if idx := strings.Index(infoText, " "); idx > 0 {
+			m.ScheduledAt = infoText[:idx]
+			m.BestOf = cleanText(infoText[idx:])
+		} else {
+			m.ScheduledAt = infoText
+		}
+
+		// Teams from .match-teams link
+		teamsText := cleanText(s.Find(".match-teams").First().Text())
+		// Teams text is typically "Team1\nTeam2" or "Team1 vs Team2"
+		teamsText = strings.ReplaceAll(teamsText, "\n", " ")
+		teamsText = strings.ReplaceAll(teamsText, "  ", " ")
+		if idx := strings.Index(teamsText, " vs "); idx > 0 {
+			m.Team1 = cleanText(teamsText[:idx])
+			m.Team2 = cleanText(teamsText[idx+4:])
+		} else {
+			// Fallback: find all text nodes in .match-teams
+			parts := strings.Fields(teamsText)
+			if len(parts) >= 2 {
+				m.Team1 = parts[0]
+				// Skip middle parts that might be "vs", take last as team2
+				if strings.ToLower(parts[len(parts)-2]) == "vs" {
+					m.Team2 = parts[len(parts)-1]
+				} else {
+					m.Team2 = parts[len(parts)-1]
+				}
 			}
 		}
+
+		// Match ID from href in any child link
+		s.Find("a").Each(func(_ int, a *goquery.Selection) {
+			if href, ok := a.Attr("href"); ok {
+				if id := parseMatchID(href); id > 0 {
+					m.MatchID = id
+				}
+			}
+		})
 
 		if perspective != "" {
 			if m.Team1 == perspective {
@@ -91,7 +128,7 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 			}
 		}
 
-		if m.Team1 != "" || m.Team2 != "" {
+		if m.Team1 != "" && m.Team2 != "" {
 			matches = append(matches, m)
 		}
 	})
