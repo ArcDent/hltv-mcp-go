@@ -2,7 +2,7 @@
 
 Go 单二进制全栈 HLTV MCP 服务 — MCP stdio + HTTP REST + React 管理面板，一键启动。
 
-> 灵感来源：[hltv-api](https://github.com/arcdent/hltv-mcp)（原 TypeScript + Python Flask/Scrapy 双层架构项目），使用 Go 完全重建，去除 Python 上游依赖。
+> 灵感来源：[hltv-api](https://github.com/M3MONs/hltv-api)（Python Flask/Scrapy HLTV 爬虫 API），使用 Go 完全重建，去除 Python 上游依赖。
 
 ## 功能特性
 
@@ -118,4 +118,4 @@ go test github.com/arcdent/hltv-mcp/internal/... -v -timeout 30s
 
 ## 灵感来源
 
-本项目是对 [hltv-api](https://github.com/arcdent/hltv-mcp) 的 Go 语言完全重建。原项目采用 TypeScript MCP 服务 + Python Flask/Scrapy 上游爬虫的双层架构，功能完善但部署复杂。本重建保留了全部 10 个 MCP 工具和中文本地化体系，统一为 Go 单一二进制，去掉外部 Python 依赖，并增加了 React Web 管理面板。
+本项目是对 [hltv-api](https://github.com/M3MONs/hltv-api) 的 Go 语言完全重建。本重建将原 TypeScript MCP 服务（基于 [hltv-api](https://github.com/M3MONs/hltv-api) Python 爬虫 API 构建）统一为 Go 单一二进制，去掉外部 Python 依赖，保留了全部 10 个 MCP 工具和中文本地化体系，并增加了 React Web 管理面板。

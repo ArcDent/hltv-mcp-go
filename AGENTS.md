@@ -4,7 +4,7 @@
 - 类型：HLTV MCP 服务 Go 全栈重建
 - 目标：Go 单二进制，同时运行 MCP stdio + HTTP REST + React 管理面板
 - 技术栈：Go 1.26, mark3labs/mcp-go, chi, goquery, chromedp, React 18, Vite, Tailwind CSS
-- 灵感来源：hltv-api（TypeScript MCP + Python Flask/Scrapy 双层架构项目）
+- 灵感来源：[hltv-api](https://github.com/M3MONs/hltv-api)（Python Flask/Scrapy HLTV 爬虫 API）
 
 ## 项目静态结构
 ```
