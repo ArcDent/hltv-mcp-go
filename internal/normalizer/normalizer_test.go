@@ -9,7 +9,7 @@ import (
 )
 
 func TestNormalizeMatches(t *testing.T) {
-	html := `<div class="result-con"><div class="team">Spirit</div><div class="team">Vitality</div><div class="result-score">2:1</div><div class="event-name">IEM Rio</div></div>`
+	html := `<div class="result-con"><a class="a-reset" href="/matches/123/foo-vs-bar"><div class="result"><table><tbody><tr><td class="team-cell"><div class="line-align team1"><div class="team">Spirit</div></div></td><td class="result-score">2:1</td><td class="team-cell"><div class="line-align team2"><div class="team">Vitality</div></div></td></tr></tbody></table></div></a></div>`
 	doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
 	matches := NormalizeMatches(doc, "")
 	if len(matches) == 0 {
@@ -21,10 +21,13 @@ func TestNormalizeMatches(t *testing.T) {
 	if matches[0].Score != "2:1" {
 		t.Errorf("score: %s", matches[0].Score)
 	}
+	if matches[0].Team2 != "Vitality" {
+		t.Errorf("team2: %s", matches[0].Team2)
+	}
 }
 
 func TestNormalizeNews(t *testing.T) {
-	html := `<div class="news-item"><a href="/news/123">Test Title</a><div class="news-date">2025-01-15</div></div>`
+	html := `<div class="newstext">Test Title</div>`
 	doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
 	items := NormalizeNews(doc)
 	if len(items) == 0 {
