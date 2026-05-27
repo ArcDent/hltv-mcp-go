@@ -44,11 +44,11 @@ const teamNicknames: Record<string, string> = {
 }
 
 const playerNicknames: Record<string, string> = {
-  'ZywOo': '载物', 's1mple': '简单', 'm0NESY': '小孩', 'donk': '洞克',
-  'NiKo': '尼扣', 'dev1ce': '设备', 'ropz': '肉铺子', 'karrigan': '卡里根',
+  'ZywOo': '载物', 's1mple': '森破', 'm0NESY': '小孩', 'donk': '洞克',
+  'NiKo': '尼扣', 'dev1ce': '设备', 'ropz': '肉铺子', 'karrigan': '大表哥',
   'apEX': 'A队长', 'flameZ': '火焰', 'Spinx': '斯宾克斯', 'mezii': '梅子',
   'jL': '杰L', 'Aleksib': '阿列克西', 'b1t': '比特', 'iM': '爱慕',
-  'w0nderful': '神奇', 'broky': '布洛基', 'frozen': '冰封人', 'Twistzz': '总监',
+  'w0nderful': '神奇', 'broky': '布洛基', 'frozen': '寒王', 'Twistzz': '总监',
   'huNter-': '猎人', 'jks': '杰克S', 'NAF': '纳夫', 'YEKINDAR': '叶金达',
   'cadiaN': '卡点', 'stavn': '斯塔文', 'jabbi': '贾比', 'TeSeS': '特塞斯',
   'EliGE': '一粒鸡', 'Magisk': '魔法男孩', 'dupreeh': '杜普瑞', 'Xyp9x': '九爷',
