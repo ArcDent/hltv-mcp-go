@@ -75,6 +75,7 @@ func TestNormalizeBO1Score(t *testing.T) {
 		{"invalid", "invalid"},
 		{"13 : 5", "1:0"},
 		{"5 : 13", "0:1"},
+		{"13:foo", "13:foo"},
 	}
 	for _, tt := range tests {
 		if got := normalizeBO1Score(tt.in); got != tt.want {

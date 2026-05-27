@@ -235,8 +235,11 @@ func normalizeBO1Score(score string) string {
 	if len(parts) != 2 {
 		return score
 	}
-	a, _ := strconv.Atoi(strings.TrimSpace(parts[0]))
-	b, _ := strconv.Atoi(strings.TrimSpace(parts[1]))
+	a, errA := strconv.Atoi(strings.TrimSpace(parts[0]))
+	b, errB := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if errA != nil || errB != nil {
+		return score
+	}
 	if a >= 13 || b >= 13 {
 		if a > b {
 			return "1:0"
