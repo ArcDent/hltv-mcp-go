@@ -252,9 +252,9 @@ type PlayerDetailProfile struct {
 	Name       string `json:"name"`
 	RealName   string `json:"real_name,omitempty"`
 	Slug       string `json:"slug"`
-	Country    string `json:"country,omitempty"`
+	Country    string `json:"country"`
 	Age        int    `json:"age,omitempty"`
-	Team       string `json:"team,omitempty"`
+	Team       string `json:"team"`
 	PrizeMoney string `json:"prize_money,omitempty"`
 }
 type PlayerRating struct {
@@ -282,13 +282,15 @@ type PlayerHonor struct {
 	Value int    `json:"value"`
 }
 type PlayerRecentMatch struct {
-	Date     string  `json:"date"`
-	Team     string  `json:"team"`
-	Opponent string  `json:"opponent"`
-	Score    string  `json:"score"`
-	Result   string  `json:"result"`
-	Rating   float64 `json:"rating"`
-	Kills    int     `json:"kills"`
-	Deaths   int     `json:"deaths"`
-	Event    string  `json:"event"`
+	MatchID   int     `json:"match_id"`
+	MatchSlug string  `json:"-"`
+	Date      string  `json:"date"`
+	Team      string  `json:"team"`
+	Opponent  string  `json:"opponent"`
+	Score     string  `json:"score"`
+	Result    string  `json:"result"`
+	Rating    float64 `json:"rating"`
+	Kills     int     `json:"kills"`
+	Deaths    int     `json:"deaths"`
+	Event     string  `json:"event"`
 }

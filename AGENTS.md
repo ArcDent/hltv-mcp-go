@@ -34,25 +34,20 @@
 ```
 
 ## 最近操作
-- 2026-05-27：前端采用 person-summon 设计语言 + 竖状侧栏 + 数据源弹窗 + 暗/亮主题
-- 2026-05-27：选手详情卡片 — chromedp 抓取 + 八维雷达 + Top20 + 荣誉 + 近期 7 场
-- 2026-05-27：新闻翻译 — 后端配置API(文件持久化) + 前端OpenAI兼容面板 + 双语展示 + localStorage缓存7天 + sessionStorage保留Key
-- 2026-05-27：修复翻译组件3个bug — masked key覆盖、worker提前return、sessionStorage恢复
-- 2026-05-27：默认为白天主题，修复首次点击无响应
-- 2026-05-27：侧栏竖状导航 + 暗/亮主题切换按钮 + 全宽内容区 + 竖状侧栏 + 数据源弹窗 + 新闻中文翻译 + 标签切换动效 — CSS 变量双主题 + 卡片系统 + 聚焦光环 + 噪声纹理
-- 2026-05-27：侧栏竖状导航 + 暗/亮主题切换按钮 + 全宽内容区
-- 2026-05-27：修复 3 轮 Docker 构建问题（镜像名、frontend dist 路径、GOTOOLCHAIN=auto）
-- 2026-05-27：全部 6/6 爬虫端点 E2E 验证通过（含 chromedp 反 Cloudflare）
-- 2026-05-27：创建 GitHub 仓库并推送（ArcDent/hltv-mcp-go）
+- 2026-05-27：修复队伍名显示 "Link" — `.playerTeam a` 选择器误抓合约来源链接，改用 `.playerTeam a[itemprop="text"]` 精确定位
+- 2026-05-27：选手页面直接提取比赛比分 — `.playerpage-match-result` 元素包含比分（如 "2:0"），无需爬 `/stats/matches/`，同时清理空格格式
+- 2026-05-27：修复 PlayerDetailProfile.Team/Country omitempty — 去除 omitempty 确保字段始终存在于 JSON 响应
+- 2026-05-27：前端空值显示 "暂无队伍"/"未知国籍" — PlayerDetail.tsx 对 team/country/realname 增加空值 fallback
+- 2026-05-27：确认 `/stats/matches/` 即使 Firecrawl stealth 代理也无法突破 CF 403
 
-## 进行中（sessionStorage Key 持久化已修复）（提取 SearchableList 共享组件，Teams/Players 各减 82%）
-- 前端细节打磨（赛事名缩写、队伍名对齐、主题切换动效）
+## 进行中
+- 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源（API 端点为 401 需认证）
+- 选手队伍推断实现（参考原 hltv-mcp 的优先队列 + roster 扫描）
 
 ## 下一步
 - 完整 70+ 队伍 localization 扩展
-- 选手队伍推断实现（参考原 hltv-mcp 的优先队列 + roster 扫描）
 - OpenCode slash command 模板
-- 选手详情卡片已完成（chromedp 抓取 + 八维雷达 + Top20 + 荣誉 + 近期 7 场）— ZywOo/s1mple/donk 验证通过
+- 清理不再需要的 MatchDetailScraper/NormalizeMatchDetail/EnrichWithScores 死代码（比分已在选手页获取）
 
 ## 关键发现
 
@@ -65,6 +60,14 @@
 - 赛程 `.match` > `.match-top`(赛事) + `.match-teams`(队伍) + `.match-info`(时间)
 - 搜索 `table tbody tr > a[href*='/team/']` 正则提取 ID
 - 新闻 `.newstext` 文本在 div 内，链接需父级查找
+- **选手页** `.playerNickname` / `.playerRealname` / `.playerTeam a[itemprop="text"]`(队伍，不可用裸 `a` 会抓到合约 Link) / `.player-stat` > `.statsVal p b`(能力值) / `.stats-window`(maps 数) / `.playerpage-matchbox`(近期比赛) / `.playerpage-match-result`(比分，格式 "2 : 0") / `.playerpage-match-rating`(个人 rating，始终为空) / `.majorSection` > `.majorWinner/.majorMVP`(荣誉) / `.mvp-count`(MVP 数) / `.all-time-stat` > `.stat` + `.description`(生涯) / `.playerInfoRow.playerAge` / `.playerTop20`
+- **比赛链接** 从 `.playerpage-matchbox[href]` 正则 `/stats/matches/(\d+)/([^"\s]+)` 提取 match ID + slug
+- **球员无队伍** `.playerTeam` 内 `<span itemprop="text">No team</span>` 表示无队伍，这是正常状态
+- **球员有合约链接** 部分球员 .playerTeam 内包含 `<a class="contract-link">Link</a>`（合约来源链接），会被误抓为队伍名
+
+### CF 阻断分层
+- **可通过 chromedp**：`/player/`、`/results`、`/matches`、`/team/` — UserDataDir + anti-blink 有效
+- **被 CF Challenge 阻断**：`/stats/matches/` — JS Challenge 无法在 headless 中完成，即使 20s 等待仍返回 "Just a moment..."
 
 ### 构建与部署
 - `go build .` 因 `frontend/` 无 Go 文件失败 → 用 `go build github.com/arcdent/hltv-mcp`

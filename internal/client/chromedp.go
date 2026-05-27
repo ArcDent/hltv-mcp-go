@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -61,6 +62,18 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 		chromedp.Navigate(url),
 		chromedp.WaitReady("body"),
 		chromedp.Sleep(2*time.Second),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			// Wait up to 20s for CF challenge to resolve
+			for i := 0; i < 20; i++ {
+				var title string
+				chromedp.Title(&title).Do(ctx)
+				if title != "" && !strings.Contains(title, "Just a moment") && !strings.Contains(title, "Attention Required") {
+					return nil
+				}
+				time.Sleep(1 * time.Second)
+			}
+			return nil // proceed even if still on challenge page
+		}),
 		chromedp.OuterHTML("html", &html),
 	); err != nil {
 		return nil, err

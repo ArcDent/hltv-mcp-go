@@ -45,5 +45,6 @@ func (h *Handlers) GetPlayer(w http.ResponseWriter, r *http.Request) {
 	}
 	pd := normalizer.NormalizePlayerDetail(doc)
 	pd.Profile.ID = id
+
 	writeJSON(w, map[string]any{"data": pd, "meta": map[string]any{"partial": false}})
 }

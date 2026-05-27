@@ -14,7 +14,15 @@ type ResultsScraper struct{ cli *client.HltvClient }
 func NewResultsScraper(cli *client.HltvClient) *ResultsScraper { return &ResultsScraper{cli: cli} }
 
 func (s *ResultsScraper) GetResults(ctx context.Context) (*goquery.Document, error) {
-	body, err := s.cli.FetchHTML(ctx, "/results", "results")
+	return s.GetResultsOffset(ctx, 0)
+}
+
+func (s *ResultsScraper) GetResultsOffset(ctx context.Context, offset int) (*goquery.Document, error) {
+	path := "/results"
+	if offset > 0 {
+		path = fmt.Sprintf("/results?offset=%d", offset)
+	}
+	body, err := s.cli.FetchHTML(ctx, path, "results")
 	if err != nil {
 		return nil, err
 	}

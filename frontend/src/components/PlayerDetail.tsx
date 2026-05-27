@@ -42,11 +42,11 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
               </div>
               <div style={{flex:1}}>
                 <div style={{fontSize:22,fontWeight:700,color:'var(--text)',lineHeight:1.2}}>{p.name}</div>
-                {p.real_name && <div style={{fontSize:13,color:'var(--text-muted)'}}>{p.real_name}</div>}
+                {p.real_name ? <div style={{fontSize:13,color:'var(--text-muted)'}}>{p.real_name}</div> : <div style={{fontSize:13,color:'var(--text-muted)'}}>暂无</div>}
                 <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}>
-                  {p.country && <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>{p.country}</span>}
-                  {p.age && <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>Age {p.age}</span>}
-                  {p.team && <span style={{padding:'2px 8px',background:'var(--gold-dim)',borderRadius:4,fontSize:11,color:'var(--gold)',fontWeight:600}}>{p.team}</span>}
+                  {p.country ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>{p.country}</span> : <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-muted)'}}>未知国籍</span>}
+                  {p.age ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>Age {p.age}</span> : null}
+                  <span style={{padding:'2px 8px',background: p.team ? 'var(--gold-dim)' : 'var(--input-bg)',borderRadius:4,fontSize:11,color: p.team ? 'var(--gold)' : 'var(--text-muted)',fontWeight: p.team ? 600 : 400}}>{p.team || '暂无队伍'}</span>
                   {p.prize_money && <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>{p.prize_money}</span>}
                 </div>
               </div>
@@ -117,17 +117,21 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
 
             {data.recent_matches && data.recent_matches.length > 0 && (
               <>
-                <div style={{fontFamily:'var(--font-display)',fontSize:16,fontWeight:600,color:'var(--gold)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:10,paddingBottom:8,borderBottom:'1px solid var(--border)'}}>近期 7 场比赛</div>
-                {data.recent_matches.map((m,i) => (
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 0',borderBottom:i<data.recent_matches.length-1?'1px solid rgba(0,0,0,0.04)':'none',fontSize:12}}>
-                    <span style={{fontSize:10,color:'var(--text-muted)',minWidth:44}}>{m.date}</span>
-                    <span style={{fontFamily:'var(--font-mono)',fontSize:12,fontWeight:700,color:'var(--gold)',minWidth:32,textAlign:'center'}}>{m.rating||'—'}</span>
+                <div style={{fontFamily:'var(--font-display)',fontSize:16,fontWeight:600,color:'var(--gold)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:10,paddingBottom:8,borderBottom:'1px solid var(--border)'}}>近期比赛</div>
+                {data.recent_matches!.map((m,i) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<data.recent_matches!.length-1?'1px solid rgba(0,0,0,0.04)':'none',fontSize:12}}>
+                    <span style={{minWidth:24,textAlign:'center',fontSize:10,fontWeight:700,fontFamily:'var(--font-mono)',
+                      color:m.result==='win'?'var(--green)':m.result==='loss'?'var(--red)':'var(--text-muted)',
+                      background:m.result==='win'?'rgba(0,200,83,0.1)':m.result==='loss'?'rgba(255,82,82,0.1)':'var(--input-bg)',
+                      padding:'2px 0',borderRadius:3}}>
+                      {m.result==='win'?'W':m.result==='loss'?'L':'—'}
+                    </span>
                     <span style={{flex:1,minWidth:0}}>
-                      <span style={{fontWeight:600}}>{m.team}</span> vs {m.opponent}
+                      <span style={{fontWeight:600}}>{m.team}</span> <span style={{color:'var(--text-muted)'}}>vs</span> {m.opponent}
                       <div style={{fontSize:10,color:'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{m.event}</div>
                     </span>
-                    <span style={{fontFamily:'var(--font-display)',fontSize:15,fontWeight:700,minWidth:30,textAlign:'center',color:m.result==='win'?'var(--green)':m.result==='loss'?'var(--red)':'var(--text)'}}>{m.score||'-:-'}</span>
-                    <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',minWidth:50,textAlign:'center'}}>{m.kills>0?`${m.kills}-${m.deaths}`:'—'}</span>
+                    {m.result !== 'scheduled' && m.score && <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',whiteSpace:'nowrap'}}>{m.score}</span>}
+                    <span style={{fontSize:10,color:'var(--text-muted)',minWidth:52,textAlign:'right'}}>{m.date}</span>
                   </div>
                 ))}
               </>
