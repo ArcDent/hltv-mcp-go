@@ -344,3 +344,12 @@ type TeamRosterPlayer struct {
 	Rating  float64 `json:"rating"`
 	Country string  `json:"country,omitempty"`
 }
+
+// NewsArticle is the full text of a news article scraped from HLTV
+type NewsArticle struct {
+	Title       string `json:"title"`
+	PublishedAt string `json:"published_at"`
+	Link        string `json:"link"`
+	BodyText    string `json:"body_text"`
+	Author      string `json:"author,omitempty"`
+}

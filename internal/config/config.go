@@ -42,6 +42,7 @@ type Config struct {
 	CacheTTLNews         int
 	CacheTTLRealtimeNews   int
 	CacheTTLPlayerDetail   int
+	CacheTTLNewsArticle    int
 	CacheMaxEntries        int
 	CacheStaleWindowSec  int
 
@@ -71,6 +72,7 @@ func LoadConfig() (*Config, error) {
 		CacheTTLNews:         envInt("CACHE_TTL_NEWS_SEC", 180),
 		CacheTTLRealtimeNews:   envInt("CACHE_TTL_REALTIME_NEWS_SEC", 60),
 		CacheTTLPlayerDetail:   envInt("CACHE_TTL_PLAYER_DETAIL_SEC", 604800),
+		CacheTTLNewsArticle:    envInt("CACHE_TTL_NEWS_ARTICLE_SEC", 100*365*24*3600), // ~100 years = infinite
 		CacheMaxEntries:        envInt("CACHE_MAX_ENTRIES", 500),
 		CacheStaleWindowSec:  envInt("CACHE_STALE_WINDOW_SEC", 3600),
 
