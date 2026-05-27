@@ -16,7 +16,8 @@
       "Read(//home/arcdent/github/**)",
       "Bash(go build *)",
       "Bash(pkill hltv-mcp *)",
-      "Bash(./hltv-mcp)"
+      "Bash(./hltv-mcp)",
+      "mcp__chrome-devtools__list_console_messages"
     ]
   }
 }
