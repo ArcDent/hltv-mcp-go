@@ -11,6 +11,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/config"
 	"github.com/arcdent/hltv-mcp/internal/errors"
+	"github.com/arcdent/hltv-mcp/internal/normalizer"
 	"github.com/arcdent/hltv-mcp/internal/scraper"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
@@ -59,6 +60,25 @@ func (f *HltvFacade) ClientIsChromeAvailable() bool { return f.client.IsChromeAv
 func (f *HltvFacade) ScrapePlayerDetail(ctx context.Context, id int, slug string) (*goquery.Document, error) {
 	if slug == "" { slug = fmt.Sprintf("player-%d", id) }
 	return f.ps.GetPlayer(ctx, id, slug)
+}
+
+// GetPlayerDetailCached returns cached player detail, or scrapes via chromedp and caches for 7 days
+func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {
+	if slug == "" {
+		slug = fmt.Sprintf("player-%d", id)
+	}
+	key := fmt.Sprintf("player_detail:%d", id)
+	if cached, ok := f.cache.Get(key); ok {
+		return cached.(types.PlayerDetail), nil
+	}
+	doc, err := f.ps.GetPlayer(ctx, id, slug)
+	if err != nil {
+		return types.PlayerDetail{}, err
+	}
+	pd := normalizer.NormalizePlayerDetail(doc)
+	pd.Profile.ID = id
+	f.cache.Set(key, pd, f.cfg.CacheTTLPlayerDetail)
+	return pd, nil
 }
 
 func (f *HltvFacade) withCache(key string, ttlSec int, query map[string]any, compute func() (*types.ToolResponse, error)) *types.ToolResponse {
@@ -119,3 +139,15 @@ func (f *HltvFacade) errorResponse(query map[string]any, err error) *types.ToolR
 		},
 	}
 }
+
+// CacheEntries returns the number of entries currently in the cache
+func (f *HltvFacade) CacheEntries() int { return f.cache.Entries() }
+
+// CacheHits returns the cumulative cache hit count
+func (f *HltvFacade) CacheHits() int64 { return f.cache.Hits() }
+
+// CacheMisses returns the cumulative cache miss count
+func (f *HltvFacade) CacheMisses() int64 { return f.cache.Misses() }
+
+// ClearCache clears all cached entries and resets counters
+func (f *HltvFacade) ClearCache() { f.cache.Clear() }

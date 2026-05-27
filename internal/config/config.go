@@ -40,8 +40,9 @@ type Config struct {
 	CacheTTLResults      int
 	CacheTTLMatches      int
 	CacheTTLNews         int
-	CacheTTLRealtimeNews int
-	CacheMaxEntries      int
+	CacheTTLRealtimeNews   int
+	CacheTTLPlayerDetail   int
+	CacheMaxEntries        int
 	CacheStaleWindowSec  int
 
 	DefaultResultLimit int
@@ -68,8 +69,9 @@ func LoadConfig() (*Config, error) {
 		CacheTTLResults:      envInt("CACHE_TTL_RESULTS_SEC", 120),
 		CacheTTLMatches:      envInt("CACHE_TTL_MATCHES_SEC", 60),
 		CacheTTLNews:         envInt("CACHE_TTL_NEWS_SEC", 180),
-		CacheTTLRealtimeNews: envInt("CACHE_TTL_REALTIME_NEWS_SEC", 60),
-		CacheMaxEntries:      envInt("CACHE_MAX_ENTRIES", 500),
+		CacheTTLRealtimeNews:   envInt("CACHE_TTL_REALTIME_NEWS_SEC", 60),
+		CacheTTLPlayerDetail:   envInt("CACHE_TTL_PLAYER_DETAIL_SEC", 604800),
+		CacheMaxEntries:        envInt("CACHE_MAX_ENTRIES", 500),
 		CacheStaleWindowSec:  envInt("CACHE_STALE_WINDOW_SEC", 3600),
 
 		DefaultResultLimit: envInt("DEFAULT_RESULT_LIMIT", 5),
