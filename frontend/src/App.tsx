@@ -17,11 +17,10 @@ const nav = [
 ]
 
 export default function App() {
-  const [dark, setDark] = useState(true)
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'))
   const toggle = () => {
-    const next = !dark
-    document.documentElement.classList.toggle('dark', next)
-    setDark(next)
+    document.documentElement.classList.toggle('dark')
+    setDark(document.documentElement.classList.contains('dark'))
   }
 
   return (
