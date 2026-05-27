@@ -5,6 +5,7 @@
 - 目标：Go 单二进制，同时运行 MCP stdio + HTTP REST + React 管理面板
 - 技术栈：Go 1.26, mark3labs/mcp-go, chi, goquery, chromedp, React 18, Vite, Tailwind CSS v4
 - 灵感来源：[hltv-api](https://github.com/M3MONs/hltv-api)（Python Flask/Scrapy HLTV 爬虫 API）
+- 前端参考：[person-summon](https://github.com/arcdent/person-summon)（暗/亮双主题 CSS 变量体系 + Space Grotesk + 噪声纹理）
 - 远端仓库：[ArcDent/hltv-mcp-go](https://github.com/ArcDent/hltv-mcp-go)
 
 ## 项目静态结构
@@ -33,8 +34,8 @@
 ```
 
 ## 最近操作
-- 2026-05-27：前端完全重写 — 体育转播大屏风格（Oswald 字体、48px 比分、两列赛程卡片）
-- 2026-05-27：Dashboard 大卡片布局（56px 数值、2x2 网格）+ 暗/亮双主题切换（CSS transition 0.5s）
+- 2026-05-27：前端采用 person-summon 设计语言 — CSS 变量双主题 + 卡片系统 + 聚焦光环 + 噪声纹理
+- 2026-05-27：侧栏竖状导航 + 暗/亮主题切换按钮 + 全宽内容区
 - 2026-05-27：修复 3 轮 Docker 构建问题（镜像名、frontend dist 路径、GOTOOLCHAIN=auto）
 - 2026-05-27：全部 6/6 爬虫端点 E2E 验证通过（含 chromedp 反 Cloudflare）
 - 2026-05-27：创建 GitHub 仓库并推送（ArcDent/hltv-mcp-go）
@@ -65,9 +66,11 @@
 - Docker: `GOTOOLCHAIN=auto` + `chromedp/headless-shell:latest` Chrome 路径 `/headless-shell/headless-shell`
 - SPA fallback: `feFS.Open(path)` 必须 strip 前导 `/`
 
-### 前端设计系统
-- 字体：Oswald（标题/比分）+ Noto Sans SC（中文正文）+ JetBrains Mono（数据）
-- 配色：深空背景 `#0a0a0f` + 金色 `#f5c842` + 红色 `#ff4444`（LIVE）
-- 暗/亮双主题：CSS 变量 + `.light` class + transition 0.5s
-- 布局：顶部导航栏 + 全宽内容区 + 两列网格
-- 赛程卡片：队伍居中对齐 + 中文昵称预留高度 + 赛事名缩写
+### 前端设计系统（参考 person-summon）
+- 主题：CSS 变量（`:root` 亮色 / `[data-theme="dark"]` 暗色）+ `transition: background-color 0.3s, color 0.2s, border-color 0.3s`
+- 色板：`--gold: #f5c842` / `--gold-dim` / `--gold-glow` + `--red`/`--green` 语义色
+- 卡片：`background: var(--card)` + `border: 1px solid var(--border)` + `box-shadow: var(--card-shadow)` + hover border transition
+- 输入框：`background: var(--input-bg)` + focus 时 `border-color: var(--gold)` + `box-shadow: 0 0 0 3px var(--gold-dim)`
+- 字体：Oswald（标题/比分）+ Noto Sans SC（正文）+ JetBrains Mono（数据）
+- 特效：暗色模式 SVG 噪声纹理 + `fadeIn`/`slideUp`/`pulseGlow` 关键帧动画
+- 布局：左侧 sticky 竖状导航 180px + 右侧滚动内容区 max-w-[1100px]
