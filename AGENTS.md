@@ -47,7 +47,6 @@
 ## 下一步
 - 完整 70+ 队伍 localization 扩展
 - OpenCode slash command 模板
-- 清理不再需要的 MatchDetailScraper/NormalizeMatchDetail/EnrichWithScores 死代码（比分已在选手页获取）
 
 ## 关键发现
 
