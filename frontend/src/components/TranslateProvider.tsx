@@ -12,6 +12,7 @@ type Config = { provider_url: string; api_key: string; model: string; configured
 export function useTranslateConfig() {
   const [cfg, setCfg] = useState<Config | null>(null)
   const [realKey, setRealKey] = useState(() => sessionStorage.getItem('hltv_real_key') ?? '')
+  const [saveCount, setSaveCount] = useState(0)
   const [open, setOpen] = useState(false)
 
   const fetchConfig = async () => {
@@ -33,10 +34,11 @@ export function useTranslateConfig() {
       body: JSON.stringify({ provider_url: url, api_key: key, model }),
     })
     await fetchConfig()
+    setSaveCount(c => c + 1)
     setOpen(false)
   }
 
-  return { cfg, realKey, save, open, setOpen }
+  return { cfg, realKey, save, open, setOpen, saveCount }
 }
 
 const overlay: React.CSSProperties = {

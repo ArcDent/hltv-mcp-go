@@ -21,7 +21,7 @@ function hashTitle(t: string) {
 export default function News() {
   const [tab, setTab] = useState<Tab>('realtime')
   const [data, setData] = useState<any>(null)
-  const { cfg, realKey, save, open, setOpen } = useTranslateConfig()
+  const { cfg, realKey, save, open, setOpen, saveCount } = useTranslateConfig()
   const [translations, setTranslations] = useState<Record<string, string>>({})
   const [translating, setTranslating] = useState<Set<string>>(new Set())
 
@@ -86,7 +86,7 @@ export default function News() {
       }
     }
     run(); run(); run()
-  }, [data, cfg?.configured])
+  }, [data, cfg?.configured, saveCount])
 
   const items: any[] = data?.items ?? []
 
