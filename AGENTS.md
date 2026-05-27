@@ -37,14 +37,13 @@
 ```
 
 ## 最近操作
-- 2026-05-28：三项 bug 修复 — 队伍详情 CSS 选择器重写（h1.profile-team-name / .value.h-rank / .bodyshot-team a / .trophyDescription）、近期战绩改用标准 results+upcoming API 按队名过滤（team matches 页面格式不兼容）、新闻正文仅提取 <p> 标签（清洗推荐卡片垃圾）、赛程时间显示 >24h 带日期、冗余代码清理（normalizeTeamDetail / ScrapeTeamDetail / ScrapeNewsArticle）
-- 2026-05-28：15 任务全栈实现完成 — README Stdio MCP 配置 / 队伍详情卡片（排名/积分/成就/10场战绩/队员列表）/ 赛程赛事分组弹窗（/api/events）/ 新闻详情弹窗（chromedp 正文 + 无限缓存 + API 翻译）
+- 2026-05-28：赛程日期 & UI 修复（5 backend + 2 frontend commits）— results 页日期从 `.results-sublist > .standard-headline` 正则提取（"Results for May 28th 2026" → YYYY-MM-DD）；matches 页日期从 `.matches-list-headline` 兄弟节点遍历提取（"Thursday - 2026-05-28"）；队伍近期比赛翻页 offset 0/100/200；队伍详情对阵居中 + 赛事名放宽；赛程卡片 MM/DD 格式 + 弹窗日期始终显示 + 右侧仅 BO3
+- 2026-05-28：三项 bug 修复 — 队伍详情 CSS 选择器重写（h1.profile-team-name / .value.h-rank / .bodyshot-team a / .trophyDescription）、近期战绩改用标准 results+upcoming API 按队名过滤、新闻正文仅提取 <p> 标签、赛程时间显示 >24h 带日期、冗余代码清理
 - 2026-05-27：Chrome DevTools 全功能验证 — 占位符翻译 winner→胜者、BO1 归一化 0:1、缓存统计真实递增（6条目/3命中/7未命中）、选手详情缓存均已确认正常；发现 Windows localhost 端口转发会缓存旧响应，需用 WSL IP 直连
-- 2026-05-27：全量中文化 + BO1 归一化 + 选手缓存 + 缓存统计修复（8 commits，7 tasks）— 赛程 winner/loser/tbd 映射为胜者/败者/待定、选手近期比赛 BO1 比分 13:5→1:0、选手详情 7 天 chromedp 缓存、修复缓存统计硬编码为 0
-- 2026-05-27：修复队伍名显示 "Link" — `.playerTeam a` 选择器误抓合约来源链接，改用 `.playerTeam a[itemprop="text"]` 精确定位
+- 2026-05-27：全量中文化 + BO1 归一化 + 选手缓存 + 缓存统计修复（8 commits，7 tasks）
 
 ## 进行中
-- 无 — 15 任务全栈实现已全部完成，三项 bug 修复已交付
+- 无 — 赛程日期修复 6 任务全部完成
 
 ## 下一步
 - 队伍详情 W/L/D 战绩数据优化（当前依赖 results 页面含该队伍的匹配，休赛期数据为空）
@@ -59,7 +58,7 @@
 
 ### HLTV HTML 结构
 - 赛果 `.result-con` > `.line-align.team1 .team` / `.result-score`
-- 赛程 `.match` > `.match-top`(赛事) + `.match-teams`(队伍) + `.match-info`(时间)
+- 赛程 `.matches-list-headline`(日期标题) 与 `.match-wrapper`(含 `.match`) 同级子节点，遍历 parent children 文档顺序提取日期 → `.match` 子树 `.match-top`(赛事) + `.match-teams`(队伍) + `.match-info`(时间)
 - 搜索 `table tbody tr > a[href*='/team/']` 正则提取 ID
 - 新闻 `.newstext` 文本在 div 内，链接需父级查找
 - **选手页** `.playerNickname` / `.playerRealname` / `.playerTeam a[itemprop="text"]`(队伍，不可用裸 `a` 会抓到合约 Link) / `.player-stat` > `.statsVal p b`(能力值) / `.stats-window`(maps 数) / `.playerpage-matchbox`(近期比赛) / `.playerpage-match-result`(比分，格式 "2 : 0") / `.playerpage-match-rating`(个人 rating，始终为空) / `.majorSection` > `.majorWinner/.majorMVP`(荣誉) / `.mvp-count`(MVP 数) / `.all-time-stat` > `.stat` + `.description`(生涯) / `.playerInfoRow.playerAge` / `.playerTop20`
