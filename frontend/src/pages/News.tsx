@@ -21,7 +21,7 @@ function hashTitle(t: string) {
 export default function News() {
   const [tab, setTab] = useState<Tab>('realtime')
   const [data, setData] = useState<any>(null)
-  const { cfg, save, open, setOpen } = useTranslateConfig()
+  const { cfg, realKey, save, open, setOpen } = useTranslateConfig()
   const [translations, setTranslations] = useState<Record<string, string>>({})
   const [translating, setTranslating] = useState<Set<string>>(new Set())
 
@@ -61,7 +61,7 @@ export default function News() {
         try {
           const res = await fetch(`${cfg!.provider_url}/chat/completions`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg!.api_key}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${realKey}` },
             body: JSON.stringify({
               model: cfg!.model,
               messages: [

@@ -11,18 +11,23 @@ type Config = { provider_url: string; api_key: string; model: string; configured
 
 export function useTranslateConfig() {
   const [cfg, setCfg] = useState<Config | null>(null)
+  const [realKey, setRealKey] = useState('')
   const [open, setOpen] = useState(false)
 
   const fetchConfig = async () => {
     try {
       const r = await fetch('/api/translate/config')
-      setCfg(await r.json())
+      const c = await r.json()
+      setCfg(c)
+      // Keep real key if we have one cached; otherwise the masked key from backend
+      if (!realKey && c.api_key) setRealKey(c.api_key)
     } catch { setCfg({ provider_url: '', api_key: '', model: '', configured: false } as Config) }
   }
 
   useEffect(() => { fetchConfig() }, [])
 
   const save = async (url: string, key: string, model: string) => {
+    setRealKey(key) // cache real key before saving
     await fetch('/api/translate/config', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -32,7 +37,7 @@ export function useTranslateConfig() {
     setOpen(false)
   }
 
-  return { cfg, save, open, setOpen }
+  return { cfg, realKey, save, open, setOpen }
 }
 
 const overlay: React.CSSProperties = {
