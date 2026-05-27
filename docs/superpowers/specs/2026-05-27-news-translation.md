@@ -6,19 +6,28 @@
 
 ## 数据流
 
+**配置存储**：Go 后端 `/api/translate/config`
+
 ```
-用户配好 provider URL + key + model → localStorage
-页面加载新闻列表 → 每条英文标题 →
-  查 localStorage 翻译缓存（key = title_md5_hash）→
-    命中 → 直接显示中文
-    未命中 → POST {provider}/v1/chat/completions
-              { model, messages: [
-                  {role:"system", content:"将以下CS电竞新闻标题翻译为简体中文，只输出翻译结果"},
-                  {role:"user", content: title}
-              ]}
-              → 解析 choices[0].message.content
-              → 写入 localStorage 缓存
-              → 显示中文
+首次使用 → 前端弹出配置面板 → 填写 API 地址/Key/模型 → PUT /api/translate/config → 后端写入文件
+后续使用 → 页面加载 → GET /api/translate/config → 后端返回配置 → 前端使用
+```
+
+**翻译流程**：
+
+```
+页面加载新闻列表 → GET /api/translate/config 获取配置 →
+  每条英文标题 →
+    查 localStorage 翻译缓存（key = title_md5_hash）→
+      命中 → 直接显示中文
+      未命中 → POST {provider}/v1/chat/completions
+                { model, messages: [
+                    {role:"system", content:"将以下CS电竞新闻标题翻译为简体中文，只输出翻译结果"},
+                    {role:"user", content: title}
+                ]}
+                → 解析 choices[0].message.content
+                → 写入 localStorage 缓存
+                → 显示中文
 ```
 
 翻译缓存结构（localStorage key: `hltv_translations`）：
@@ -30,6 +39,33 @@
 ```
 
 同一标题在缓存有效期（7 天）内不重复请求翻译 API。
+
+## 配置存储（Go 后端）
+
+新增 `internal/http/handlers/translate.go`，两个端点：
+
+**GET `/api/translate/config`**
+```json
+{
+  "provider_url": "https://api.openai.com/v1",
+  "api_key": "sk-••••••••",
+  "model": "gpt-4o-mini",
+  "configured": true
+}
+```
+
+**PUT `/api/translate/config`**
+```json
+// Request body
+{
+  "provider_url": "https://api.deepseek.com/v1",
+  "api_key": "sk-xxxx",
+  "model": "deepseek-chat"
+}
+// Response: {"status": "saved"}
+```
+
+配置存储为项目目录下的 `translate_config.json` 文件（gitignore），服务重启后配置不丢失。API Key 返回时前三段保持、后三段替换为 `****`。配置文件路径为二进制同目录下的 `translate_config.json`（gitignore 中已忽略 `*.json` 以外的模式，需单独添加）。provider_url 为用户填写的完整 base URL（如 `https://api.openai.com/v1`），前端直接拼接 `/chat/completions`，不额外添加 `/v1` 路径段。
 
 ## 配置组件 UI
 
@@ -65,7 +101,7 @@
 └────────────────────────────────────────────────────┘
 ```
 
-预设选项自动填充 API 地址和模型名，用户可手动修改。API Key 为 password 类型输入框。配置保存到 localStorage key `hltv_translate_config`。
+预设选项自动填充 API 地址和模型名，用户可手动修改。API Key 为 password 类型输入框。配置通过 `PUT /api/translate/config` 保存到 Go 后端文件。
 
 ## 翻译展示
 
@@ -84,7 +120,11 @@
 
 ## 技术约束
 
-- 纯前端实现，不经过 Go 后端
+- 配置存储：Go 后端 `/api/translate/config`（GET/PUT），文件持久化
+- 翻译执行：前端 fetch 直接调 OpenAI 兼容 API（不经过 Go 后端）
+- 翻译缓存：localStorage，7 天有效期
 - 翻译请求并发控制：最多同时 3 个 in-flight 请求
 - 不引入新的 npm 依赖（fetch + localStorage 即足够）
-- 组件文件：新建 `frontend/src/components/TranslateProvider.tsx`（配置面板）+ 修改 `frontend/src/pages/News.tsx`（翻译展示）
+- Go 新增文件：`internal/http/handlers/translate.go`
+- 前端新增文件：`frontend/src/components/TranslateProvider.tsx`（配置面板）
+- 前端修改文件：`frontend/src/pages/News.tsx`（翻译展示）
