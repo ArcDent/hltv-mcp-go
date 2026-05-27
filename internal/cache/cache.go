@@ -2,6 +2,7 @@ package cache
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -17,6 +18,8 @@ type Cache struct {
 	inFlight   map[string]*inflightEntry
 	maxEntries int
 	maxStale   time.Duration
+	hits       atomic.Int64
+	misses     atomic.Int64
 }
 
 type entry struct {
@@ -47,8 +50,10 @@ func (c *Cache) Get(key string) (any, bool) {
 	e, ok := c.store[key]
 	c.mu.RUnlock()
 	if !ok || time.Now().After(e.expiresAt) {
+		c.misses.Add(1)
 		return nil, false
 	}
+	c.hits.Add(1)
 	return e.value, true
 }
 
@@ -125,6 +130,8 @@ func (c *Cache) Clear() {
 	c.mu.Lock()
 	c.store = make(map[string]*entry)
 	c.mu.Unlock()
+	c.hits.Store(0)
+	c.misses.Store(0)
 }
 
 // Entries returns the current number of cached entries
@@ -133,3 +140,9 @@ func (c *Cache) Entries() int {
 	defer c.mu.RUnlock()
 	return len(c.store)
 }
+
+// Hits returns the total number of cache hits
+func (c *Cache) Hits() int64 { return c.hits.Load() }
+
+// Misses returns the total number of cache misses
+func (c *Cache) Misses() int64 { return c.misses.Load() }
