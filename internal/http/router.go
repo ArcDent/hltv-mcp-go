@@ -3,6 +3,7 @@ package http
 import (
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -45,8 +46,8 @@ func NewRouter(cfg *config.Config, f *facade.HltvFacade, frontendFS fs.FS) http.
 		if err == nil {
 			fileServer := http.FileServer(http.FS(feFS))
 			r.Get("/*", func(w http.ResponseWriter, req *http.Request) {
-				if _, err := feFS.Open(req.URL.Path); err != nil {
-					// Serve index.html for SPA routes
+				fsPath := strings.TrimPrefix(req.URL.Path, "/")
+				if _, err := feFS.Open(fsPath); err != nil {
 					req.URL.Path = "/"
 				}
 				fileServer.ServeHTTP(w, req)
