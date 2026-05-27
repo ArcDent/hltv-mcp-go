@@ -34,7 +34,8 @@
 ```
 
 ## 最近操作
-- 2026-05-27：前端采用 person-summon 设计语言 + 竖状侧栏 + 数据源弹窗(动态端点) + 暗/亮主题切换
+- 2026-05-27：前端采用 person-summon 设计语言 + 竖状侧栏 + 数据源弹窗 + 暗/亮主题
+- 2026-05-27：选手详情卡片 — chromedp 抓取 + 八维雷达 + Top20 + 荣誉 + 近期 7 场
 - 2026-05-27：新闻翻译 — 后端配置API(文件持久化) + 前端OpenAI兼容面板 + 双语展示 + localStorage缓存7天 + sessionStorage保留Key
 - 2026-05-27：修复翻译组件3个bug — masked key覆盖、worker提前return、sessionStorage恢复
 - 2026-05-27：默认为白天主题，修复首次点击无响应
@@ -51,7 +52,7 @@
 - 完整 70+ 队伍 localization 扩展
 - 选手队伍推断实现（参考原 hltv-mcp 的优先队列 + roster 扫描）
 - OpenCode slash command 模板
-- 前端队伍/选手详情页展开
+- 选手详情卡片已完成（chromedp 抓取 + 八维雷达 + Top20 + 荣誉 + 近期 7 场）— ZywOo/s1mple/donk 验证通过
 
 ## 关键发现
 
