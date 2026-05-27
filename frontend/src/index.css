@@ -18,6 +18,22 @@
   --font-mono:          'JetBrains Mono', monospace;
 }
 
+/* ---- Light theme ---- */
+.light {
+  --color-bg:           #f5f5f0;
+  --color-surface:      #ffffff;
+  --color-card:         #fafaf7;
+  --color-border:       #e0e0d8;
+  --color-gold:         #c7940a;
+  --color-gold-muted:   rgba(199, 148, 10, 0.08);
+  --color-red:          #d63031;
+  --color-red-muted:    rgba(214, 48, 49, 0.08);
+  --color-green:        #00b894;
+  --color-text:         #1a1a1a;
+  --color-text-secondary: #6b6b6b;
+  --color-text-muted:   #9a9a9a;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
@@ -28,6 +44,7 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
+  transition: background 0.5s ease, color 0.5s ease;
 }
 
 /* ---- Scrollbar ---- */
@@ -49,4 +66,12 @@ body {
 }
 .pulse-dot {
   animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Theme transition for all color-dependent elements */
+.bg-bg, .bg-surface, .bg-card,
+.text-text, .text-text-secondary, .text-text-muted, .text-gold,
+.border-border, .border-gold\/30, .border-gold\/20,
+[class*="bg-card"], [class*="bg-surface"] {
+  transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
 }
