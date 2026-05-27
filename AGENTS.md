@@ -16,10 +16,10 @@
 ├── internal/
 │   ├── types/                 # 全部共享类型
 │   ├── errors/                # AppError + 11 错误码
-│   ├── config/                # 17 环境变量
+│   ├── config/                # 18 环境变量
 │   ├── cache/                 # TTL + stale 窗口 + 并发合并
 │   ├── client/                # HTTP + chromedp 反CF + fallback 记忆
-│   ├── scraper/               # 6 爬虫（team/player/results/matches/news/realtime_news）
+│   ├── scraper/               # 7 爬虫（team/player/results/matches/news/realtime_news/news_article）
 │   ├── localization/          # 26 队伍 + 3 赛事中英映射
 │   ├── normalizer/            # HLTV HTML → 标准化类型
 │   ├── facade/                # 核心编排层（withCache + resolve + matches + news）
@@ -28,23 +28,34 @@
 │   ├── mcp/                   # 10 MCP 工具注册 + stdio 传输
 │   └── http/                  # chi router + 12 REST API + SPA fallback
 ├── frontend/                  # React + Vite + Tailwind
-│   └── src/pages/             # Dashboard, Matches, Teams, Players, News, Cache
+│   └── src/
+│       ├── api/client.ts      # 13 API 方法（含 getNewsArticle）
+│       ├── components/        # NewsDetail, PlayerDetail, TeamDetail, SearchableList, TranslateProvider
+│       └── pages/             # Dashboard, Matches, Teams, Players, News (集成 NewsDetail 点击弹窗), Cache
 ├── cmd/                       # 调试/验证工具（scrapercheck, antifp, e2e）
 └── docs/superpowers/          # spec + plan
 ```
 
 ## 最近操作
+- 2026-05-27：Task 14 完成 — 新建 NewsDetail React 组件（全屏模态框 + backdrop blur + 文章正文 pre-wrap 渲染 + 翻译按钮复用 TranslateProvider + localStorage 无限 TTL 翻译缓存 + "在 HLTV 阅读原文" 外链），集成到 News.tsx 中（点击新闻条目弹出详情），添加 getNewsArticle API 方法，构建通过并提交
+- 2026-05-27：Task 13 完成 — 添加 /api/news/article?url= GET handler（URL 参数编码、调用 GetNewsArticleCached 模式、30s 超时 + 优雅降级），编译通过并提交
+- 2026-05-27：Task 12 完成 — 添加 NewsArticleScraper（GetArticle 爬取单篇文章页面）、NormalizeNewsArticle（提取标题/日期/作者/正文）和 facade 方法（ScrapeNewsArticle + GetNewsArticleCached 用 MD5 URL hash 做无限期缓存），编译通过并提交
+- 2026-05-27：Task 10 完成 — CF Smoke Test 确认 HLTV /news/ 页面 HTTP 直连返回 200，不被 CF Challenge 阻断（与 /stats/matches/ 不同），Feature 4 新闻文章抓取可正常推进
+- 2026-05-27：Task 8 完成 — 添加 /api/events 后端 API（EventGroup + EventsResponse 类型、GetEvents + groupByEvent facade 方法、handler + 路由），编译通过并提交
+- 2026-05-27：Task 7 完成 — 将 TeamDetail 集成到 SearchableList，队伍搜索结果可点击弹出 TeamDetail 模态框（新增 selectedTeamId 状态 + TeamDetail 导入 + onClick handler 分支 + cursor pointer）
+- 2026-05-27：Task 6 完成 — 新建 TeamDetail React 组件，全屏模态框（backdrop blur + slideUp 动画），展示队伍排名/积分/战绩/成就/近期 10 场/队员阵容，队员可点击穿透至 PlayerDetail
+- 2026-05-27：Task 5 完成 — 替换 GetTeam HTTP handler 存根为真实实现，新增 TeamDetail 类型/规格化/爬虫/facade（Task 1-4 前置），handler 模式镜像 GetPlayer 使用 GetTeamDetailCached + 30s 超时 + 优雅降级
 - 2026-05-27：Chrome DevTools 全功能验证 — 占位符翻译 winner→胜者、BO1 归一化 0:1、缓存统计真实递增（6条目/3命中/7未命中）、选手详情缓存均已确认正常；发现 Windows localhost 端口转发会缓存旧响应，需用 WSL IP 直连
 - 2026-05-27：全量中文化 + BO1 归一化 + 选手缓存 + 缓存统计修复（8 commits，7 tasks）— 赛程 winner/loser/tbd 映射为胜者/败者/待定、选手近期比赛 BO1 比分 13:5→1:0、选手详情 7 天 chromedp 缓存、修复缓存统计硬编码为 0
 - 2026-05-27：修复队伍名显示 "Link" — `.playerTeam a` 选择器误抓合约来源链接，改用 `.playerTeam a[itemprop="text"]` 精确定位
 - 2026-05-27：选手页面直接提取比赛比分 — `.playerpage-match-result` 元素包含比分（如 "2:0"），无需爬 `/stats/matches/`，同时清理空格格式
-- 2026-05-27：修复 PlayerDetailProfile.Team/Country omitempty — 去除 omitempty 确保字段始终存在于 JSON 响应
 
 ## 进行中
 - 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源（API 端点为 401 需认证）
 - 选手队伍推断实现（参考原 hltv-mcp 的优先队列 + roster 扫描）
 
 ## 下一步
+- Task 15：最终验证（全功能端到端检查，确认所有 15 个任务完整交付）
 - 完整 70+ 队伍 localization 扩展
 - OpenCode slash command 模板
 
@@ -65,6 +76,7 @@
 - **球员有合约链接** 部分球员 .playerTeam 内包含 `<a class="contract-link">Link</a>`（合约来源链接），会被误抓为队伍名
 
 ### CF 阻断分层
+- **HTTP 直连可用（无需 chromedp）**：`/player/`、`/results`、`/matches`、`/team/`、**`/news/`** — 无需反 CF 措施即可直连
 - **可通过 chromedp**：`/player/`、`/results`、`/matches`、`/team/` — UserDataDir + anti-blink 有效
 - **被 CF Challenge 阻断**：`/stats/matches/` — JS Challenge 无法在 headless 中完成，即使 20s 等待仍返回 "Just a moment..."
 
