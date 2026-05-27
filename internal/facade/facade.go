@@ -126,45 +126,59 @@ func (f *HltvFacade) GetTeamDetailCached(ctx context.Context, id int, slug strin
 	td := normalizer.NormalizeTeamDetail(doc)
 	td.Profile.ID = id
 	td.Profile.Slug = slug
-	// Fetch recent 10 matches via team matches page
-	matchDoc, err := f.ts.GetTeamMatches(ctx, id)
-	if err == nil {
-		matches := normalizer.NormalizeMatches(matchDoc, td.Profile.Name)
-		normalizer.SortByPlayedAtDesc(matches)
-		if len(matches) > 10 {
-			matches = matches[:10]
-		}
-		td.RecentMatches = matches
-		// Compute stats from recent matches
-		for _, m := range matches {
-			switch m.Result {
-			case types.OutcomeWin:
-				td.Stats.Wins++
-			case types.OutcomeLoss:
-				td.Stats.Losses++
-			case types.OutcomeDraw:
-				td.Stats.Draws++
+		// Fetch recent matches via standard results/matches pages, filter by team name
+		var allMatches []types.NormalizedMatch
+		if td.Profile.Name != "" {
+			if resultDoc, err := f.rs.GetResults(ctx); err == nil {
+				allResults := normalizer.NormalizeMatches(resultDoc, td.Profile.Name)
+				allMatches = append(allMatches, allResults...)
+			}
+			if upcomingDoc, err := f.ms.GetUpcoming(ctx); err == nil {
+				allUpcoming := normalizer.NormalizeUpcomingMatches(upcomingDoc, td.Profile.Name)
+				allMatches = append(allMatches, allUpcoming...)
+			}
+			name := td.Profile.Name
+			var matches []types.NormalizedMatch
+			for _, m := range allMatches {
+				if m.Team1 == name || m.Team2 == name || m.Opponent == name {
+					matches = append(matches, m)
+				}
+			}
+			normalizer.SortByPlayedAtDesc(matches)
+			if len(matches) > 10 {
+				matches = matches[:10]
+			}
+			td.RecentMatches = matches
+			// Compute stats from recent matches
+			for _, m := range matches {
+				switch m.Result {
+				case types.OutcomeWin:
+					td.Stats.Wins++
+				case types.OutcomeLoss:
+					td.Stats.Losses++
+				case types.OutcomeDraw:
+					td.Stats.Draws++
+				}
+			}
+			total := td.Stats.Wins + td.Stats.Losses + td.Stats.Draws
+			if total > 0 {
+				td.Stats.WinRate = fmt.Sprintf("%.0f%%", float64(td.Stats.Wins)/float64(total)*100)
+			}
+			// Recent form string (last 5)
+			for i, m := range matches {
+				if i >= 5 {
+					break
+				}
+				switch m.Result {
+				case types.OutcomeWin:
+					td.Stats.RecentForm += "W"
+				case types.OutcomeLoss:
+					td.Stats.RecentForm += "L"
+				case types.OutcomeDraw:
+					td.Stats.RecentForm += "D"
+				}
 			}
 		}
-		total := td.Stats.Wins + td.Stats.Losses + td.Stats.Draws
-		if total > 0 {
-			td.Stats.WinRate = fmt.Sprintf("%.0f%%", float64(td.Stats.Wins)/float64(total)*100)
-		}
-		// Recent form string (last 5)
-		for i, m := range matches {
-			if i >= 5 {
-				break
-			}
-			switch m.Result {
-			case types.OutcomeWin:
-				td.Stats.RecentForm += "W"
-			case types.OutcomeLoss:
-				td.Stats.RecentForm += "L"
-			case types.OutcomeDraw:
-				td.Stats.RecentForm += "D"
-			}
-		}
-	}
 	f.cache.Set(key, td, f.cfg.CacheTTLPlayerDetail) // reuse 7d TTL
 	return td, nil
 }

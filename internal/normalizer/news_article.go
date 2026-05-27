@@ -20,11 +20,23 @@ func NormalizeNewsArticle(doc *goquery.Document, link string) types.NewsArticle 
 	authorEl := doc.Find(".news-author, .author-name").First()
 	a.Author = strings.TrimSpace(authorEl.Text())
 
-	bodyEl := doc.Find(".news-block, .news-body, article, .body").First()
-	if bodyEl.Length() == 0 {
-		bodyEl = doc.Find(".content, .main-content, .article-content").First()
+	var paragraphs []string
+	doc.Find(".news-block p, .news-body p, article p, .body p").Each(func(_ int, s *goquery.Selection) {
+		t := strings.TrimSpace(s.Text())
+		if t != "" {
+			paragraphs = append(paragraphs, t)
+		}
+	})
+	if len(paragraphs) == 0 {
+		// fallback: try broader selectors
+		doc.Find(".content p, .main-content p, .article-content p").Each(func(_ int, s *goquery.Selection) {
+			t := strings.TrimSpace(s.Text())
+			if t != "" {
+				paragraphs = append(paragraphs, t)
+			}
+		})
 	}
-	a.BodyText = strings.TrimSpace(bodyEl.Text())
+	a.BodyText = strings.Join(paragraphs, "\n\n")
 
 	return a
 }

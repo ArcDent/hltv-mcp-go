@@ -146,9 +146,26 @@ export default function Matches() {
                   {m.score ? (
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--text)', minWidth: 50, textAlign: 'center' }}>{m.score}</span>
                   ) : (
-                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', minWidth: 50, textAlign: 'center' }}>
-                      {m.scheduled_at ? m.scheduled_at.slice(11, 16) : '—:—'}
-                    </span>
+                    (() => {
+                      const t = m.scheduled_at
+                      if (!t) return <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', minWidth: 50, textAlign: 'center' }}>—:—</span>
+                      const target = new Date(t.replace(' ', 'T') + ':00')
+                      const now = new Date()
+                      const diffMs = target.getTime() - now.getTime()
+                      const diffH = diffMs / (1000 * 3600)
+                      return (
+                        <div style={{ minWidth: 50, textAlign: 'center' }}>
+                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>
+                            {t.slice(11, 16)}
+                          </div>
+                          {diffH > 24 && (
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                              {t.slice(5, 10).replace('-', '/')}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()
                   )}
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '0.03em', color: 'var(--text)' }}>{m.team2 || '待定'}</span>

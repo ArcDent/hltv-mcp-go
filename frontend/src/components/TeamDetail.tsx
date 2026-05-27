@@ -190,15 +190,6 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
               </div>
             </div>
 
-            {/* BO1 note */}
-            <div style={{marginTop:16,padding:'8px 14px',background:'var(--input-bg)',borderRadius:'var(--radius-sm)',fontSize:11,color:'var(--text-muted)',textAlign:'center',border:'1px dashed var(--border)'}}>
-              BO1 比分归一化：任一侧得分 ≥13 →{' '}
-              <code style={{fontFamily:'var(--font-mono)',color:'var(--text-secondary)',background:'rgba(196,138,10,0.08)',padding:'1px 5px',borderRadius:3}}>1:0</code>
-              {' / '}
-              <code style={{fontFamily:'var(--font-mono)',color:'var(--text-secondary)',background:'rgba(196,138,10,0.08)',padding:'1px 5px',borderRadius:3}}>0:1</code>
-              ，与选手详情保持一致
-            </div>
-
             <div style={{marginTop:14,textAlign:'center',fontSize:11,color:'var(--text-muted)'}}>点击队员可查看选手详情 · ESC 关闭</div>
           </>
         )}
