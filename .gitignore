@@ -5,3 +5,4 @@ frontend/node_modules/
 frontend/dist/
 hltv-mcp
 .env
+translate_config.json

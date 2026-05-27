@@ -65,7 +65,17 @@
 // Response: {"status": "saved"}
 ```
 
-配置存储为项目目录下的 `translate_config.json` 文件（gitignore），服务重启后配置不丢失。API Key 返回时前三段保持、后三段替换为 `****`。配置文件路径为二进制同目录下的 `translate_config.json`（gitignore 中已忽略 `*.json` 以外的模式，需单独添加）。provider_url 为用户填写的完整 base URL（如 `https://api.openai.com/v1`），前端直接拼接 `/chat/completions`，不额外添加 `/v1` 路径段。
+配置存储为项目目录下的 `translate_config.json` 文件（gitignore），服务重启后配置不丢失。API Key 返回时前三段保持、后三段替换为 `****`。配置文件路径为二进制同目录下的 `translate_config.json`。Docker 部署时通过 volume 挂载持久化：
+
+```yaml
+# docker-compose.yml
+services:
+  hltv-mcp:
+    volumes:
+      - ./translate_config.json:/translate_config.json
+```
+
+首次启动时文件不存在则自动创建默认空配置，用户通过前端面板填写后持久化到宿主机文件。（gitignore 中已忽略 `*.json` 以外的模式，需单独添加）。provider_url 为用户填写的完整 base URL（如 `https://api.openai.com/v1`），前端直接拼接 `/chat/completions`，不额外添加 `/v1` 路径段。
 
 ## 配置组件 UI
 
