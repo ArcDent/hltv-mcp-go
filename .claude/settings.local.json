@@ -23,7 +23,8 @@
       "Bash(curl -s http://localhost:8082/api/status)",
       "Bash(python3 -m json.tool)",
       "Bash(python3 -c ' *)",
-      "Bash(curl -s http://localhost:8082/api/health)"
+      "Bash(curl -s http://localhost:8082/api/health)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=2048\" npx vite build --outDir ../dist)"
     ]
   }
 }
