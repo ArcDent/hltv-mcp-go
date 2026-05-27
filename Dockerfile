@@ -16,12 +16,11 @@ COPY --from=frontend /app/frontend/dist ./dist/
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o hltv-mcp github.com/arcdent/hltv-mcp
 
 # Stage 3: Runtime
-# chrome-headless-shell:stable provides chrome-headless-shell binary
-# Go starts it via chromedp.ExecAllocator at runtime
-FROM chrome-headless-shell:stable
+# chromedp/headless-shell provides a headless Chrome instance for chromedp
+FROM chromedp/headless-shell:latest
 COPY --from=builder /app/hltv-mcp /hltv-mcp
 EXPOSE 8082
 ENV HTTP_PORT=8082
 ENV HTTP_HOST=0.0.0.0
-ENV HLTV_CHROME_PATH=/usr/bin/chrome-headless-shell
+ENV HLTV_CHROME_PATH=/headless-shell/headless-shell
 ENTRYPOINT ["/hltv-mcp"]
