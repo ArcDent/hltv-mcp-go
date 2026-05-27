@@ -7,7 +7,7 @@ type TeamData = {
   stats: { wins: number; losses: number; draws: number; win_rate: string; recent_form: string }
   achievements?: { label: string; count: number; tier: string }[]
   roster?: { id: number; name: string; slug: string; rating: number; country?: string }[]
-  recent_matches?: { team1?: string; team2?: string; opponent?: string; score?: string; result: string; event?: string; played_at?: string; map_text?: string; best_of?: string }[]
+  recent_matches?: { team1?: string; team2?: string; opponent?: string; score?: string; result: string; event?: string; played_at?: string; scheduled_at?: string; map_text?: string; best_of?: string }[]
 }
 
 const teamNicknames: Record<string, string> = {
@@ -144,18 +144,21 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
                 </div>
                 {matches.length === 0 && <div style={{fontSize:12,color:'var(--text-muted)',textAlign:'center',padding:'20px 0'}}>暂无数据</div>}
                 {matches.map((m, i) => (
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 0',borderBottom:i<matches.length-1?'1px solid rgba(128,128,128,0.06)':'none',fontSize:12}}>
+                  <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'7px 0',borderBottom:i<matches.length-1?'1px solid rgba(128,128,128,0.06)':'none',fontSize:12}}>
                     <span style={{minWidth:26,textAlign:'center',fontSize:10,fontWeight:700,fontFamily:'var(--font-mono)',padding:'2px 0',borderRadius:3,
                       color:m.result==='win'?'var(--green)':m.result==='loss'?'var(--red)':'var(--text-muted)',
                       background:m.result==='win'?'rgba(0,200,83,0.1)':m.result==='loss'?'rgba(255,82,82,0.1)':'var(--input-bg)'}}>
                       {m.result==='win'?'W':m.result==='loss'?'L':'—'}
                     </span>
-                    <span style={{flex:1,minWidth:0,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
-                      <b style={{fontWeight:600}}>{p.name}</b> vs {m.opponent || m.team2 || '待定'}
-                    </span>
-                    {m.score && <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',minWidth:30,textAlign:'center'}}>{m.score}</span>}
-                    <span style={{fontSize:10,color:'var(--text-muted)',maxWidth:80,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{m.event || ''}</span>
-                    <span style={{fontSize:10,color:'var(--text-muted)',minWidth:48,textAlign:'right'}}>{(m.played_at || '').slice(5,10)}</span>
+                    <span><b style={{fontWeight:600}}>{p.name}</b></span>
+                    {m.score ? (
+                      <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)'}}>{m.score}</span>
+                    ) : (
+                      <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-muted)'}}>vs</span>
+                    )}
+                    <span style={{fontWeight:600}}>{m.opponent || m.team2 || '待定'}</span>
+                    <span style={{fontSize:10,color:'var(--text-muted)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.event || ''}</span>
+                    <span style={{fontSize:10,color:'var(--text-muted)',minWidth:48,textAlign:'right'}}>{(m.played_at || m.scheduled_at || '').slice(5,10)}</span>
                   </div>
                 ))}
               </div>
