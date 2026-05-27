@@ -220,11 +220,13 @@ func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 			m := types.PlayerRecentMatch{Result: "scheduled"}
 			m.Team = cleanText(s.Find(".team1 .team, .line-align.team1 .team").First().Text())
 			if m.Team == "" { m.Team = pd.Profile.Team }
+			m.Team = TranslatePlaceholder(m.Team)
 			m.Opponent = cleanText(s.Find(".team2 .team, .line-align.team2 .team").First().Text())
+			m.Opponent = TranslatePlaceholder(m.Opponent)
 			m.Score = strings.ReplaceAll(cleanText(s.Find(".result-score").First().Text()), " ", "")
-			m.Score = normalizeBO1Score(m.Score)
 			m.Event = cleanText(s.Find(".event-name").First().Text())
 			if m.Score != "" { m.Result = "loss"; if strings.Count(m.Score, "2") >= 1 { m.Result = "win" } }
+			m.Score = normalizeBO1Score(m.Score)
 			pd.RecentMatches = append(pd.RecentMatches, m)
 		})
 	}
