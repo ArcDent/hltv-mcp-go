@@ -65,11 +65,6 @@ func (f *HltvFacade) ScrapePlayerDetail(ctx context.Context, id int, slug string
 	return f.ps.GetPlayer(ctx, id, slug)
 }
 
-func (f *HltvFacade) ScrapeTeamDetail(ctx context.Context, id int, slug string) (*goquery.Document, error) {
-	if slug == "" { slug = fmt.Sprintf("team-%d", id) }
-	return f.ts.GetTeam(ctx, id, slug)
-}
-
 // GetPlayerDetailCached returns cached player detail, or scrapes via chromedp and caches for 7 days
 func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {
 	if slug == "" {
@@ -87,11 +82,6 @@ func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug str
 	pd.Profile.ID = id
 	f.cache.Set(key, pd, f.cfg.CacheTTLPlayerDetail)
 	return pd, nil
-}
-
-// ScrapeNewsArticle fetches a news article page via chromedp
-func (f *HltvFacade) ScrapeNewsArticle(ctx context.Context, url string) (*goquery.Document, error) {
-	return f.nas.GetArticle(ctx, url)
 }
 
 // GetNewsArticleCached returns cached article body, or scrapes and caches indefinitely

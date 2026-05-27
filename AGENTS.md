@@ -37,27 +37,19 @@
 ```
 
 ## 最近操作
-- 2026-05-27：Task 14 完成 — 新建 NewsDetail React 组件（全屏模态框 + backdrop blur + 文章正文 pre-wrap 渲染 + 翻译按钮复用 TranslateProvider + localStorage 无限 TTL 翻译缓存 + "在 HLTV 阅读原文" 外链），集成到 News.tsx 中（点击新闻条目弹出详情），添加 getNewsArticle API 方法，构建通过并提交
-- 2026-05-27：Task 13 完成 — 添加 /api/news/article?url= GET handler（URL 参数编码、调用 GetNewsArticleCached 模式、30s 超时 + 优雅降级），编译通过并提交
-- 2026-05-27：Task 12 完成 — 添加 NewsArticleScraper（GetArticle 爬取单篇文章页面）、NormalizeNewsArticle（提取标题/日期/作者/正文）和 facade 方法（ScrapeNewsArticle + GetNewsArticleCached 用 MD5 URL hash 做无限期缓存），编译通过并提交
-- 2026-05-27：Task 10 完成 — CF Smoke Test 确认 HLTV /news/ 页面 HTTP 直连返回 200，不被 CF Challenge 阻断（与 /stats/matches/ 不同），Feature 4 新闻文章抓取可正常推进
-- 2026-05-27：Task 8 完成 — 添加 /api/events 后端 API（EventGroup + EventsResponse 类型、GetEvents + groupByEvent facade 方法、handler + 路由），编译通过并提交
-- 2026-05-27：Task 7 完成 — 将 TeamDetail 集成到 SearchableList，队伍搜索结果可点击弹出 TeamDetail 模态框（新增 selectedTeamId 状态 + TeamDetail 导入 + onClick handler 分支 + cursor pointer）
-- 2026-05-27：Task 6 完成 — 新建 TeamDetail React 组件，全屏模态框（backdrop blur + slideUp 动画），展示队伍排名/积分/战绩/成就/近期 10 场/队员阵容，队员可点击穿透至 PlayerDetail
-- 2026-05-27：Task 5 完成 — 替换 GetTeam HTTP handler 存根为真实实现，新增 TeamDetail 类型/规格化/爬虫/facade（Task 1-4 前置），handler 模式镜像 GetPlayer 使用 GetTeamDetailCached + 30s 超时 + 优雅降级
+- 2026-05-28：三项 bug 修复 — 队伍详情 CSS 选择器重写（h1.profile-team-name / .value.h-rank / .bodyshot-team a / .trophyDescription）、近期战绩改用标准 results+upcoming API 按队名过滤（team matches 页面格式不兼容）、新闻正文仅提取 <p> 标签（清洗推荐卡片垃圾）、赛程时间显示 >24h 带日期、冗余代码清理（normalizeTeamDetail / ScrapeTeamDetail / ScrapeNewsArticle）
+- 2026-05-28：15 任务全栈实现完成 — README Stdio MCP 配置 / 队伍详情卡片（排名/积分/成就/10场战绩/队员列表）/ 赛程赛事分组弹窗（/api/events）/ 新闻详情弹窗（chromedp 正文 + 无限缓存 + API 翻译）
 - 2026-05-27：Chrome DevTools 全功能验证 — 占位符翻译 winner→胜者、BO1 归一化 0:1、缓存统计真实递增（6条目/3命中/7未命中）、选手详情缓存均已确认正常；发现 Windows localhost 端口转发会缓存旧响应，需用 WSL IP 直连
 - 2026-05-27：全量中文化 + BO1 归一化 + 选手缓存 + 缓存统计修复（8 commits，7 tasks）— 赛程 winner/loser/tbd 映射为胜者/败者/待定、选手近期比赛 BO1 比分 13:5→1:0、选手详情 7 天 chromedp 缓存、修复缓存统计硬编码为 0
 - 2026-05-27：修复队伍名显示 "Link" — `.playerTeam a` 选择器误抓合约来源链接，改用 `.playerTeam a[itemprop="text"]` 精确定位
-- 2026-05-27：选手页面直接提取比赛比分 — `.playerpage-match-result` 元素包含比分（如 "2:0"），无需爬 `/stats/matches/`，同时清理空格格式
 
 ## 进行中
-- 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源（API 端点为 401 需认证）
-- 选手队伍推断实现（参考原 hltv-mcp 的优先队列 + roster 扫描）
+- 无 — 15 任务全栈实现已全部完成，三项 bug 修复已交付
 
 ## 下一步
-- Task 15：最终验证（全功能端到端检查，确认所有 15 个任务完整交付）
+- 队伍详情 W/L/D 战绩数据优化（当前依赖 results 页面含该队伍的匹配，休赛期数据为空）
 - 完整 70+ 队伍 localization 扩展
-- OpenCode slash command 模板
+- 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源
 
 ## 关键发现
 
@@ -74,6 +66,9 @@
 - **比赛链接** 从 `.playerpage-matchbox[href]` 正则 `/stats/matches/(\d+)/([^"\s]+)` 提取 match ID + slug
 - **球员无队伍** `.playerTeam` 内 `<span itemprop="text">No team</span>` 表示无队伍，这是正常状态
 - **球员有合约链接** 部分球员 .playerTeam 内包含 `<a class="contract-link">Link</a>`（合约来源链接），会被误抓为队伍名
+- **队伍页** (`/team/{id}/{slug}`) — `h1.profile-team-name`(队名) / `.profile-team-container`(国家+队名，空格分隔取首词为国别) / `.value.h-rank`(HLTV 世界排名，#N 格式) / `.profile-team-stat`(含 "World ranking#N") / `.bodyshot-team.g-grid a[href*='/player/']`(现役 5 队员，精确去重) / `.trophySection .trophyDescription[title]`(奖杯名称) / `.trophySection .trophy[data-trophy-num]`(奖杯链接) / **队员链接在整个页面重复出现 5-10 次**（bodyshot / FAQ / playersBox / timeline / tooltip / transfer），必须限定在 `.bodyshot-team` 容器内才能取到现役队员
+- **队伍赛程页** (`/team/{id}/matches`) — 使用非标准 `table.match-table` + `.carousel-slider` 布局，**不与**标准 results/matches 页面共享 `.result-con` / `.match` 选择器，无法用现有 normalizer 提取。替代方案：用标准 `/results` + `/matches` 页面获取全部匹配后按队名过滤
+- **新闻文章页** — `.news-block` 内正文在 `<p>` 标签中，页面底部含 `.related-news` / `.player-card` / `.teammate` / `.comment-section` 等推荐卡片。提取时必须只取 `<p>` 标签（`doc.Find(".news-block p")`），不可用 `.Text()` 取整个容器否则会混入推荐新闻/选手卡片等垃圾内容
 
 ### CF 阻断分层
 - **HTTP 直连可用（无需 chromedp）**：`/player/`、`/results`、`/matches`、`/team/`、**`/news/`** — 无需反 CF 措施即可直连
