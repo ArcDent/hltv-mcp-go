@@ -202,10 +202,13 @@ func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 		m.Event = cleanText(s.Find(".playerpage-matchbox-bottom").First().Text())
 		m.Date = cleanText(s.Find(".playerpage-match-date").First().Text())
 		m.Score = strings.ReplaceAll(cleanText(s.Find(".playerpage-match-result").First().Text()), " ", "")
+		m.Score = normalizeBO1Score(m.Score)
 		if m.Opponent == "" {
 			m.Opponent = cleanText(s.Find(".playerpage-matchbox-team").First().Text())
 		}
+		m.Opponent = TranslatePlaceholder(m.Opponent)
 		m.Team = pd.Profile.Team
+		m.Team = TranslatePlaceholder(m.Team)
 
 		pd.RecentMatches = append(pd.RecentMatches, m)
 	})
@@ -219,6 +222,7 @@ func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 			if m.Team == "" { m.Team = pd.Profile.Team }
 			m.Opponent = cleanText(s.Find(".team2 .team, .line-align.team2 .team").First().Text())
 			m.Score = strings.ReplaceAll(cleanText(s.Find(".result-score").First().Text()), " ", "")
+			m.Score = normalizeBO1Score(m.Score)
 			m.Event = cleanText(s.Find(".event-name").First().Text())
 			if m.Score != "" { m.Result = "loss"; if strings.Count(m.Score, "2") >= 1 { m.Result = "win" } }
 			pd.RecentMatches = append(pd.RecentMatches, m)

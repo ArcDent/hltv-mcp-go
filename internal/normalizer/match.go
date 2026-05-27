@@ -127,6 +127,8 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 				m.Opponent = m.Team1
 			}
 		}
+		m.Team1 = TranslatePlaceholder(m.Team1)
+		m.Team2 = TranslatePlaceholder(m.Team2)
 
 		if m.Team1 != "" && m.Team2 != "" {
 			matches = append(matches, m)
