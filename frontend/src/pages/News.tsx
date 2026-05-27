@@ -71,8 +71,9 @@ export default function News() {
               temperature: 0.1,
             }),
           })
-          if (!res.ok) { console.error('translate API error', res.status, await res.text()); return }
-          const j = await res.json()
+          const body = await res.text()
+          if (!res.ok) { console.error('translate API error', res.status, body); throw new Error(body) }
+          const j = JSON.parse(body)
           const zh = (j?.choices?.[0]?.message?.content as string)?.trim() ?? ''
           if (zh) {
             cache[hashTitle(title)] = { zh, ts: Date.now() }
