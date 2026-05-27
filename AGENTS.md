@@ -34,8 +34,9 @@
 ```
 
 ## 最近操作
-- 2026-05-27：前端采用 person-summon 设计语言 + 竖状侧栏 + 数据源弹窗(动态端点) + 主题切换
-- 2026-05-27：新闻翻译功能 — 后端配置API + 前端OpenAI兼容翻译面板 + 双语展示 + localStorage缓存7天
+- 2026-05-27：前端采用 person-summon 设计语言 + 竖状侧栏 + 数据源弹窗(动态端点) + 暗/亮主题切换
+- 2026-05-27：新闻翻译 — 后端配置API(文件持久化) + 前端OpenAI兼容面板 + 双语展示 + localStorage缓存7天 + sessionStorage保留Key
+- 2026-05-27：修复翻译组件3个bug — masked key覆盖、worker提前return、sessionStorage恢复
 - 2026-05-27：默认为白天主题，修复首次点击无响应
 - 2026-05-27：侧栏竖状导航 + 暗/亮主题切换按钮 + 全宽内容区 + 竖状侧栏 + 数据源弹窗 + 新闻中文翻译 + 标签切换动效 — CSS 变量双主题 + 卡片系统 + 聚焦光环 + 噪声纹理
 - 2026-05-27：侧栏竖状导航 + 暗/亮主题切换按钮 + 全宽内容区
@@ -43,7 +44,8 @@
 - 2026-05-27：全部 6/6 爬虫端点 E2E 验证通过（含 chromedp 反 Cloudflare）
 - 2026-05-27：创建 GitHub 仓库并推送（ArcDent/hltv-mcp-go）
 
-## 进行中（提取 SearchableList 共享组件，Teams/Players 各减 82%）
+## 进行中
+- 翻译功能调试（sessionStorage Key 持久化已修复）（提取 SearchableList 共享组件，Teams/Players 各减 82%）
 - 前端细节打磨（赛事名缩写、队伍名对齐、主题切换动效）
 
 ## 下一步
