@@ -34,11 +34,11 @@
 ```
 
 ## 最近操作
+- 2026-05-27：全量中文化 + BO1 归一化 + 选手缓存 + 缓存统计修复（8 commits，7 tasks）— 赛程 winner/loser/tbd 映射为胜者/败者/待定、选手近期比赛 BO1 比分 13:5→1:0、选手详情 7 天 chromedp 缓存、修复缓存统计硬编码为 0
 - 2026-05-27：修复队伍名显示 "Link" — `.playerTeam a` 选择器误抓合约来源链接，改用 `.playerTeam a[itemprop="text"]` 精确定位
 - 2026-05-27：选手页面直接提取比赛比分 — `.playerpage-match-result` 元素包含比分（如 "2:0"），无需爬 `/stats/matches/`，同时清理空格格式
 - 2026-05-27：修复 PlayerDetailProfile.Team/Country omitempty — 去除 omitempty 确保字段始终存在于 JSON 响应
 - 2026-05-27：前端空值显示 "暂无队伍"/"未知国籍" — PlayerDetail.tsx 对 team/country/realname 增加空值 fallback
-- 2026-05-27：确认 `/stats/matches/` 即使 Firecrawl stealth 代理也无法突破 CF 403
 
 ## 进行中
 - 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源（API 端点为 401 需认证）
@@ -72,6 +72,13 @@
 - `go build .` 因 `frontend/` 无 Go 文件失败 → 用 `go build github.com/arcdent/hltv-mcp`
 - Docker: `GOTOOLCHAIN=auto` + `chromedp/headless-shell:latest` Chrome 路径 `/headless-shell/headless-shell`
 - SPA fallback: `feFS.Open(path)` 必须 strip 前导 `/`
+
+### 赛中文化与缓存模式
+- HLTV bracket 占位符映射：winner/loser/tbd → 胜者/败者/待定，使用 `strings.Contains` 包含匹配（HLTV 实际文本可能是 "Winner of Group A" 格式）
+- BO1 比分归一化：任一侧 >= 13 判定为 BO1，转为 1:0/0:1；`.result-con` 回退路径中归一化必须在胜负判断之后执行
+- 选手详情缓存：`types.PlayerDetail` 不走 `withCache` 包装，直接用 `cache.Get/Set`（非 `*ToolResponse` 类型），key 格式 `player_detail:<id>`
+- cache.GetStale 不计入 hits/misses（降级兜底不在统计范围）
+- `sync/atomic.Int64` 用于 cache 计数器，与 `sync.RWMutex` 无锁竞争
 
 ### 前端设计系统（参考 person-summon）
 - 主题：CSS 变量（`:root` 亮色 / `[data-theme="dark"]` 暗色）+ `transition: background-color 0.3s, color 0.2s, border-color 0.3s`
