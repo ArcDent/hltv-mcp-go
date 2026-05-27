@@ -97,7 +97,8 @@ export default function Matches() {
               </span>
             </div>
             <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>
-              {ev.date_start || '?'} ~ {ev.date_end || '?'}
+              {ev.date_start && ev.date_start.length === 10 ? ev.date_start.slice(5).replace('-','/') : '?'}
+              {ev.date_end && ev.date_start !== ev.date_end && ev.date_end.length === 10 ? ' ~ ' + ev.date_end.slice(5).replace('-','/') : ''}
             </div>
           </div>
         ))}
@@ -149,18 +150,17 @@ export default function Matches() {
                     (() => {
                       const t = m.scheduled_at
                       if (!t) return <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', minWidth: 50, textAlign: 'center' }}>—:—</span>
-                      const target = new Date(t.replace(' ', 'T') + ':00')
-                      const now = new Date()
-                      const diffMs = target.getTime() - now.getTime()
-                      const diffH = diffMs / (1000 * 3600)
+                      const parts = t.split(' ')
+                      const datePart = parts.length > 1 ? parts[0] : ''
+                      const timePart = parts.length > 1 ? parts[1] : t
                       return (
                         <div style={{ minWidth: 50, textAlign: 'center' }}>
                           <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>
-                            {t.slice(11, 16)}
+                            {timePart.length >= 5 ? timePart.slice(0, 5) : timePart}
                           </div>
-                          {diffH > 24 && (
+                          {datePart && (
                             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                              {t.slice(5, 10).replace('-', '/')}
+                              {datePart.slice(5).replace('-', '/')}
                             </div>
                           )}
                         </div>
@@ -172,7 +172,7 @@ export default function Matches() {
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', height: 16 }}>{c2}</span>
                   </div>
                   <span style={{ fontSize: 11, color: m.score ? 'var(--text-muted)' : 'var(--gold)', minWidth: 60, textAlign: 'right' }}>
-                    {m.best_of ? `${m.best_of.toUpperCase()}` : ''}{m.played_at ? ` · ${m.played_at.slice(5, 10)}` : ''}
+                    {m.best_of ? `${m.best_of.toUpperCase()}` : ''}
                   </span>
                 </div>
               )
