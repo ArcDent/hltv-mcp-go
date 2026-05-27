@@ -149,35 +149,63 @@ Consistent with player detail logic: if either side score >= 13, normalize to 1:
 - Ranking and points: scraped from team profile page
 - Achievements: scraped from team profile page (Major wins, S/A-tier trophies, streaks)
 - Roster with ratings: scraped from team profile page player cards
-- If a player in roster has a known ID, clicking opens existing PlayerDetail component
+- If a player in roster has a known ID (extractable from team page HTML), clicking opens existing PlayerDetail component
+- **Fallback**: if player IDs cannot be extracted from team page, roster displays as static list (name + rating only, no click-to-detail). This is accepted behavior.
 
 ---
 
 ## Feature 3: Matches by Event Grouping
 
-### Frontend only
+### Backend
+
+**New API endpoint** `GET /api/events`:
+
+Query params: `type` = `today` | `upcoming` | `results`, `limit` = default 150.
+
+Response groups matches by event server-side:
+```json
+{
+  "events": [
+    {
+      "name": "IEM Katowice",
+      "date_start": "2026-05-24",
+      "date_end": "2026-05-26",
+      "match_count": 3,
+      "matches": [...]
+    }
+  ],
+  "other": [...matches with empty event...]
+}
+```
+
+**Handler** (`internal/http/handlers/matches.go`):
+- `GetEvents(w, r)` — reads `type` + `limit` from query, calls facade
+
+**Facade** (`internal/facade/matches.go`):
+- `GetEvents(type, limit)` — fetches matches via existing scraper, groups by `event` field, builds response
+
+**Router**: `r.Get("/api/events", h.GetEvents)`
+
+### Frontend
 
 **Matches.tsx rewrite**:
 
 Keep 3 tabs (今日赛程 / 即将开始 / 近期赛果).
 
-Within each tab:
-1. **Group** matches by `event` field (no Chinese translation of event name)
-2. **Render event cards** in 2-column grid (same card style as current match cards)
-   - Event name (Oswald font, original text)
+Within each tab, call `/api/events?type=<tab>&limit=150`:
+1. **Render event cards** in 2-column grid (same card style as current match cards)
+   - Event name (Oswald font, original text, no Chinese translation)
    - Date range (earliest–latest match date within event)
    - Match count badge (N 场)
-3. **Click event card** → modal with:
+2. **Click event card** → modal with:
    - Event name title + date range + match count
    - Vertical list of all matches under that event
    - Each match row: Team1 / Score or Time / Team2 + BO1/BO3 + date/status
    - For results: show score with BO1 normalization
    - For upcoming: show HH:MM start time in gold
-4. **ESC** or **click backdrop** closes modal
+3. **ESC** or **click backdrop** closes modal
 
-No backend changes needed — existing `NormalizedMatch.Event` field is already populated.
-
-Event names that are empty/null: group under "Other" or use date as fallback.
+Empty event names (observed in ~30% of upcoming lower-tier matches, e.g. Young vs TNC, Galorys vs LP) are returned as `"other"` key in the response and rendered as "Other" card group.
 
 ---
 
@@ -192,7 +220,7 @@ type NewsArticle struct {
     Title       string `json:"title"`
     PublishedAt string `json:"published_at"`
     Link        string `json:"link"`
-    BodyHTML    string `json:"body_html"`
+    BodyText    string `json:"body_text"`
     Author      string `json:"author,omitempty"`
 }
 ```
@@ -202,12 +230,12 @@ type NewsArticle struct {
 Add method `GetArticle(ctx, url) (string, error)`:
 - chromedp requests the article URL
 - Wait for `.news-block` or `.news-body` or `article` selector
-- Extract inner HTML
-- Note: HLTV article pages may be CF-protected — chromedp with UserDataDir should work (same as `/matches`)
+- Extract **text only** (`.textContent`), not HTML — avoids XSS risk from untrusted third-party HTML
+- **PREREQUISITE**: Before implementing, must test that HLTV news article pages are accessible via chromedp (not CF-blocked like `/stats/matches/`). If CF-blocked, this feature needs alternative approach.
 
 **New normalizer** (`internal/normalizer/news.go`):
 
-`NormalizeNewsArticle(html, item) NewsArticle` — extracts title, date, body HTML, author.
+`NormalizeNewsArticle(text, item) NewsArticle` — extracts title, date, body text, author.
 
 **Facade** (`internal/facade/facade.go`):
 
@@ -244,7 +272,7 @@ Layout:
 1. Title (bold, larger)
 2. Published time + author (if any)
 3. Divider
-4. Body content (rendered as HTML via `dangerouslySetInnerHTML`)
+4. Body content (plain text, preserved whitespace/line breaks via `white-space: pre-wrap`)
 5. Divider
 6. Translate button (reuses existing OpenAI translation API)
 7. Translated text area below button (shown after translation completes)
@@ -252,8 +280,8 @@ Layout:
 
 **Translation flow**:
 - User clicks translate button
-- Entire body HTML text sent to OpenAI API (same provider config as existing news title translation)
-- System prompt: "将以下CS电竞新闻正文翻译为简体中文，保留HTML标签结构"
+- Entire body text sent to OpenAI API (same provider config as existing news title translation)
+- System prompt: "将以下CS电竞新闻正文翻译为简体中文"
 - Result cached in localStorage: key = `news_trans:<md5(url)>`, TTL = infinite
 - Subsequent clicks serve cached translation immediately
 
@@ -270,15 +298,15 @@ Following 方案 A (全栈串联):
 
 1. **README Stdio config** — 1 file, no deps
 2. **Team detail** — backend types → scraper/normalizer → facade → handler → frontend component
-3. **Matches event grouping** — frontend only, Matches.tsx rewrite
-4. **News detail** — backend types → scraper/normalizer → facade → handler → frontend component
+3. **Matches event grouping** — backend `/api/events` → frontend Matches.tsx rewrite
+4. **News detail** — CF smoke test → (if pass) backend types → scraper/normalizer → facade → handler → frontend component
 
 ---
 
 ## Error Handling
 
 - Team detail: if HLTV page fails chromedp, return `UPSTREAM_UNAVAILABLE` error (same as PlayerDetail)
-- News article: if article page CF-blocked, return error with "请在 HLTV 阅读原文" link as fallback
+- News article CF check: before implementation, run chromedp smoke test against a real HLTV article URL. If CF-blocked (like `/stats/matches/`), abort news detail feature and fall back to showing metadata + external link only
 - Matches: if `event` field is empty string, group as "Other" bucket
 - BO1 normalization: degenerate cases (both < 13, negative scores) pass through unchanged
 
