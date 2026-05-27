@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PlayerDetail from './PlayerDetail'
 
 type Props = {
   type: 'team' | 'player'
@@ -36,6 +37,7 @@ export default function SearchableList({ placeholder, emptyHint, apiSearch }: Pr
   const [q, setQ] = useState('')
   const [list, setList] = useState<any[] | null>(null)
   const [loading, setLoading] = useState(false)
+  const [selectedId, setSelectedId] = useState<number | null>(null)
 
   const search = async () => {
     if (!q.trim()) return
@@ -69,7 +71,8 @@ export default function SearchableList({ placeholder, emptyHint, apiSearch }: Pr
         </div>
       )}
       {list?.map((item, i) => (
-        <div key={i} className="anim-in" style={{ ...cardStyle, animationDelay: `${i * 35}ms` }}>
+        <div key={i} className="anim-in" onClick={() => item.id && setSelectedId(item.id)}
+          style={{ ...cardStyle, animationDelay: `${i * 35}ms`, cursor: 'pointer' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700, color: 'var(--gold)', minWidth: 28 }}>
             {String(i + 1).padStart(2, '0')}
           </span>
@@ -85,5 +88,6 @@ export default function SearchableList({ placeholder, emptyHint, apiSearch }: Pr
         </div>
       ))}
     </div>
+    {selectedId !== null && <PlayerDetail id={selectedId} onClose={() => setSelectedId(null)} />}
   )
 }

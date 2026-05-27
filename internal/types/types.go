@@ -236,3 +236,59 @@ type RealtimeNewsQuery struct {
 	Page   int `json:"page,omitempty"`
 	Offset int `json:"offset,omitempty"`
 }
+
+// PlayerDetail is the full player profile scraped from HLTV player page
+type PlayerDetail struct {
+	Profile       PlayerDetailProfile `json:"profile"`
+	Rating        PlayerRating        `json:"rating"`
+	Abilities     []PlayerAbility     `json:"abilities"`
+	Career        PlayerCareer        `json:"career"`
+	Top20Ranks    map[string]int      `json:"top20_ranks"`
+	Honors        []PlayerHonor       `json:"honors,omitempty"`
+	RecentMatches []PlayerRecentMatch `json:"recent_matches,omitempty"`
+}
+type PlayerDetailProfile struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	RealName   string `json:"real_name,omitempty"`
+	Slug       string `json:"slug"`
+	Country    string `json:"country,omitempty"`
+	Age        int    `json:"age,omitempty"`
+	Team       string `json:"team,omitempty"`
+	PrizeMoney string `json:"prize_money,omitempty"`
+}
+type PlayerRating struct {
+	Value float64 `json:"value"`
+	Maps  int     `json:"maps"`
+}
+type PlayerAbility struct {
+	Key     string  `json:"key"`
+	LabelEn string  `json:"label_en"`
+	LabelZh string  `json:"label_zh"`
+	Value   float64 `json:"value"`
+	Max     int     `json:"max"`
+	Format  string  `json:"format,omitempty"`
+}
+type PlayerCareer struct {
+	Rating       float64 `json:"rating"`
+	Matches      int     `json:"matches"`
+	WinRate      string  `json:"win_rate"`
+	KD           float64 `json:"kd"`
+	HeadshotPct  string  `json:"headshot_pct"`
+	WinStreak    int     `json:"win_streak"`
+}
+type PlayerHonor struct {
+	Label string `json:"label"`
+	Value int    `json:"value"`
+}
+type PlayerRecentMatch struct {
+	Date     string  `json:"date"`
+	Team     string  `json:"team"`
+	Opponent string  `json:"opponent"`
+	Score    string  `json:"score"`
+	Result   string  `json:"result"`
+	Rating   float64 `json:"rating"`
+	Kills    int     `json:"kills"`
+	Deaths   int     `json:"deaths"`
+	Event    string  `json:"event"`
+}

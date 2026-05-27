@@ -1,9 +1,12 @@
 package facade
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/cache"
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/config"
@@ -52,6 +55,11 @@ func (f *HltvFacade) createMeta(ttlSec int) types.ToolMeta {
 
 // withCache checks cache, then computes and caches the result
 func (f *HltvFacade) ClientIsChromeAvailable() bool { return f.client.IsChromeAvailable() }
+
+func (f *HltvFacade) ScrapePlayerDetail(ctx context.Context, id int, slug string) (*goquery.Document, error) {
+	if slug == "" { slug = fmt.Sprintf("player-%d", id) }
+	return f.ps.GetPlayer(ctx, id, slug)
+}
 
 func (f *HltvFacade) withCache(key string, ttlSec int, query map[string]any, compute func() (*types.ToolResponse, error)) *types.ToolResponse {
 	if cached, ok := f.cache.Get(key); ok {
