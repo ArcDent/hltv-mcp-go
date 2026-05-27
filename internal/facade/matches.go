@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -30,6 +31,106 @@ func stripGenericFilter(s string) string {
 	s = regexp.MustCompile(`^(?:today|upcoming|未来|即将)?\s*`).ReplaceAllString(s, "")
 	s = regexp.MustCompile(`\s*(?:matches?|match|schedule|比赛|赛程)?\s*$`).ReplaceAllString(s, "")
 	return strings.TrimSpace(s)
+}
+
+// EventGroup holds matches grouped under one event name
+type EventGroup struct {
+	Name       string                  `json:"name"`
+	DateStart  string                  `json:"date_start"`
+	DateEnd    string                  `json:"date_end"`
+	MatchCount int                     `json:"match_count"`
+	Matches    []types.NormalizedMatch `json:"matches"`
+}
+
+// EventsResponse is the response for /api/events
+type EventsResponse struct {
+	Events []EventGroup            `json:"events"`
+	Other  []types.NormalizedMatch `json:"other,omitempty"`
+}
+
+// GetEvents fetches matches and groups them by event name
+func (f *HltvFacade) GetEvents(matchType string, limit int) *types.ToolResponse {
+	q := map[string]any{"type": matchType, "limit": limit}
+	key := fmt.Sprintf("events:%s:%d", matchType, limit)
+	ttl := f.cfg.CacheTTLMatches
+
+	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
+		var items []types.NormalizedMatch
+		switch matchType {
+		case "today", "upcoming":
+			doc, err := f.ms.GetUpcoming(context.Background())
+			if err != nil {
+				return nil, err
+			}
+			items = normalizer.NormalizeUpcomingMatches(doc, "")
+			if matchType == "today" {
+				items = filterToday(items)
+			}
+		case "results":
+			doc, err := f.rs.GetResults(context.Background())
+			if err != nil {
+				return nil, err
+			}
+			items = normalizer.NormalizeMatches(doc, "")
+			normalizer.SortByPlayedAtDesc(items)
+		default:
+			return nil, fmt.Errorf("invalid type: %s", matchType)
+		}
+		if len(items) > limit {
+			items = items[:limit]
+		}
+
+		resp := groupByEvent(items)
+		meta := f.createMeta(ttl)
+		r := &types.ToolResponse{Query: q, Meta: meta}
+		r.Data = resp
+		return r, nil
+	})
+}
+
+func groupByEvent(matches []types.NormalizedMatch) EventsResponse {
+	groups := make(map[string]*EventGroup)
+	var other []types.NormalizedMatch
+
+	for _, m := range matches {
+		event := strings.TrimSpace(m.Event)
+		if event == "" {
+			other = append(other, m)
+			continue
+		}
+		g, exists := groups[event]
+		if !exists {
+			g = &EventGroup{Name: event}
+			groups[event] = g
+		}
+		g.Matches = append(g.Matches, m)
+		g.MatchCount++
+
+		date := m.PlayedAt
+		if date == "" {
+			date = m.ScheduledAt
+		}
+		if date == "" {
+			continue
+		}
+		date = strings.SplitN(date, " ", 2)[0]
+		if g.DateStart == "" || date < g.DateStart {
+			g.DateStart = date
+		}
+		if g.DateEnd == "" || date > g.DateEnd {
+			g.DateEnd = date
+		}
+	}
+
+	var events []EventGroup
+	for _, g := range groups {
+		events = append(events, *g)
+	}
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].DateStart < events[j].DateStart
+	})
+
+	return EventsResponse{Events: events, Other: other}
 }
 
 // GetTodayMatches delegates to GetUpcomingMatches with empty query

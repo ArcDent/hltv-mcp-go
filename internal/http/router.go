@@ -37,6 +37,7 @@ func NewRouter(cfg *config.Config, f *facade.HltvFacade, frontendFS fs.FS) http.
 	r.Get("/api/matches/today", h.GetTodayMatches)
 	r.Get("/api/matches", h.GetUpcomingMatches)
 	r.Get("/api/results", h.GetResults)
+	r.Get("/api/events", h.GetEvents)
 	r.Get("/api/news/realtime", h.GetRealtimeNews)
 	r.Get("/api/news", h.GetNewsDigest)
 	r.Get("/api/translate/config", h.GetTranslateConfig)

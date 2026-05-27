@@ -32,3 +32,14 @@ func (h *Handlers) GetResults(w http.ResponseWriter, r *http.Request) {
 	})
 	writeJSON(w, resp)
 }
+
+func (h *Handlers) GetEvents(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	matchType := q.Get("type")
+	limit := atoi(q.Get("limit"))
+	if limit == 0 {
+		limit = 150
+	}
+	resp := h.f.GetEvents(matchType, limit)
+	writeJSON(w, resp)
+}
