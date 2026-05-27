@@ -5,7 +5,10 @@
       "Bash(sed -i 's|灵感来源：\\\\[hltv-api\\\\]\\(https://github.com/arcdent/hltv-mcp\\)（原 TypeScript + Python Flask/Scrapy 双层架构项目）|灵感来源：[hltv-api]\\(https://github.com/M3MONs/hltv-api\\)（Python Flask/Scrapy HLTV 爬虫 API）|' README.md)",
       "Bash(sed -i 's|\\\\[hltv-api\\\\]\\(https://github.com/arcdent/hltv-mcp\\)|[hltv-api]\\(https://github.com/M3MONs/hltv-api\\)|' README.md)",
       "Bash(sed -i 's|灵感来源：hltv-api（TypeScript MCP + Python Flask/Scrapy 双层架构项目）|灵感来源：[hltv-api]\\(https://github.com/M3MONs/hltv-api\\)（Python Flask/Scrapy HLTV 爬虫 API）|' AGENTS.md)",
-      "Bash(sed -n '5,7p' README.md)"
+      "Bash(sed -n '5,7p' README.md)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
