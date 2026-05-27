@@ -44,8 +44,7 @@
 - 2026-05-27：全部 6/6 爬虫端点 E2E 验证通过（含 chromedp 反 Cloudflare）
 - 2026-05-27：创建 GitHub 仓库并推送（ArcDent/hltv-mcp-go）
 
-## 进行中
-- 翻译功能调试（sessionStorage Key 持久化已修复）（提取 SearchableList 共享组件，Teams/Players 各减 82%）
+## 进行中（sessionStorage Key 持久化已修复）（提取 SearchableList 共享组件，Teams/Players 各减 82%）
 - 前端细节打磨（赛事名缩写、队伍名对齐、主题切换动效）
 
 ## 下一步
