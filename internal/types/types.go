@@ -294,3 +294,53 @@ type PlayerRecentMatch struct {
 	Deaths    int     `json:"deaths"`
 	Event     string  `json:"event"`
 }
+
+// TeamDetail is the full team profile scraped from HLTV team page
+type TeamDetail struct {
+	Profile       TeamDetailProfile  `json:"profile"`
+	Ranking       TeamRanking        `json:"ranking"`
+	Stats         TeamStats          `json:"stats"`
+	Achievements  []TeamAchievement  `json:"achievements"`
+	Roster        []TeamRosterPlayer `json:"roster"`
+	RecentMatches []NormalizedMatch  `json:"recent_matches"`
+}
+
+// TeamDetailProfile holds basic team identity
+type TeamDetailProfile struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Slug    string `json:"slug"`
+	Country string `json:"country"`
+	Region  string `json:"region,omitempty"`
+}
+
+// TeamRanking holds world ranking and points
+type TeamRanking struct {
+	WorldRank int `json:"world_rank"`
+	Points    int `json:"points"`
+}
+
+// TeamStats holds win/loss/draw and form
+type TeamStats struct {
+	Wins       int    `json:"wins"`
+	Losses     int    `json:"losses"`
+	Draws      int    `json:"draws"`
+	WinRate    string `json:"win_rate"`
+	RecentForm string `json:"recent_form"`
+}
+
+// TeamAchievement represents a trophy or record
+type TeamAchievement struct {
+	Label string `json:"label"`
+	Count int    `json:"count"`
+	Tier  string `json:"tier,omitempty"` // "major", "s", "a", "streak"
+}
+
+// TeamRosterPlayer is a player in the team roster
+type TeamRosterPlayer struct {
+	ID      int     `json:"id"`
+	Name    string  `json:"name"`
+	Slug    string  `json:"slug"`
+	Rating  float64 `json:"rating"`
+	Country string  `json:"country,omitempty"`
+}
