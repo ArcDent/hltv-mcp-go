@@ -108,7 +108,7 @@ export default function Matches() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 50 }}>
                   <span style={{ fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-display)',
                     color: 'var(--text)', letterSpacing: '0.03em', textAlign: 'center' }}>
-                    {m.team1 ?? 'TBD'}
+                    {m.team1 || '待定'}
                   </span>
                   <span style={{ fontSize: 13, color: 'var(--text-muted)', height: 18 }}>{c1}</span>
                 </div>
@@ -131,7 +131,7 @@ export default function Matches() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 50 }}>
                   <span style={{ fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-display)',
                     color: 'var(--text)', letterSpacing: '0.03em', textAlign: 'center' }}>
-                    {m.team2 ?? 'TBD'}
+                    {m.team2 || '待定'}
                   </span>
                   <span style={{ fontSize: 13, color: 'var(--text-muted)', height: 18 }}>{c2}</span>
                 </div>

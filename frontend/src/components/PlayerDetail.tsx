@@ -127,7 +127,7 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
                       {m.result==='win'?'W':m.result==='loss'?'L':'—'}
                     </span>
                     <span style={{flex:1,minWidth:0}}>
-                      <span style={{fontWeight:600}}>{m.team}</span> <span style={{color:'var(--text-muted)'}}>vs</span> {m.opponent}
+                      <span style={{fontWeight:600}}>{m.team || '待定'}</span> <span style={{color:'var(--text-muted)'}}>vs</span> {m.opponent || '待定'}
                       <div style={{fontSize:10,color:'var(--text-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{m.event}</div>
                     </span>
                     {m.result !== 'scheduled' && m.score && <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',whiteSpace:'nowrap'}}>{m.score}</span>}
