@@ -11,7 +11,7 @@ type Config = { provider_url: string; api_key: string; model: string; configured
 
 export function useTranslateConfig() {
   const [cfg, setCfg] = useState<Config | null>(null)
-  const [realKey, setRealKey] = useState('')
+  const [realKey, setRealKey] = useState(() => sessionStorage.getItem('hltv_real_key') ?? '')
   const [open, setOpen] = useState(false)
 
   const fetchConfig = async () => {
@@ -25,7 +25,8 @@ export function useTranslateConfig() {
   useEffect(() => { fetchConfig() }, [])
 
   const save = async (url: string, key: string, model: string) => {
-    setRealKey(key) // cache real key before saving
+    sessionStorage.setItem('hltv_real_key', key)
+    setRealKey(key)
     await fetch('/api/translate/config', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
