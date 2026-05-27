@@ -19,8 +19,6 @@ export function useTranslateConfig() {
       const r = await fetch('/api/translate/config')
       const c = await r.json()
       setCfg(c)
-      // Keep real key if we have one cached; otherwise the masked key from backend
-      if (!realKey && c.api_key) setRealKey(c.api_key)
     } catch { setCfg({ provider_url: '', api_key: '', model: '', configured: false } as Config) }
   }
 

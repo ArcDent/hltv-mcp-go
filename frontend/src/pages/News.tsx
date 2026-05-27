@@ -71,6 +71,7 @@ export default function News() {
               temperature: 0.1,
             }),
           })
+          if (!res.ok) { console.error('translate API error', res.status, await res.text()); return }
           const j = await res.json()
           const zh = (j?.choices?.[0]?.message?.content as string)?.trim() ?? ''
           if (zh) {
@@ -78,7 +79,7 @@ export default function News() {
             saveCache(cache)
             setTranslations(prev => ({ ...prev, [title]: zh }))
           }
-        } catch {}
+        } catch (e) { console.error('translate failed:', title, e) }
         active--
         setTranslating(prev => { const s = new Set(prev); s.delete(title); return s })
       }
