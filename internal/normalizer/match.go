@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/types"
@@ -81,74 +82,82 @@ func normalizeResultsCon(doc *goquery.Document, perspective string) []types.Norm
 	return matches
 }
 
-// NormalizeUpcomingMatches handles the "/matches" page (React-rendered, fetched via chromedp)
-// HLTV React component structure:
-//   div.match > a.match-top (event) + div.match-bottom > a.match-info (time) + a.match-teams (teams)
 func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
 	var matches []types.NormalizedMatch
+	currentDate := strings.Split(time.Now().UTC().Format(time.RFC3339), "T")[0] // "2006-01-02"
 
-	// Strategy: parse from .match containers
-	doc.Find(".match").Each(func(_ int, s *goquery.Selection) {
-		m := types.NormalizedMatch{Result: types.OutcomeScheduled}
+	// Find parent container holding both headlines and match-wrappers
+	headline := doc.Find(".matches-list-headline").First()
+	var parent *goquery.Selection
+	if headline.Length() > 0 {
+		parent = headline.Parent()
+	}
+	if parent.Length() == 0 {
+		parent = doc.Find("body").First()
+	}
 
-		// Event from .match-top link
-		m.Event = cleanText(s.Find(".match-top").First().Text())
-
-		// Time from .match-info link
-		infoText := cleanText(s.Find(".match-info").First().Text())
-		// Extract time portion (e.g., "09:00 bo3" → "09:00")
-		if idx := strings.Index(infoText, " "); idx > 0 {
-			m.ScheduledAt = infoText[:idx]
-			m.BestOf = cleanText(infoText[idx:])
-		} else {
-			m.ScheduledAt = infoText
+	parent.Children().Each(func(_ int, child *goquery.Selection) {
+		if child.HasClass("matches-list-headline") {
+			text := cleanText(child.Text())
+			if idx := strings.LastIndex(text, "- "); idx >= 0 {
+				currentDate = strings.TrimSpace(text[idx+2:])
+			}
+			return
 		}
+		child.Find(".match").Each(func(_ int, s *goquery.Selection) {
+			m := types.NormalizedMatch{Result: types.OutcomeScheduled}
 
-		// Teams from .match-teams link
-		teamsText := cleanText(s.Find(".match-teams").First().Text())
-		// Teams text is typically "Team1\nTeam2" or "Team1 vs Team2"
-		teamsText = strings.ReplaceAll(teamsText, "\n", " ")
-		teamsText = strings.ReplaceAll(teamsText, "  ", " ")
-		if idx := strings.Index(teamsText, " vs "); idx > 0 {
-			m.Team1 = cleanText(teamsText[:idx])
-			m.Team2 = cleanText(teamsText[idx+4:])
-		} else {
-			// Fallback: find all text nodes in .match-teams
-			parts := strings.Fields(teamsText)
-			if len(parts) >= 2 {
-				m.Team1 = parts[0]
-				// Skip middle parts that might be "vs", take last as team2
-				if strings.ToLower(parts[len(parts)-2]) == "vs" {
-					m.Team2 = parts[len(parts)-1]
-				} else {
-					m.Team2 = parts[len(parts)-1]
+			m.Event = cleanText(s.Find(".match-top").First().Text())
+
+			infoText := cleanText(s.Find(".match-info").First().Text())
+			if idx := strings.Index(infoText, " "); idx > 0 {
+				m.ScheduledAt = currentDate + " " + infoText[:idx]
+				m.BestOf = cleanText(infoText[idx:])
+			} else {
+				m.ScheduledAt = currentDate + " " + infoText
+			}
+
+			teamsText := cleanText(s.Find(".match-teams").First().Text())
+			teamsText = strings.ReplaceAll(teamsText, "\n", " ")
+			teamsText = strings.ReplaceAll(teamsText, "  ", " ")
+			if idx := strings.Index(teamsText, " vs "); idx > 0 {
+				m.Team1 = cleanText(teamsText[:idx])
+				m.Team2 = cleanText(teamsText[idx+4:])
+			} else {
+				parts := strings.Fields(teamsText)
+				if len(parts) >= 2 {
+					m.Team1 = parts[0]
+					if strings.ToLower(parts[len(parts)-2]) == "vs" {
+						m.Team2 = parts[len(parts)-1]
+					} else {
+						m.Team2 = parts[len(parts)-1]
+					}
 				}
 			}
-		}
 
-		// Match ID from href in any child link
-		s.Find("a").Each(func(_ int, a *goquery.Selection) {
-			if href, ok := a.Attr("href"); ok {
-				if id := parseMatchID(href); id > 0 {
-					m.MatchID = id
+			s.Find("a").Each(func(_ int, a *goquery.Selection) {
+				if href, ok := a.Attr("href"); ok {
+					if id := parseMatchID(href); id > 0 {
+						m.MatchID = id
+					}
 				}
+			})
+
+			if perspective != "" {
+				if m.Team1 == perspective {
+					m.Opponent = m.Team2
+				} else if m.Team2 == perspective {
+					m.Opponent = m.Team1
+				}
+			}
+			m.Team1 = TranslatePlaceholder(m.Team1)
+			m.Team2 = TranslatePlaceholder(m.Team2)
+			m.Opponent = TranslatePlaceholder(m.Opponent)
+
+			if m.Team1 != "" && m.Team2 != "" {
+				matches = append(matches, m)
 			}
 		})
-
-		if perspective != "" {
-			if m.Team1 == perspective {
-				m.Opponent = m.Team2
-			} else if m.Team2 == perspective {
-				m.Opponent = m.Team1
-			}
-		}
-		m.Team1 = TranslatePlaceholder(m.Team1)
-		m.Team2 = TranslatePlaceholder(m.Team2)
-		m.Opponent = TranslatePlaceholder(m.Opponent)
-
-		if m.Team1 != "" && m.Team2 != "" {
-			matches = append(matches, m)
-		}
 	})
 	return matches
 }
