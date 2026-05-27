@@ -33,7 +33,10 @@
       "Bash(fuser -k 8082/tcp)",
       "mcp__chrome-devtools__handle_dialog",
       "Bash(curl -s http://localhost:8082/api/players/11893)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('name:', d.get\\('data',{}\\).get\\('profile',{}\\).get\\('name','N/A'\\)\\); print\\('abilities:', len\\(d.get\\('data',{}\\).get\\('abilities',[]\\)\\)\\); print\\('top20:', d.get\\('data',{}\\).get\\('top20_ranks',{}\\)\\); print\\('honors:', len\\(d.get\\('data',{}\\).get\\('honors',[]\\)\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('name:', d.get\\('data',{}\\).get\\('profile',{}\\).get\\('name','N/A'\\)\\); print\\('abilities:', len\\(d.get\\('data',{}\\).get\\('abilities',[]\\)\\)\\); print\\('top20:', d.get\\('data',{}\\).get\\('top20_ranks',{}\\)\\); print\\('honors:', len\\(d.get\\('data',{}\\).get\\('honors',[]\\)\\)\\)\")",
+      "Bash(curl -s \"http://localhost:8082/api/search?q=m0NESY&type=player\")",
+      "Bash(python3 -c \"import sys,json; items=json.load\\(sys.stdin\\).get\\('items',[]\\); print\\(items[0] if items else 'NOT FOUND'\\)\")",
+      "Bash(curl -s \"http://localhost:8082/api/search?q=dev1ce&type=player\")"
     ]
   }
 }
