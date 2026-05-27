@@ -36,12 +36,13 @@ func ifElse(cond bool, a, b string) string { if cond { return a }; return b }
 
 func (h *Handlers) GetCacheStats(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
-		"entries": 0,
-		"hits":    0,
-		"misses":  0,
+		"entries": h.f.CacheEntries(),
+		"hits":    h.f.CacheHits(),
+		"misses":  h.f.CacheMisses(),
 	})
 }
 
 func (h *Handlers) ClearCache(w http.ResponseWriter, r *http.Request) {
+	h.f.ClearCache()
 	writeJSON(w, map[string]string{"status": "cleared"})
 }
