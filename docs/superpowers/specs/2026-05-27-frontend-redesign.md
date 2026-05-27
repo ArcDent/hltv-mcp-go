@@ -106,6 +106,27 @@
 - 列表项添加 stagger 入场动画（`animation-delay: i*30ms`）
 - 页面切换不重新挂载组件（React Router 保持状态）
 
+## 数据展示细节
+
+### 队伍名展示格式
+
+两行展示：
+- 第一行：英文原名 16px / 600（如 `Spirit`）
+- 第二行：中文昵称 12px / 灰色 `#8b949e`（如 `绿龙`）
+- 使用 `localization.LookupTeam` 获取 `Display` 和 `Colloquial` 字段
+- 若队伍不在 catalog 中，第二行留空
+
+### 比赛状态判定
+
+基于 `scheduled_at` 时间判断：
+- `Score` 有值 → 已结束，展示比分（金色 28px）
+- `scheduled_at` 在当前时间 ±2 小时内 → 展示"即将开始"橙色标签（`#ff8c42`），替代比分位显示倒计时风格时间
+- `scheduled_at` > 2 小时后 → 展示时间（常规金色 28px），无特殊标签
+
+### 侧栏滚动
+
+侧栏 `position: sticky; top: 0; height: 100vh`，主内容区 `overflow-y: auto`。滚动赛程/新闻列表时侧栏始终可见。
+
 ## 技术约束
 
 - React 18 + TypeScript + Vite + Tailwind CSS v4

@@ -1,0 +1,40 @@
+- generic [ref=e5]:
+  - navigation [ref=e6]:
+    - generic [ref=e7]:
+      - heading "HLTV·MCP" [level=1] [ref=e8]
+      - generic [ref=e9]: TACTICAL OPS
+    - generic [ref=e10]:
+      - link "◈ DASH" [ref=e11] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e12]: ◈
+        - text: DASH
+      - link "◆ MATCHES" [ref=e13] [cursor=pointer]:
+        - /url: /matches
+        - generic [ref=e14]: ◆
+        - text: MATCHES
+      - link "▣ TEAMS" [ref=e15] [cursor=pointer]:
+        - /url: /teams
+        - generic [ref=e16]: ▣
+        - text: TEAMS
+      - link "◎ PLAYERS" [ref=e17] [cursor=pointer]:
+        - /url: /players
+        - generic [ref=e18]: ◎
+        - text: PLAYERS
+      - link "◉ NEWS" [ref=e19] [cursor=pointer]:
+        - /url: /news
+        - generic [ref=e20]: ◉
+        - text: NEWS
+      - link "◫ CACHE" [ref=e21] [cursor=pointer]:
+        - /url: /cache
+        - generic [ref=e22]: ◫
+        - text: CACHE
+    - generic [ref=e26]: SYS ONLINE
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - heading "TAC.MATCHES" [level=2] [ref=e30]
+      - generic [ref=e32]:
+        - button "TODAY" [ref=e33]
+        - button "UPCOMING" [ref=e34]
+        - button "RESULTS" [ref=e35]
+      - textbox "FILTER BY TEAM..." [ref=e36]
+      - generic [ref=e38]: LOADING...
