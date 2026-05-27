@@ -13,20 +13,16 @@ export default function Dashboard() {
     { label: '缓存条目', value: status?.cache_entries ?? '—' },
   ]
 
-  const sys = [
-    { label: 'HTTP 服务', detail: '0.0.0.0:8082',            desc: 'REST API + 前端面板' },
-    { label: 'MCP 连接',  detail: 'stdio',                    desc: 'MCP 协议已连接' },
-    { label: 'Chrome',    detail: 'chromedp',                 desc: 'headless 反爬引擎就绪' },
-    { label: '数据源',    detail: 'HTTP 直连 + chromedp 备用', desc: '5/6 端点可用', clickable: true },
-  ]
+  const epStatus = (status?.endpoints as any[]) ?? []
+  const epOk = status?.endpoints_ok ?? 0
+  const epTotal = status?.endpoints_total ?? 6
+  const chromeOk = epStatus.some((e: any) => e.name === '/matches' && e.ok)
 
-  const endpoints = [
-    { name: '赛果 /results',       method: 'HTTP', status: 'ok' as const },
-    { name: '赛程 /matches',       method: 'chromedp', status: 'ok' as const },
-    { name: '队伍搜索',            method: 'HTTP', status: 'ok' as const },
-    { name: '选手搜索',            method: 'HTTP', status: 'ok' as const },
-    { name: '实时新闻',            method: 'HTTP', status: 'ok' as const },
-    { name: '归档新闻',            method: 'HTTP', status: 'ok' as const },
+  const sys = [
+    { label: 'HTTP 服务', detail: '0.0.0.0:8082',                     desc: 'REST API + 前端面板' },
+    { label: 'MCP 连接',  detail: 'stdio',                             desc: 'MCP 协议已连接' },
+    { label: 'Chrome',    detail: chromeOk ? 'chromedp 就绪' : '不可用', desc: chromeOk ? 'headless 反爬引擎就绪' : '部分端点不可用' },
+    { label: '数据源',    detail: 'HTTP 直连 + chromedp 备用',          desc: `${epOk}/${epTotal} 端点可用`, clickable: true },
   ]
 
   const cardStyle: React.CSSProperties = {
@@ -98,7 +94,8 @@ export default function Dashboard() {
               }}>✕</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {endpoints.map((ep) => (
+              {epStatus.length === 0 && <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 20 }}>加载中...</div>}
+              {epStatus.map((ep: any) => (
                 <div key={ep.name} style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px',
                   background: 'var(--input-bg)', borderRadius: 'var(--radius-sm)',
@@ -106,19 +103,18 @@ export default function Dashboard() {
                 }}>
                   <span style={{
                     width: 8, height: 8, borderRadius: '50%',
-                    background: ep.status === 'ok' ? 'var(--green)' : 'var(--red)',
+                    background: ep.ok ? 'var(--green)' : 'var(--red)',
                   }} />
                   <span style={{ flex: 1, fontSize: 15, fontFamily: 'var(--font-mono)' }}>{ep.name}</span>
                   <span style={{
                     fontSize: 12, fontWeight: 600, padding: '2px 10px', borderRadius: 10,
-                    background: ep.method === 'chromedp' ? 'var(--gold-dim)' : 'var(--gold-dim)',
-                    color: 'var(--gold)',
+                    background: 'var(--gold-dim)', color: 'var(--gold)',
                   }}>{ep.method}</span>
                   <span style={{
                     fontSize: 12, fontWeight: 600, padding: '2px 10px', borderRadius: 10,
-                    background: ep.status === 'ok' ? 'rgba(94,201,124,0.12)' : 'var(--red-dim)',
-                    color: ep.status === 'ok' ? 'var(--green)' : 'var(--red)',
-                  }}>{ep.status === 'ok' ? '✓ 正常' : '✗ 异常'}</span>
+                    background: ep.ok ? 'rgba(94,201,124,0.12)' : 'var(--red-dim)',
+                    color: ep.ok ? 'var(--green)' : 'var(--red)',
+                  }}>{ep.ok ? '✓ 正常' : '✗ 异常'}</span>
                 </div>
               ))}
             </div>

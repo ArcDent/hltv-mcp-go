@@ -51,6 +51,8 @@ func (f *HltvFacade) createMeta(ttlSec int) types.ToolMeta {
 }
 
 // withCache checks cache, then computes and caches the result
+func (f *HltvFacade) ClientIsChromeAvailable() bool { return f.client.IsChromeAvailable() }
+
 func (f *HltvFacade) withCache(key string, ttlSec int, query map[string]any, compute func() (*types.ToolResponse, error)) *types.ToolResponse {
 	if cached, ok := f.cache.Get(key); ok {
 		r := cloneResponse(cached.(*types.ToolResponse))

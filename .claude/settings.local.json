@@ -18,7 +18,10 @@
       "Bash(pkill hltv-mcp *)",
       "Bash(./hltv-mcp)",
       "mcp__chrome-devtools__list_console_messages",
-      "Bash(curl -s http://localhost:3000/)"
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(python3)",
+      "Bash(curl -s http://localhost:8082/api/status)",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }
