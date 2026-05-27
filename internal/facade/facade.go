@@ -2,6 +2,7 @@ package facade
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -27,6 +28,7 @@ type HltvFacade struct {
 	ms     *scraper.MatchesScraper
 	ns     *scraper.NewsScraper
 	rns    *scraper.RealtimeNewsScraper
+	nas    *scraper.NewsArticleScraper
 }
 
 // New creates a new HltvFacade
@@ -41,6 +43,7 @@ func New(cfg *config.Config, c *cache.Cache, cli *client.HltvClient) *HltvFacade
 		ms:     scraper.NewMatchesScraper(cli),
 		ns:     scraper.NewNewsScraper(cli),
 		rns:    scraper.NewRealtimeNewsScraper(cli),
+		nas:    scraper.NewNewsArticleScraper(cli),
 	}
 }
 
@@ -84,6 +87,27 @@ func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug str
 	pd.Profile.ID = id
 	f.cache.Set(key, pd, f.cfg.CacheTTLPlayerDetail)
 	return pd, nil
+}
+
+// ScrapeNewsArticle fetches a news article page via chromedp
+func (f *HltvFacade) ScrapeNewsArticle(ctx context.Context, url string) (*goquery.Document, error) {
+	return f.nas.GetArticle(ctx, url)
+}
+
+// GetNewsArticleCached returns cached article body, or scrapes and caches indefinitely
+func (f *HltvFacade) GetNewsArticleCached(ctx context.Context, url string) (types.NewsArticle, error) {
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
+	key := fmt.Sprintf("news_article:%s", hash)
+	if cached, ok := f.cache.Get(key); ok {
+		return cached.(types.NewsArticle), nil
+	}
+	doc, err := f.nas.GetArticle(ctx, url)
+	if err != nil {
+		return types.NewsArticle{}, err
+	}
+	article := normalizer.NormalizeNewsArticle(doc, url)
+	f.cache.Set(key, article, f.cfg.CacheTTLNewsArticle)
+	return article, nil
 }
 
 // GetTeamDetailCached returns cached team detail, or scrapes via chromedp and caches for 7 days
