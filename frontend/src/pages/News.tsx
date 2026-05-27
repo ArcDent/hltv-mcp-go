@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { useTranslateConfig, TranslateModal } from '../components/TranslateProvider'
+import NewsDetail from '../components/NewsDetail'
 
 type Tab = 'realtime' | 'archive'
 
@@ -24,6 +25,7 @@ export default function News() {
   const { cfg, realKey, save, open, setOpen, saveCount } = useTranslateConfig()
   const [translations, setTranslations] = useState<Record<string, string>>({})
   const [translating, setTranslating] = useState<Set<string>>(new Set())
+  const [selectedNewsUrl, setSelectedNewsUrl] = useState<string | null>(null)
 
   useEffect(() => {
     setData(null)
@@ -132,10 +134,11 @@ export default function News() {
           const zh = translations[n.title]
           const loading = translating.has(n.title)
           return (
-            <div key={i} className="anim-in" style={{
+            <div key={i} className="anim-in" onClick={() => n.link && setSelectedNewsUrl(n.link)} style={{
               ...card, marginBottom: i < items.length - 1 ? 6 : 0,
               flexDirection: 'column', alignItems: 'stretch', gap: 4,
               animationDelay: `${i * 30}ms`,
+              cursor: 'pointer',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700,
@@ -156,6 +159,8 @@ export default function News() {
           )
         })}
       </div>
+
+      {selectedNewsUrl && <NewsDetail url={selectedNewsUrl} onClose={() => setSelectedNewsUrl(null)} />}
     </div>
   )
 }

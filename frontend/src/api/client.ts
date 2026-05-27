@@ -29,4 +29,6 @@ export const api = {
     request<any>(`/news/realtime?limit=${limit}&offset=${offset}`),
   newsDigest: (params: Record<string, string>) =>
     request<any>(`/news?${new URLSearchParams(params)}`),
+  getNewsArticle: (url: string) =>
+    request<any>(`/news/article?url=${encodeURIComponent(url)}`),
 }
