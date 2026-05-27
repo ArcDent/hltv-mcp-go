@@ -3,63 +3,46 @@ import { api } from '../api/client'
 
 export default function Dashboard() {
   const [status, setStatus] = useState<any>(null)
-
-  useEffect(() => {
-    api.status().then(setStatus).catch(() => {})
-  }, [])
+  useEffect(() => { api.status().then(setStatus).catch(() => {}) }, [])
 
   const stats = [
-    { label: 'UPTIME', value: status ? `${status.uptime_sec}s` : '---', unit: 'SEC' },
-    { label: 'GO VERSION', value: status?.go_version ?? '---', unit: 'RT' },
-    { label: 'MEMORY', value: status ? `${status.memory_mb}` : '--', unit: 'MB' },
-    { label: 'CACHE KEYS', value: status?.cache_entries ?? '--', unit: 'ENT' },
+    { label: '运行时间', value: status ? `${status.uptime_sec}s` : '--' },
+    { label: 'Go 版本', value: status?.go_version ?? '--' },
+    { label: '内存占用', value: status ? `${status.memory_mb} MB` : '--' },
+    { label: '缓存条目', value: status?.cache_entries ?? '--' },
+  ]
+
+  const sysRows = [
+    { label: 'HTTP 服务', detail: '0.0.0.0:8082' },
+    { label: 'MCP 连接', detail: 'stdio 已连接' },
+    { label: 'Chrome', detail: 'chromedp 就绪' },
+    { label: '数据源', detail: 'HTTP 直连 + chromedp 备用' },
   ]
 
   return (
     <div className="animate-in">
-      <div className="mb-8">
-        <h2 className="font-display text-neon text-lg tracking-[0.2em] mb-1">
-          SYS.DASHBOARD
-        </h2>
-        <div className="h-[1px] w-full bg-gradient-to-r from-neon/50 via-neon/20 to-transparent" />
-      </div>
+      <h2 className="text-[16px] font-semibold text-gold mb-4 pb-2 border-b border-border tracking-wide">
+        ◈ 总览
+      </h2>
 
       <div className="grid grid-cols-4 gap-3 mb-8">
         {stats.map((s, i) => (
-          <div
-            key={s.label}
-            className="bg-panel border border-border p-4 animate-in"
-            style={{ animationDelay: `${i * 80}ms` }}
-          >
-            <div className="text-[10px] text-text-dim tracking-[0.15em] mb-2">
-              {s.label}
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-text tracking-tight">
-                {s.value}
-              </span>
-              <span className="text-[10px] text-steel">{s.unit}</span>
-            </div>
+          <div key={s.label} className="bg-panel border border-border rounded-md p-5 animate-in"
+            style={{ animationDelay: `${i * 80}ms` }}>
+            <div className="text-[13px] text-text-dim mb-2">{s.label}</div>
+            <div className="text-[26px] font-bold text-text font-mono">{s.value}</div>
           </div>
         ))}
       </div>
 
-      {/* System status panel */}
-      <div className="bg-panel border border-border p-5 animate-in" style={{ animationDelay: '320ms' }}>
-        <div className="text-[10px] text-text-dim tracking-[0.15em] mb-3">
-          SYSTEM STATUS
-        </div>
-        <div className="space-y-2">
-          {[
-            { label: 'HTTP SERVER', ok: true, detail: '0.0.0.0:8082' },
-            { label: 'MCP STDIO', ok: true, detail: 'connected' },
-            { label: 'CHROME', ok: true, detail: 'chromedp ready' },
-            { label: 'HLTV CONN', ok: true, detail: 'direct + fallback' },
-          ].map((s, _) => (
-            <div key={s.label} className="flex items-center gap-3 text-[11px]">
-              <span className={`w-2 h-2 rounded-full ${s.ok ? 'bg-neon animate-pulse' : 'bg-orange'}`} />
-              <span className="text-text w-28">{s.label}</span>
-              <span className="text-text-dim">{s.detail}</span>
+      <div className="bg-panel border border-border rounded-md p-5">
+        <div className="text-[14px] font-semibold text-text mb-4">系统状态</div>
+        <div className="space-y-3">
+          {sysRows.map((row) => (
+            <div key={row.label} className="flex items-center gap-3 text-[14px]">
+              <span className="w-2 h-2 rounded-full bg-[#3fb950]" />
+              <span className="text-text w-28">{row.label}</span>
+              <span className="text-text-dim">{row.detail}</span>
             </div>
           ))}
         </div>
