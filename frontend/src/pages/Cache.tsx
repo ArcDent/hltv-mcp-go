@@ -19,30 +19,38 @@ export default function Cache() {
     { label: '未命中',   value: stats?.misses  ?? '—' },
   ]
 
+  const cardStyle: React.CSSProperties = {
+    background: 'var(--card)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)', padding: '28px 24px', boxShadow: 'var(--card-shadow)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+  }
+
   return (
-    <div className="anim-in space-y-10">
-      <div className="grid grid-cols-3 gap-4">
+    <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {cards.map((c, i) => (
-          <div key={c.label} className="bg-card border border-border rounded-lg px-6 py-5"
-            style={{ animationDelay: `${i * 80}ms` }}>
-            <div className="text-text-muted text-[14px] mb-2">{c.label}</div>
-            <div className="text-[40px] font-display font-bold text-text leading-none">{c.value}</div>
+          <div key={c.label} className="anim-in" style={{ ...cardStyle, animationDelay: `${i * 80}ms` }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 48, fontWeight: 700,
+              color: 'var(--text)', lineHeight: 1, marginBottom: 10 }}>{c.value}</span>
+            <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>{c.label}</span>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center gap-5">
-        <button onClick={clear}
-          className="px-7 py-3 bg-red-muted border border-red/30 text-red text-[16px] font-display font-semibold tracking-wider rounded-lg uppercase hover:bg-red/20 transition-colors">
-          清除全部缓存
-        </button>
-        <button onClick={refresh}
-          className="px-7 py-3 bg-card border border-border text-text-secondary text-[16px] font-display font-semibold tracking-wider rounded-lg uppercase hover:border-gold/30 hover:text-text transition-colors">
-          刷新
-        </button>
-        {cleared && (
-          <span className="text-[16px] font-medium text-gold anim-in">✓ 缓存已清除</span>
-        )}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <button onClick={clear} style={{
+          padding: '10px 24px', background: 'var(--red-dim)', color: 'var(--red)',
+          border: '1px solid var(--red)', borderRadius: 'var(--radius-sm)',
+          fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-display)',
+          letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer',
+        }}>清除全部缓存</button>
+        <button onClick={refresh} style={{
+          padding: '10px 24px', background: 'transparent', color: 'var(--text-secondary)',
+          border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+          fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-display)',
+          letterSpacing: '0.04em', textTransform: 'uppercase', cursor: 'pointer',
+        }}>刷新</button>
+        {cleared && <span style={{ fontSize: 15, color: 'var(--gold)', fontWeight: 500 }}>✓ 缓存已清除</span>}
       </div>
     </div>
   )

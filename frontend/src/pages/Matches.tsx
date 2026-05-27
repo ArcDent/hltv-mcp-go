@@ -19,34 +19,19 @@ const nicknames: Record<string, string> = {
   'Aurora':'欧若拉','RED Canids':'红犬','GamerLegion':'GL','PARIVISION':'PV',
 }
 
-// Shorten event names: strip verbose suffixes, keep core identity
 function shortEvent(name?: string): string {
   if (!name) return ''
-  let s = name
-  // Strip verbose suffixes
-  s = s.replace(/\bSeason\s*\d+\b/gi, '')
-  s = s.replace(/\bSeries\s*\d+\b/gi, '')
-  s = s.replace(/\bRound\s*of\s*\d+\b/gi, '')
-  s = s.replace(/\bCup\s*\d+\b/gi, '')
-  s = s.replace(/\bGroup\s*[A-D]\b/gi, '')
-  s = s.replace(/\bStage\s*\d+\b/gi, '')
-  s = s.replace(/\bDivision\s*\d+\b/gi, '')
-  s = s.replace(/\bLower\s*Bracket\b/gi, '')
-  s = s.replace(/\bUpper\s*Bracket\b/gi, '')
-  s = s.replace(/\bSemi-final\b/gi, '')
-  s = s.replace(/\bQuarterfinal\b/gi, '')
-  s = s.replace(/\bFinals?\b/gi, '')
-  s = s.replace(/\bClosed\s*Qualifier\b/gi, '预选')
-  s = s.replace(/\bQualifier\b/gi, '预选')
-  s = s.replace(/\bOpen\b/gi, '')
-  s = s.replace(/\bClosed\b/gi, '')
-  s = s.replace(/\bChampionship\b/gi, '')
-  s = s.replace(/\bMasters\b/gi, '大师赛')
-  s = s.replace(/\s{2,}/g, ' ')
-  return s.trim()
+  return name
+    .replace(/\bSeason\s*\d+\b/gi,'').replace(/\bSeries\s*\d+\b/gi,'')
+    .replace(/\bRound\s*of\s*\d+\b/gi,'').replace(/\bCup\s*\d+\b/gi,'')
+    .replace(/\bGroup\s*[A-D]\b/gi,'').replace(/\bStage\s*\d+\b/gi,'')
+    .replace(/\bLower\s*Bracket\b/gi,'').replace(/\bUpper\s*Bracket\b/gi,'')
+    .replace(/\bSemi-final\b/gi,'').replace(/\bQuarterfinal\b/gi,'')
+    .replace(/\bFinals?\b/gi,'').replace(/\bClosed\s*Qualifier\b/gi,'预选')
+    .replace(/\bQualifier\b/gi,'预选').replace(/\bOpen\b/gi,'')
+    .replace(/\bChampionship\b/gi,'').replace(/\bMasters\b/gi,'大师赛')
+    .replace(/\s{2,}/g,' ').trim()
 }
-
-function cn(name?: string) { return nicknames[name ?? ''] ?? '' }
 
 export default function Matches() {
   const [tab, setTab] = useState<Tab>('today')
@@ -62,93 +47,100 @@ export default function Matches() {
 
   const items: any[] = data?.items ?? []
 
+  const cardStyle: React.CSSProperties = {
+    background: 'var(--card)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)', padding: '16px 20px',
+    boxShadow: 'var(--card-shadow)',
+  }
+
+  const tabBtn = (active: boolean): React.CSSProperties => ({
+    fontSize: 16, fontWeight: 600, fontFamily: 'var(--font-display)',
+    letterSpacing: '0.04em', textTransform: 'uppercase' as const,
+    color: active ? 'var(--gold)' : 'var(--text-muted)',
+    borderBottom: active ? '2px solid var(--gold)' : '2px solid transparent',
+    paddingBottom: 6, background: 'none', cursor: 'pointer',
+  })
+
+  const inputStyle: React.CSSProperties = {
+    background: 'var(--input-bg)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-sm)', color: 'var(--text)',
+    fontSize: 14, padding: '8px 14px', outline: 'none', width: 200,
+  }
+
   return (
-    <div className="anim-in space-y-6">
-      {/* ---- Tab bar ---- */}
-      <div className="flex items-center gap-4">
+    <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Tab bar + filter */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`text-[18px] font-display font-semibold tracking-wider uppercase pb-2 border-b-[3px] transition-colors ${
-              tab === t.key
-                ? 'text-gold border-gold'
-                : 'text-text-muted border-transparent hover:text-text-secondary'
-            }`}>
+          <button key={t.key} onClick={() => setTab(t.key)} style={tabBtn(tab === t.key)}>
             {t.label}
           </button>
         ))}
-        <div className="flex-1" />
-        {/* Star count */}
+        <div style={{ flex: 1 }} />
         {items.length > 0 && (
-          <span className="text-text-muted text-[15px]">{items.length} 场比赛</span>
+          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{items.length} 场比赛</span>
         )}
-        <input
-          placeholder="筛选队伍..."
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          className="w-52 bg-card border border-border text-text text-[15px] px-4 py-2 rounded-lg focus:outline-none focus:border-gold placeholder:text-text-muted"
+        <input placeholder="筛选队伍..." value={filter} onChange={e => setFilter(e.target.value)}
+          style={inputStyle}
+          onFocus={e => { e.target.style.borderColor = 'var(--gold)'; e.target.style.boxShadow = '0 0 0 3px var(--gold-dim)'; }}
+          onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
         />
       </div>
 
-      {/* ---- 2-col match grid ---- */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Match grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
         {items.length === 0 && (
-          <div className="col-span-2 text-text-muted text-[16px] py-24 text-center bg-card border border-border rounded-lg">
+          <div style={{ ...cardStyle, gridColumn: '1 / -1', textAlign: 'center', padding: '80px 0',
+            color: 'var(--text-muted)', fontSize: 15 }}>
             {data ? '暂无比赛数据' : '加载中...'}
           </div>
         )}
 
         {items.map((m, i) => {
-          const c1 = cn(m.team1)
-          const c2 = cn(m.team2)
+          const c1 = nicknames[m.team1 ?? ''] ?? ''
+          const c2 = nicknames[m.team2 ?? ''] ?? ''
           const evt = shortEvent(m.event)
 
           return (
-            <div key={i}
-              className="anim-in bg-card border border-border rounded-lg px-5 py-4 flex flex-col gap-3 hover:border-gold/30 transition-colors"
-              style={{ animationDelay: `${i * 25}ms` }}>
-
-              {/* ---- Teams + Score row ---- */}
-              <div className="flex items-center gap-3">
-                {/* Team 1 — fixed width, center-aligned, reserves height for nickname */}
-                <div className="flex-1 min-w-0 flex flex-col items-center justify-center min-h-[52px]">
-                  <span className="text-[18px] font-display font-semibold text-text leading-tight tracking-wide truncate max-w-full">
+            <div key={i} className="anim-in" style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 12, animationDelay: `${i * 25}ms` }}>
+              {/* Teams + Score row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 50 }}>
+                  <span style={{ fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-display)',
+                    color: 'var(--text)', letterSpacing: '0.03em', textAlign: 'center' }}>
                     {m.team1 ?? 'TBD'}
                   </span>
-                  <span className="text-[13px] text-text-muted mt-0.5 h-[18px]">
-                    {c1}
-                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)', height: 18 }}>{c1}</span>
                 </div>
 
-                {/* Score or Time — fixed width */}
-                <div className="shrink-0 w-[110px] flex flex-col items-center justify-center">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100 }}>
                   {m.score ? (
-                    <span className="text-[38px] font-display font-bold text-text leading-none tracking-tight">
+                    <span style={{ fontSize: 36, fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>
                       {m.score}
                     </span>
                   ) : (
-                    <span className="text-[38px] font-display font-bold text-gold leading-none tracking-tight">
+                    <span style={{ fontSize: 36, fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>
                       {m.scheduled_at ? m.scheduled_at.slice(11, 16) : '—:—'}
                     </span>
                   )}
-                  <span className="text-[12px] text-text-muted mt-0.5 h-[16px] flex items-center">
-                    {m.best_of && m.best_of}
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', height: 16 }}>
+                    {m.best_of ?? ''}
                   </span>
                 </div>
 
-                {/* Team 2 — fixed width, center-aligned, reserves height for nickname */}
-                <div className="flex-1 min-w-0 flex flex-col items-center justify-center min-h-[52px]">
-                  <span className="text-[18px] font-display font-semibold text-text leading-tight tracking-wide truncate max-w-full">
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 50 }}>
+                  <span style={{ fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-display)',
+                    color: 'var(--text)', letterSpacing: '0.03em', textAlign: 'center' }}>
                     {m.team2 ?? 'TBD'}
                   </span>
-                  <span className="text-[13px] text-text-muted mt-0.5 h-[18px]">
-                    {c2}
-                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--text-muted)', height: 18 }}>{c2}</span>
                 </div>
               </div>
 
-              {/* ---- Event row ---- */}
+              {/* Event */}
               {evt && (
-                <div className="text-center text-[13px] text-gold font-medium tracking-wide border-t border-border pt-2.5 truncate">
+                <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--gold)',
+                  fontWeight: 500, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                   {evt}
                 </div>
               )}

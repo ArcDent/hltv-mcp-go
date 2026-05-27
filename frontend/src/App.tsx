@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Routes, Route, NavLink } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import Matches from './pages/Matches'
@@ -6,60 +7,81 @@ import Players from './pages/Players'
 import News from './pages/News'
 import Cache from './pages/Cache'
 
-const navItems = [
-  { to: '/',         label: '总览' },
-  { to: '/matches',  label: '赛程' },
-  { to: '/teams',    label: '队伍' },
-  { to: '/players',  label: '选手' },
-  { to: '/news',     label: '新闻' },
-  { to: '/cache',    label: '缓存' },
+const nav = [
+  { to: '/',        label: '总览' },
+  { to: '/matches', label: '赛程' },
+  { to: '/teams',   label: '队伍' },
+  { to: '/players', label: '选手' },
+  { to: '/news',    label: '新闻' },
+  { to: '/cache',   label: '缓存' },
 ]
 
 export default function App() {
+  const [dark, setDark] = useState(true)
+  const toggle = () => {
+    const next = !dark
+    document.documentElement.classList.toggle('dark', next)
+    setDark(next)
+  }
+
   return (
-    <div className="h-full flex flex-col bg-bg">
-      {/* ---- Top Bar ---- */}
-      <header className="shrink-0 border-b border-border bg-surface">
-        <div className="max-w-7xl mx-auto flex items-center px-8 h-16">
-          {/* Brand */}
-          <span className="font-display text-gold text-2xl tracking-[0.15em] font-bold shrink-0 mr-12">
-            HLTV<span className="text-text-secondary font-normal text-base ml-1">MCP</span>
-          </span>
+    <div className="h-full flex" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      {/* Sidebar */}
+      <nav style={{
+        width: 180, flexShrink: 0, height: '100vh', position: 'sticky', top: 0,
+        background: 'var(--card)', borderRight: '1px solid var(--border)',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Brand */}
+        <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700,
+            color: 'var(--gold)', letterSpacing: '0.08em' }}>
+            HLTV<span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: 15 }}>MCP</span>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>数据中心</div>
+        </div>
 
-          {/* Nav */}
-          <nav className="flex gap-8">
-            {navItems.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === '/'}
-                className={({ isActive }) =>
-                  `text-[16px] font-medium transition-colors border-b-[3px] pb-[15px] -mb-[15px] ${
-                    isActive
-                      ? 'text-gold border-gold'
-                      : 'text-text-secondary border-transparent hover:text-text'
-                  }`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
+        {/* Nav items */}
+        <div style={{ flex: 1, padding: '12px 0' }}>
+          {nav.map(({ to, label }) => (
+            <NavLink key={to} to={to} end={to === '/'}
+              style={({ isActive }) => ({
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 18px', fontSize: 15, fontWeight: 500,
+                textDecoration: 'none',
+                color: isActive ? 'var(--gold)' : 'var(--text-secondary)',
+                background: isActive ? 'var(--gold-dim)' : 'transparent',
+                borderLeft: isActive ? '2px solid var(--gold)' : '2px solid transparent',
+                transition: 'all 0.15s ease',
+              })}>
+              {label}
+            </NavLink>
+          ))}
+        </div>
 
-          {/* Spacer pushes ONLINE to the right */}
-          <div className="flex-1" />
-
-          {/* ONLINE — far right */}
-          <div className="flex items-center gap-2 text-text-muted text-[14px] shrink-0">
-            <span className="w-2 h-2 rounded-full bg-green pulse-dot" />
+        {/* Bottom status */}
+        <div style={{ padding: '14px 18px', borderTop: '1px solid var(--border)',
+          display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 12, color: 'var(--text-muted)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)' }} />
             ONLINE
           </div>
+          <button onClick={toggle} style={{
+            width: 30, height: 30, borderRadius: '50%',
+            border: '1px solid var(--border)', background: 'var(--card)',
+            color: 'var(--text-secondary)', fontSize: 15,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}>
+            {dark ? '☀' : '🌙'}
+          </button>
         </div>
-      </header>
+      </nav>
 
-      {/* ---- Main ---- */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-8 py-10">
+      {/* Main */}
+      <main style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/matches" element={<Matches />} />
