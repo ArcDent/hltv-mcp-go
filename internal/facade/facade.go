@@ -117,21 +117,30 @@ func (f *HltvFacade) GetTeamDetailCached(ctx context.Context, id int, slug strin
 	td.Profile.ID = id
 	td.Profile.Slug = slug
 		// Fetch recent matches via standard results/matches pages, filter by team name
-		var allMatches []types.NormalizedMatch
 		if td.Profile.Name != "" {
-			if resultDoc, err := f.rs.GetResults(ctx); err == nil {
-				allResults := normalizer.NormalizeMatches(resultDoc, td.Profile.Name)
-				allMatches = append(allMatches, allResults...)
-			}
-			if upcomingDoc, err := f.ms.GetUpcoming(ctx); err == nil {
-				allUpcoming := normalizer.NormalizeUpcomingMatches(upcomingDoc, td.Profile.Name)
-				allMatches = append(allMatches, allUpcoming...)
-			}
 			name := td.Profile.Name
 			var matches []types.NormalizedMatch
-			for _, m := range allMatches {
-				if m.Team1 == name || m.Team2 == name || m.Opponent == name {
-					matches = append(matches, m)
+
+			// Paginate through results to find team matches (up to 3 pages)
+			for offset := 0; offset < 300 && len(matches) < 10; offset += 100 {
+				resultDoc, err := f.rs.GetResultsOffset(ctx, offset)
+				if err != nil {
+					break
+				}
+				pageResults := normalizer.NormalizeMatches(resultDoc, name)
+				for _, m := range pageResults {
+					if m.Team1 == name || m.Team2 == name || m.Opponent == name {
+						matches = append(matches, m)
+					}
+				}
+			}
+
+			if upcomingDoc, err := f.ms.GetUpcoming(ctx); err == nil {
+				allUpcoming := normalizer.NormalizeUpcomingMatches(upcomingDoc, name)
+				for _, m := range allUpcoming {
+					if m.Team1 == name || m.Team2 == name || m.Opponent == name {
+						matches = append(matches, m)
+					}
 				}
 			}
 			normalizer.SortByPlayedAtDesc(matches)
