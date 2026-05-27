@@ -18,6 +18,10 @@ func normalizeTeamProfile(doc *goquery.Document, fallback types.ResolvedTeam) ty
 	return normalizer.NormalizeTeamProfile(doc, fallback)
 }
 
+func normalizeTeamDetail(doc *goquery.Document) types.TeamDetail {
+	return normalizer.NormalizeTeamDetail(doc)
+}
+
 func normalizePlayerProfile(doc *goquery.Document, fallback types.ResolvedPlayer) types.PlayerProfile {
 	return normalizer.NormalizePlayerProfile(doc, fallback)
 }

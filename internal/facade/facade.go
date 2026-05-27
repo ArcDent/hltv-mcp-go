@@ -62,6 +62,11 @@ func (f *HltvFacade) ScrapePlayerDetail(ctx context.Context, id int, slug string
 	return f.ps.GetPlayer(ctx, id, slug)
 }
 
+func (f *HltvFacade) ScrapeTeamDetail(ctx context.Context, id int, slug string) (*goquery.Document, error) {
+	if slug == "" { slug = fmt.Sprintf("team-%d", id) }
+	return f.ts.GetTeam(ctx, id, slug)
+}
+
 // GetPlayerDetailCached returns cached player detail, or scrapes via chromedp and caches for 7 days
 func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {
 	if slug == "" {
@@ -79,6 +84,65 @@ func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug str
 	pd.Profile.ID = id
 	f.cache.Set(key, pd, f.cfg.CacheTTLPlayerDetail)
 	return pd, nil
+}
+
+// GetTeamDetailCached returns cached team detail, or scrapes via chromedp and caches for 7 days
+func (f *HltvFacade) GetTeamDetailCached(ctx context.Context, id int, slug string) (types.TeamDetail, error) {
+	if slug == "" {
+		slug = fmt.Sprintf("team-%d", id)
+	}
+	key := fmt.Sprintf("team_detail:%d", id)
+	if cached, ok := f.cache.Get(key); ok {
+		return cached.(types.TeamDetail), nil
+	}
+	doc, err := f.ts.GetTeam(ctx, id, slug)
+	if err != nil {
+		return types.TeamDetail{}, err
+	}
+	td := normalizer.NormalizeTeamDetail(doc)
+	td.Profile.ID = id
+	td.Profile.Slug = slug
+	// Fetch recent 10 matches via team matches page
+	matchDoc, err := f.ts.GetTeamMatches(ctx, id)
+	if err == nil {
+		matches := normalizer.NormalizeMatches(matchDoc, td.Profile.Name)
+		normalizer.SortByPlayedAtDesc(matches)
+		if len(matches) > 10 {
+			matches = matches[:10]
+		}
+		td.RecentMatches = matches
+		// Compute stats from recent matches
+		for _, m := range matches {
+			switch m.Result {
+			case types.OutcomeWin:
+				td.Stats.Wins++
+			case types.OutcomeLoss:
+				td.Stats.Losses++
+			case types.OutcomeDraw:
+				td.Stats.Draws++
+			}
+		}
+		total := td.Stats.Wins + td.Stats.Losses + td.Stats.Draws
+		if total > 0 {
+			td.Stats.WinRate = fmt.Sprintf("%.0f%%", float64(td.Stats.Wins)/float64(total)*100)
+		}
+		// Recent form string (last 5)
+		for i, m := range matches {
+			if i >= 5 {
+				break
+			}
+			switch m.Result {
+			case types.OutcomeWin:
+				td.Stats.RecentForm += "W"
+			case types.OutcomeLoss:
+				td.Stats.RecentForm += "L"
+			case types.OutcomeDraw:
+				td.Stats.RecentForm += "D"
+			}
+		}
+	}
+	f.cache.Set(key, td, f.cfg.CacheTTLPlayerDetail) // reuse 7d TTL
+	return td, nil
 }
 
 func (f *HltvFacade) withCache(key string, ttlSec int, query map[string]any, compute func() (*types.ToolResponse, error)) *types.ToolResponse {
