@@ -34,11 +34,11 @@
 ```
 
 ## 最近操作
+- 2026-05-27：Chrome DevTools 全功能验证 — 占位符翻译 winner→胜者、BO1 归一化 0:1、缓存统计真实递增（6条目/3命中/7未命中）、选手详情缓存均已确认正常；发现 Windows localhost 端口转发会缓存旧响应，需用 WSL IP 直连
 - 2026-05-27：全量中文化 + BO1 归一化 + 选手缓存 + 缓存统计修复（8 commits，7 tasks）— 赛程 winner/loser/tbd 映射为胜者/败者/待定、选手近期比赛 BO1 比分 13:5→1:0、选手详情 7 天 chromedp 缓存、修复缓存统计硬编码为 0
 - 2026-05-27：修复队伍名显示 "Link" — `.playerTeam a` 选择器误抓合约来源链接，改用 `.playerTeam a[itemprop="text"]` 精确定位
 - 2026-05-27：选手页面直接提取比赛比分 — `.playerpage-match-result` 元素包含比分（如 "2:0"），无需爬 `/stats/matches/`，同时清理空格格式
 - 2026-05-27：修复 PlayerDetailProfile.Team/Country omitempty — 去除 omitempty 确保字段始终存在于 JSON 响应
-- 2026-05-27：前端空值显示 "暂无队伍"/"未知国籍" — PlayerDetail.tsx 对 team/country/realname 增加空值 fallback
 
 ## 进行中
 - 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源（API 端点为 401 需认证）
@@ -79,6 +79,12 @@
 - 选手详情缓存：`types.PlayerDetail` 不走 `withCache` 包装，直接用 `cache.Get/Set`（非 `*ToolResponse` 类型），key 格式 `player_detail:<id>`
 - cache.GetStale 不计入 hits/misses（降级兜底不在统计范围）
 - `sync/atomic.Int64` 用于 cache 计数器，与 `sync.RWMutex` 无锁竞争
+
+### 测试与验证
+- 通过 Chrome DevTools MCP 在 Windows Chrome 中直接测试前端页面效果
+- **关键问题**：Windows `localhost:8082` 端口转发会缓存/代理旧 HTTP 响应（即使 WSL 进程已重启），导致前端显示过期数据。解决方案：使用 WSL IP（如 `172.21.32.31:8082`）直连，绕过 Windows 端口转发层
+- **验证方法**：`curl` 从 WSL 内部调用 API 对照浏览器网络请求，若两者返回不同数据（不同 `fetched_at`），则问题在 Windows 端口转发层而非 Go 代码
+- `strings` 命令无法找到 UTF-8 中文字符串（多字节序列），需用 `grep -a` 在二进制中搜索
 
 ### 前端设计系统（参考 person-summon）
 - 主题：CSS 变量（`:root` 亮色 / `[data-theme="dark"]` 暗色）+ `transition: background-color 0.3s, color 0.2s, border-color 0.3s`
