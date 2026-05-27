@@ -24,7 +24,11 @@
       "Bash(python3 -m json.tool)",
       "Bash(python3 -c ' *)",
       "Bash(curl -s http://localhost:8082/api/health)",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=2048\" npx vite build --outDir ../dist)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=2048\" npx vite build --outDir ../dist)",
+      "Bash(curl -s http://localhost:8082/api/translate/config)",
+      "Bash(curl -s -X PUT http://localhost:8082/api/translate/config -H 'Content-Type: application/json' -d '{\"provider_url\":\"https://api.openai.com/v1\",\"api_key\":\"sk-test123456789\",\"model\":\"gpt-4o-mini\"}')",
+      "Bash(curl -s -X PUT http://localhost:8082/api/translate/config -H 'Content-Type: application/json' -d '{\"provider_url\":\"https://api.deepseek.com/v1\",\"api_key\":\"sk-***6789\",\"model\":\"deepseek-chat\"}')",
+      "Bash(kill %1)"
     ]
   }
 }
