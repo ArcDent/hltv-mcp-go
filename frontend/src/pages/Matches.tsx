@@ -19,33 +19,23 @@ const nicknames: Record<string, string> = {
   'Aurora':'欧若拉','RED Canids':'红犬','GamerLegion':'GL','PARIVISION':'PV',
 }
 
-function shortEvent(name?: string): string {
-  if (!name) return ''
-  return name
-    .replace(/\bSeason\s*\d+\b/gi,'').replace(/\bSeries\s*\d+\b/gi,'')
-    .replace(/\bRound\s*of\s*\d+\b/gi,'').replace(/\bCup\s*\d+\b/gi,'')
-    .replace(/\bGroup\s*[A-D]\b/gi,'').replace(/\bStage\s*\d+\b/gi,'')
-    .replace(/\bLower\s*Bracket\b/gi,'').replace(/\bUpper\s*Bracket\b/gi,'')
-    .replace(/\bSemi-final\b/gi,'').replace(/\bQuarterfinal\b/gi,'')
-    .replace(/\bFinals?\b/gi,'').replace(/\bClosed\s*Qualifier\b/gi,'预选')
-    .replace(/\bQualifier\b/gi,'预选').replace(/\bOpen\b/gi,'')
-    .replace(/\bChampionship\b/gi,'').replace(/\bMasters\b/gi,'大师赛')
-    .replace(/\s{2,}/g,' ').trim()
-}
-
 export default function Matches() {
   const [tab, setTab] = useState<Tab>('today')
-  const [data, setData] = useState<any>(null)
-  const [filter, setFilter] = useState('')
+  const [events, setEvents] = useState<any[]>([])
+  const [other, setOther] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<any>(null)
 
   useEffect(() => {
-    setData(null)
-    if (tab === 'today')    api.todayMatches().then(setData)
-    else if (tab === 'upcoming') api.upcomingMatches({ team: filter, limit: '40' }).then(setData)
-    else api.results({ team: filter, limit: '40' }).then(setData)
-  }, [tab, filter])
-
-  const items: any[] = data?.items ?? []
+    setLoading(true)
+    setEvents([])
+    setOther([])
+    api.getEvents(tab, 150).then(d => {
+      setEvents(d?.data?.events ?? [])
+      setOther(d?.data?.other ?? [])
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [tab])
 
   const cardStyle: React.CSSProperties = {
     background: 'var(--card)', border: '1px solid var(--border)',
@@ -61,15 +51,12 @@ export default function Matches() {
     paddingBottom: 6, background: 'none', cursor: 'pointer',
   })
 
-  const inputStyle: React.CSSProperties = {
-    background: 'var(--input-bg)', border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-sm)', color: 'var(--text)',
-    fontSize: 14, padding: '8px 14px', outline: 'none', width: 200,
-  }
+  const totalEvents = events.length + (other.length > 0 ? 1 : 0)
 
   return (
     <div className="anim-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Tab bar + filter */}
+
+      {/* Tab bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={tabBtn(tab === t.key)}>
@@ -77,77 +64,105 @@ export default function Matches() {
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        {items.length > 0 && (
-          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{items.length} 场比赛</span>
+        {!loading && totalEvents > 0 && (
+          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{totalEvents} 个赛事</span>
         )}
-        <input placeholder="筛选队伍..." value={filter} onChange={e => setFilter(e.target.value)}
-          style={inputStyle}
-          onFocus={e => { e.target.style.borderColor = 'var(--gold)'; e.target.style.boxShadow = '0 0 0 3px var(--gold-dim)'; }}
-          onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none'; }}
-        />
       </div>
 
-      {/* Match grid */}
+      {/* Event cards grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-        {items.length === 0 && (
-          <div style={{ ...cardStyle, gridColumn: '1 / -1', textAlign: 'center', padding: '80px 0',
-            color: 'var(--text-muted)', fontSize: 15 }}>
-            {data ? '暂无比赛数据' : '加载中...'}
+        {!loading && totalEvents === 0 && (
+          <div style={{ ...cardStyle, gridColumn: '1 / -1', textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)', fontSize: 15 }}>
+            暂无赛事数据
           </div>
         )}
 
-        {items.map((m, i) => {
-          const c1 = nicknames[m.team1 ?? ''] ?? ''
-          const c2 = nicknames[m.team2 ?? ''] ?? ''
-          const evt = shortEvent(m.event)
+        {loading && (
+          <div style={{ ...cardStyle, gridColumn: '1 / -1', textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)', fontSize: 15 }}>
+            加载中...
+          </div>
+        )}
 
-          return (
-            <div key={i} className="anim-in" style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 12, animationDelay: `${i * 25}ms` }}>
-              {/* Teams + Score row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 50 }}>
-                  <span style={{ fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-display)',
-                    color: 'var(--text)', letterSpacing: '0.03em', textAlign: 'center' }}>
-                    {m.team1 || '待定'}
-                  </span>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', height: 18 }}>{c1}</span>
-                </div>
+        {events.map((ev, i) => (
+          <div key={i} className="anim-in" style={{ ...cardStyle, cursor: 'pointer', animationDelay: `${i * 30}ms` }}
+            onClick={() => setSelectedEvent(ev)}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--gold)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ flex: 1, fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '0.03em', color: 'var(--text)' }}>
+                {ev.name}
+              </span>
+              <span style={{ background: 'var(--gold-dim)', color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                {ev.match_count}
+              </span>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+              {ev.date_start || '?'} ~ {ev.date_end || '?'}
+            </div>
+          </div>
+        ))}
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 100 }}>
+        {/* Other bucket */}
+        {other.length > 0 && (
+          <div className="anim-in" style={{ ...cardStyle, cursor: 'pointer' }}
+            onClick={() => setSelectedEvent({ name: 'Other', date_start: '—', date_end: '—', match_count: other.length, matches: other })}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--gold)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ flex: 1, fontSize: 16, fontWeight: 700, fontFamily: 'var(--font-display)', letterSpacing: '0.03em', color: 'var(--text-secondary)' }}>
+                Other
+              </span>
+              <span style={{ background: 'var(--input-bg)', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                {other.length}
+              </span>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>未分配赛事</div>
+          </div>
+        )}
+      </div>
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div onClick={() => setSelectedEvent(null)} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease' }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', width: 700, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', animation: 'slideUp 0.25s ease' }}>
+            <button onClick={() => setSelectedEvent(null)} style={{ position: 'absolute', top: 14, right: 14, width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.04em', marginBottom: 6 }}>
+              {selectedEvent.name}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid var(--border)' }}>
+              {selectedEvent.date_start || '?'} ~ {selectedEvent.date_end || '?'} · {selectedEvent.match_count} 场比赛
+            </div>
+
+            {(selectedEvent.matches || []).map((m: any, i: number) => {
+              const c1 = nicknames[m.team1 ?? ''] ?? ''
+              const c2 = nicknames[m.team2 ?? ''] ?? ''
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderTop: i > 0 ? '1px solid rgba(128,128,128,0.06)' : 'none', fontSize: 13 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '0.03em', color: 'var(--text)' }}>{m.team1 || '待定'}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', height: 16 }}>{c1}</span>
+                  </div>
                   {m.score ? (
-                    <span style={{ fontSize: 36, fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>
-                      {m.score}
-                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--text)', minWidth: 50, textAlign: 'center' }}>{m.score}</span>
                   ) : (
-                    <span style={{ fontSize: 36, fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', minWidth: 50, textAlign: 'center' }}>
                       {m.scheduled_at ? m.scheduled_at.slice(11, 16) : '—:—'}
                     </span>
                   )}
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', height: 16 }}>
-                    {m.best_of ?? ''}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '0.03em', color: 'var(--text)' }}>{m.team2 || '待定'}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', height: 16 }}>{c2}</span>
+                  </div>
+                  <span style={{ fontSize: 11, color: m.score ? 'var(--text-muted)' : 'var(--gold)', minWidth: 60, textAlign: 'right' }}>
+                    {m.best_of ? `${m.best_of.toUpperCase()}` : ''}{m.played_at ? ` · ${m.played_at.slice(5, 10)}` : ''}
                   </span>
                 </div>
-
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 50 }}>
-                  <span style={{ fontSize: 17, fontWeight: 600, fontFamily: 'var(--font-display)',
-                    color: 'var(--text)', letterSpacing: '0.03em', textAlign: 'center' }}>
-                    {m.team2 || '待定'}
-                  </span>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', height: 18 }}>{c2}</span>
-                </div>
-              </div>
-
-              {/* Event */}
-              {evt && (
-                <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--gold)',
-                  fontWeight: 500, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                  {evt}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
