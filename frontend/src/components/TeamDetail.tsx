@@ -192,7 +192,7 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
 
             {/* BO1 note */}
             <div style={{marginTop:16,padding:'8px 14px',background:'var(--input-bg)',borderRadius:'var(--radius-sm)',fontSize:11,color:'var(--text-muted)',textAlign:'center',border:'1px dashed var(--border)'}}>
-              BO1 比分归一化：任一侧得分 &ge;13 &rarr;{' '}
+              BO1 比分归一化：任一侧得分 ≥13 →{' '}
               <code style={{fontFamily:'var(--font-mono)',color:'var(--text-secondary)',background:'rgba(196,138,10,0.08)',padding:'1px 5px',borderRadius:3}}>1:0</code>
               {' / '}
               <code style={{fontFamily:'var(--font-mono)',color:'var(--text-secondary)',background:'rgba(196,138,10,0.08)',padding:'1px 5px',borderRadius:3}}>0:1</code>
