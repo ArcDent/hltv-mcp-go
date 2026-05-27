@@ -10,7 +10,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  health: () => request<{ status: string }>('/health'),
   status: () => request<any>('/status'),
   cacheStats: () => request<any>('/cache'),
   clearCache: () => request<any>('/cache', { method: 'DELETE' }),
@@ -18,13 +17,8 @@ export const api = {
     request<any>(`/search?q=${encodeURIComponent(q)}&type=${type}`),
   getTeam: (id: number) => request<any>(`/teams/${id}`),
   getPlayer: (id: number) => request<any>(`/players/${id}`),
-  todayMatches: () => request<any>('/matches/today'),
   getEvents: (type: string, limit = 150) =>
     request<any>(`/events?type=${encodeURIComponent(type)}&limit=${limit}`),
-  upcomingMatches: (params: Record<string, string>) =>
-    request<any>(`/matches?${new URLSearchParams(params)}`),
-  results: (params: Record<string, string>) =>
-    request<any>(`/results?${new URLSearchParams(params)}`),
   realtimeNews: (limit = 25, offset = 0) =>
     request<any>(`/news/realtime?limit=${limit}&offset=${offset}`),
   newsDigest: (params: Record<string, string>) =>

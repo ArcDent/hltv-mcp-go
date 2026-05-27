@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
+import { teamNicknames as nicknames } from '../data/nicknames'
+import Modal from '../components/Modal'
 
 type Tab = 'today' | 'upcoming' | 'results'
 
@@ -8,16 +10,6 @@ const tabs: { key: Tab; label: string }[] = [
   { key: 'upcoming', label: '即将开始' },
   { key: 'results',  label: '近期赛果' },
 ]
-
-const nicknames: Record<string, string> = {
-  'Vitality':'小蜜蜂','Spirit':'绿龙','Team Spirit':'绿龙','Natus Vincere':'天生赢家',
-  'NAVI':'天生赢家','FaZe':'FaZe Clan','G2':'武士','MOUZ':'老鼠','Falcons':'猎鹰',
-  'Astralis':'A队','Virtus.pro':'VP','Team Liquid':'液体','FURIA':'黑豹',
-  'The MongolZ':'蒙古队','TYLOO':'天禄','3DMAX':'3DMAX','paiN':'paiN',
-  'HEROIC':'HEROIC','Complexity':'coL','Ninjas in Pyjamas':'NIP',
-  'Eternal Fire':'永火','fnatic':'橙黑','Rare Atom':'RA','Lynn Vision':'LVG',
-  'Aurora':'欧若拉','RED Canids':'红犬','GamerLegion':'GL','PARIVISION':'PV',
-}
 
 export default function Matches() {
   const [tab, setTab] = useState<Tab>('today')
@@ -124,9 +116,7 @@ export default function Matches() {
 
       {/* Event Detail Modal */}
       {selectedEvent && (
-        <div onClick={() => setSelectedEvent(null)} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease' }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', width: 700, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', padding: 28, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', animation: 'slideUp 0.25s ease' }}>
-            <button onClick={() => setSelectedEvent(null)} style={{ position: 'absolute', top: 14, right: 14, width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        <Modal onClose={() => setSelectedEvent(null)}>
 
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.04em', marginBottom: 6 }}>
               {selectedEvent.name}
@@ -177,8 +167,7 @@ export default function Matches() {
                 </div>
               )
             })}
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   )

@@ -64,7 +64,8 @@
       "mcp__chrome-devtools__resize_page",
       "Bash(kill 54395)",
       "Bash(kill 55694)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(python3 -m http.server 8090)"
     ]
   }
 }
