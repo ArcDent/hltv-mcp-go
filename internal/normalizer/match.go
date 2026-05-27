@@ -169,6 +169,24 @@ func SortByPlayedAtDesc(matches []types.NormalizedMatch) {
 	})
 }
 
+// TranslatePlaceholder maps HLTV bracket placeholder team names to Chinese
+func TranslatePlaceholder(s string) string {
+	lower := strings.ToLower(strings.TrimSpace(s))
+	if lower == "" {
+		return s
+	}
+	if strings.Contains(lower, "winner") {
+		return "胜者"
+	}
+	if strings.Contains(lower, "loser") {
+		return "败者"
+	}
+	if strings.Contains(lower, "tbd") {
+		return "待定"
+	}
+	return s
+}
+
 // SortByScheduledAtAsc sorts matches in ascending order by scheduled_at
 func SortByScheduledAtAsc(matches []types.NormalizedMatch) {
 	sort.Slice(matches, func(i, j int) bool {

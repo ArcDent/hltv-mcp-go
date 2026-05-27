@@ -38,6 +38,51 @@ func TestNormalizeNews(t *testing.T) {
 	}
 }
 
+func TestTranslatePlaceholder(t *testing.T) {
+	tests := []struct{ in, want string }{
+		{"winner", "胜者"},
+		{"Winner", "胜者"},
+		{"Winner of Group A", "胜者"},
+		{"WINNER", "胜者"},
+		{"loser", "败者"},
+		{"Loser of match 3", "败者"},
+		{"tbd", "待定"},
+		{"TBD", "待定"},
+		{"  tbd  ", "待定"},
+		{"Vitality", "Vitality"},
+		{"FaZe Clan", "FaZe Clan"},
+	}
+	for _, tt := range tests {
+		if got := TranslatePlaceholder(tt.in); got != tt.want {
+			t.Errorf("TranslatePlaceholder(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+func TestNormalizeBO1Score(t *testing.T) {
+	tests := []struct{ in, want string }{
+		{"2:0", "2:0"},
+		{"2:1", "2:1"},
+		{"0:2", "0:2"},
+		{"13:5", "1:0"},
+		{"5:13", "0:1"},
+		{"16:14", "1:0"},
+		{"14:16", "0:1"},
+		{"16:16", "平局"},
+		{"13:11", "1:0"},
+		{"11:13", "0:1"},
+		{"", ""},
+		{"invalid", "invalid"},
+		{"13 : 5", "1:0"},
+		{"5 : 13", "0:1"},
+	}
+	for _, tt := range tests {
+		if got := normalizeBO1Score(tt.in); got != tt.want {
+			t.Errorf("normalizeBO1Score(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
 func TestSplitTeamMatches(t *testing.T) {
 	matches := []types.NormalizedMatch{
 		{Score: "2:1", PlayedAt: "2025-01-01"},

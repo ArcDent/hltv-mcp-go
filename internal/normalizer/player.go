@@ -228,6 +228,27 @@ func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 	return pd
 }
 
+// normalizeBO1Score converts BO1 match scores (e.g. "13:5") to "1:0"/"0:1"
+// If both sides < 13, returns the original score unchanged.
+func normalizeBO1Score(score string) string {
+	parts := strings.SplitN(score, ":", 2)
+	if len(parts) != 2 {
+		return score
+	}
+	a, _ := strconv.Atoi(strings.TrimSpace(parts[0]))
+	b, _ := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if a >= 13 || b >= 13 {
+		if a > b {
+			return "1:0"
+		}
+		if b > a {
+			return "0:1"
+		}
+		return "平局"
+	}
+	return score
+}
+
 // CollectRecentHighlights extracts highlight/achievement text from player doc
 func CollectRecentHighlights(doc *goquery.Document) []string {
 	var highlights []string
