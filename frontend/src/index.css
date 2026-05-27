@@ -1,49 +1,52 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0d1117;
-  --color-panel: #161b22;
-  --color-border: #30363d;
-  --color-gold: #f0c040;
-  --color-gold-dim: rgba(240, 192, 64, 0.08);
-  --color-gold-border: rgba(240, 192, 64, 0.25);
-  --color-orange: #ff8c42;
-  --color-orange-dim: rgba(255, 140, 66, 0.12);
-  --color-text: #e6edf3;
-  --color-text-dim: #8b949e;
-  --color-placeholder: #484f58;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
+  --color-bg:           #0a0a0f;
+  --color-surface:      #111118;
+  --color-card:         #16161e;
+  --color-border:       #252530;
+  --color-gold:         #f5c842;
+  --color-gold-muted:   rgba(245, 200, 66, 0.10);
+  --color-red:          #ff4444;
+  --color-red-muted:    rgba(255, 68, 68, 0.10);
+  --color-green:        #3ddc84;
+  --color-text:         #f0f0f5;
+  --color-text-secondary: #8e8e9a;
+  --color-text-muted:   #5e5e6a;
+  --font-display:       'Oswald', system-ui, sans-serif;
+  --font-body:          'Noto Sans SC', system-ui, sans-serif;
+  --font-mono:          'JetBrains Mono', monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body, #root {
-  height: 100%;
-  overflow: hidden;
-}
+html, body, #root { height: 100%; }
 
 body {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
+  font-family: var(--font-body);
+  font-size: 16px;
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-gold-border); }
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
 
-/* Staggered entry animation */
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ---- Animations ---- */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.anim-in {
+  animation: fade-up 0.4s ease both;
 }
 
-.animate-in {
-  animation: fade-in-up 0.35s ease-out both;
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+.pulse-dot {
+  animation: pulse-glow 2s ease-in-out infinite;
 }

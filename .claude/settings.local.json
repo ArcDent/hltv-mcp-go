@@ -12,7 +12,11 @@
       "mcp__chrome-devtools__evaluate_script",
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__navigate_page",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Read(//home/arcdent/github/**)",
+      "Bash(go build *)",
+      "Bash(pkill hltv-mcp *)",
+      "Bash(./hltv-mcp)"
     ]
   }
 }

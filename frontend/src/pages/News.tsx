@@ -10,42 +10,43 @@ export default function News() {
   useEffect(() => {
     setData(null)
     if (tab === 'realtime') api.realtimeNews().then(setData)
-    else api.newsDigest({ limit: '25' }).then(setData)
+    else api.newsDigest({ limit: '30' }).then(setData)
   }, [tab])
 
   const items: any[] = data?.items ?? []
 
   return (
-    <div className="animate-in">
-      <h2 className="text-[16px] font-semibold text-gold mb-4 pb-2 border-b border-border tracking-wide">
-        ◉ 新闻
-      </h2>
-
-      <div className="flex gap-1 mb-6">
-        {[{ key: 'realtime' as Tab, label: '实时新闻' }, { key: 'archive' as Tab, label: '归档新闻' }].map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`px-5 py-2 text-[14px] font-medium rounded-md border transition-all ${
+    <div className="anim-in space-y-8">
+      <div className="flex items-center gap-4">
+        {[{ key: 'realtime', label: '实时新闻' }, { key: 'archive', label: '归档新闻' }].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key as Tab)}
+            className={`text-[17px] font-display font-semibold tracking-wider uppercase pb-2 border-b-[3px] transition-colors ${
               tab === t.key
-                ? 'border-gold bg-gold-dim text-gold'
-                : 'border-border bg-panel text-text-dim hover:text-text hover:border-gold-border'
+                ? 'text-gold border-gold'
+                : 'text-text-muted border-transparent hover:text-text-secondary'
             }`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-[1px]">
         {items.length === 0 && (
-          <div className="text-text-dim text-[14px] py-16 text-center border border-border rounded-md bg-panel">
+          <div className="text-text-muted text-[16px] py-24 text-center bg-card border border-border rounded-lg">
             {data ? '暂无新闻' : '加载中...'}
           </div>
         )}
-        {items.map((n: any, i: number) => (
-          <div key={i} className="bg-panel border border-border rounded-md p-3.5 flex items-center gap-4 animate-in hover:border-gold-border transition-colors group"
+        {items.map((n, i) => (
+          <div key={i}
+            className="anim-in bg-card border border-border rounded-lg px-6 py-4 flex items-center gap-5 hover:border-gold/30 transition-colors group"
             style={{ animationDelay: `${i * 25}ms` }}>
-            <span className="text-gold text-[14px] font-mono font-semibold w-7 shrink-0">{String(i + 1).padStart(2, '0')}</span>
-            <span className="flex-1 text-[15px] text-text group-hover:text-gold transition-colors truncate">{n.title}</span>
-            <span className="text-[13px] text-text-dim shrink-0">{n.published_at ?? n.relative_time ?? ''}</span>
+            <span className="text-gold font-mono font-bold text-[16px] w-8 shrink-0">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span className="flex-1 text-[17px] font-medium group-hover:text-gold transition-colors truncate">
+              {n.title}
+            </span>
+            <span className="text-[14px] text-text-muted shrink-0">{n.published_at ?? n.relative_time ?? ''}</span>
           </div>
         ))}
       </div>
