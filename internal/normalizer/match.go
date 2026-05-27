@@ -10,6 +10,30 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
+var monthMap = map[string]string{
+	"January": "01", "February": "02", "March": "03", "April": "04",
+	"May": "05", "June": "06", "July": "07", "August": "08",
+	"September": "09", "October": "10", "November": "11", "December": "12",
+}
+
+var resultsDateRe = regexp.MustCompile("Results for (\\w+) (\\d+)(?:st|nd|rd|th)? (\\d{4})")
+
+func parseResultsDate(headline string) string {
+	m := resultsDateRe.FindStringSubmatch(headline)
+	if len(m) != 4 {
+		return ""
+	}
+	month, ok := monthMap[m[1]]
+	if !ok {
+		return ""
+	}
+	day := m[2]
+	if len(day) == 1 {
+		day = "0" + day
+	}
+	return m[3] + "-" + month + "-" + day
+}
+
 // NormalizeMatches parses HLTV HTML result/match rows into NormalizedMatch slices.
 // Use ".result-con" for results, ".upcoming-match" or ".match-box" for upcoming.
 func NormalizeMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
@@ -19,49 +43,40 @@ func NormalizeMatches(doc *goquery.Document, perspective string) []types.Normali
 // normalizeResultsCon handles the "/results" page structure
 func normalizeResultsCon(doc *goquery.Document, perspective string) []types.NormalizedMatch {
 	var matches []types.NormalizedMatch
-	doc.Find(".result-con").Each(func(_ int, s *goquery.Selection) {
-		m := types.NormalizedMatch{Result: types.OutcomeUnknown}
+	doc.Find(".results-sublist").Each(func(_ int, sublist *goquery.Selection) {
+		date := parseResultsDate(cleanText(sublist.Find(".standard-headline").First().Text()))
+		sublist.Find(".result-con").Each(func(_ int, s *goquery.Selection) {
+			m := types.NormalizedMatch{Result: types.OutcomeUnknown}
 
-		// Extract team names from dedicated .team divs within .line-align containers
-		m.Team1 = cleanText(s.Find(".line-align.team1 .team").First().Text())
-		m.Team2 = cleanText(s.Find(".line-align.team2 .team").First().Text())
+			m.Team1 = cleanText(s.Find(".line-align.team1 .team").First().Text())
+			m.Team2 = cleanText(s.Find(".line-align.team2 .team").First().Text())
 
-		// Score from .result-score
-		if score := cleanText(s.Find(".result-score").First().Text()); score != "" {
-			m.Score = score
-		}
-
-		// Event name from the event-cell or map-text
-		m.Event = cleanText(s.Find(".event-name, .map-text, .stars").First().Text())
-
-		// Match link with ID
-		if href, ok := s.Find("a.a-reset").First().Attr("href"); ok && href != "" {
-			if id := parseMatchID(href); id > 0 {
-				m.MatchID = id
+			if score := cleanText(s.Find(".result-score").First().Text()); score != "" {
+				m.Score = score
 			}
-		}
 
-		// Time/date
-		if t := cleanText(s.Find(".time, .date").First().Text()); t != "" {
-			if m.Score != "" {
-				m.PlayedAt = t
-			} else {
-				m.ScheduledAt = t
+			m.Event = cleanText(s.Find(".event-name, .map-text, .stars").First().Text())
+
+			if href, ok := s.Find("a.a-reset").First().Attr("href"); ok && href != "" {
+				if id := parseMatchID(href); id > 0 {
+					m.MatchID = id
+				}
 			}
-		}
 
-		if perspective != "" {
-			if m.Team1 == perspective {
-				m.Opponent = m.Team2
-			} else if m.Team2 == perspective {
-				m.Opponent = m.Team1
+			m.PlayedAt = date
+
+			if perspective != "" {
+				if m.Team1 == perspective {
+					m.Opponent = m.Team2
+				} else if m.Team2 == perspective {
+					m.Opponent = m.Team1
+				}
 			}
-		}
 
-		// Only include if we have at least one team identified
-		if m.Team1 != "" || m.Team2 != "" {
-			matches = append(matches, m)
-		}
+			if m.Team1 != "" || m.Team2 != "" {
+				matches = append(matches, m)
+			}
+		})
 	})
 	return matches
 }
