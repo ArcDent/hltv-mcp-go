@@ -20,6 +20,10 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o hltv-mcp github.com/arcdent/hltv-
 # chromedp/headless-shell provides a headless Chrome instance for chromedp
 FROM chromedp/headless-shell:latest
 WORKDIR /
+# ca-certificates is required for Go's net/http to verify TLS connections
+# (e.g., LLM translate proxy). chromedp/headless-shell includes openssl
+# but not the CA certificate bundle.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /data
 COPY --from=builder /app/hltv-mcp /hltv-mcp
 EXPOSE 8082

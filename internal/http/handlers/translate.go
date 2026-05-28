@@ -169,9 +169,11 @@ func (h *Handlers) PutTranslateConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	if strings.Contains(cfg.APIKey, "***") {
 		existing, err := loadTranslateConfig()
-		if err == nil {
-			cfg.APIKey = existing.APIKey
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "无法加载现有配置，请重新输入完整的 API Key")
+			return
 		}
+		cfg.APIKey = existing.APIKey
 	}
 	if err := saveTranslateConfig(cfg); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to save config")
@@ -227,6 +229,7 @@ func (h *Handlers) PostTranslate(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
+		log.Printf("translate proxy: request failed: %v", err)
 		writeError(w, http.StatusBadGateway, "翻译服务请求失败: "+err.Error())
 		return
 	}

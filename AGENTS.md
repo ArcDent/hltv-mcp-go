@@ -37,19 +37,24 @@
 ```
 
 ## 最近操作
+- 2026-05-28：修复 Docker 翻译 502 — `chromedp/headless-shell` 基础镜像缺少 `ca-certificates`，Go HTTP 客户端无法完成 TLS 验证；Dockerfile 新增 `apt-get install ca-certificates`；`PostTranslate` 连接错误路径新增 `log.Printf`；`PutTranslateConfig` 遮罩恢复失败时不再静默写入遮罩 key
 - 2026-05-28：代码深度收敛 — 删 10 个文件（.clinerules-* ×5 + frontend/hltv-mcp + docs/superpowers/ ×4）、合并 shared.go/transport.go 薄包装、删除 SummaryMode/Raw 死代码路径、删除 3 个未用错误码、删除 7 个未使用查询字段，源文件 43→40 个
 - 2026-05-28：昵称字典后端迁移+编辑功能 — 新增 `overrides.go` 持久化覆盖层 + `PlayerCatalog`（95 选手）+ 3 个 REST API（`GET/PUT /api/nicknames*`）+ 前端 `useNicknames` hook + TeamDetail/PlayerDetail 内联编辑，删除 `frontend/src/data/nicknames.ts`
 - 2026-05-28：CI/CD 与文档完善 — GitHub Actions 自动构建推送 GHCR、添加 MIT 许可证、修正 GHCR 镜像路径、Docker 部署示例按平台汇总
 - 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、选手简称补全至 98 名
-- 2026-05-28：修复新闻"在 HLTV 阅读原文"链接 — NewsDetail link 相对路径缺少 https://www.hltv.org 前缀
 
 ## 进行中
 - 无
 
 ## 下一步
-- 用户确认后推送到远程仓库
+- 无
 
 ## 关键发现
+
+### Docker SSL 证书
+- **`chromedp/headless-shell` 基础镜像不含 `ca-certificates`**，Go 的 `crypto/x509` 在 Linux 容器内找不到系统根 CA 时，所有 HTTPS 出站连接（`http.DefaultClient`）会因 `x509: certificate signed by unknown authority` 失败
+- **HLTV 爬虫不受影响**：爬虫优先使用 chromedp（Chrome 自带 CA 存储），不经过 Go HTTP 客户端
+- **修复**：`Dockerfile` runtime stage 添加 `apt-get install -y ca-certificates`
 
 ### nickname 覆盖层
 - **`internal/localization/overrides.go`**：线程安全的内存缓存 + JSON 文件持久化

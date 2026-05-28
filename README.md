@@ -309,18 +309,19 @@ curl http://localhost:8082/api/news/realtime?limit=10
 ├── Dockerfile                 # 三阶段构建
 ├── internal/
 │   ├── types/         # 共享类型定义
-│   ├── errors/        # AppError 错误体系
+│   ├── errors/        # AppError 错误体系（8 错误码）
 │   ├── config/        # 环境变量配置
+│   ├── crypto/        # AES-256-GCM 加解密（API Key 持久化）
 │   ├── cache/         # 内存缓存（TTL + stale + 并发合并）
 │   ├── client/        # HTTP 客户端 + chromedp 反 CF
 │   ├── scraper/       # 6 个 HLTV 爬虫模块
-│   ├── localization/  # 中英文名称映射
+│   ├── localization/  # 中英文名称映射（26 队伍 + 98 选手）
 │   ├── normalizer/    # HTML → 标准化数据结构
 │   ├── facade/        # 核心编排层
 │   ├── summary/       # 中文摘要
 │   ├── renderer/      # 中文格式化输出
-│   ├── mcp/           # MCP 工具注册 + stdio 传输
-│   └── http/          # chi router + REST API
+│   ├── mcp/           # 10 MCP 工具注册 + stdio 传输
+│   └── http/          # chi router + REST API + SPA fallback
 ├── frontend/          # React + Vite + Tailwind
 │   └── src/pages/     # 6 个管理面板页面
 ```
