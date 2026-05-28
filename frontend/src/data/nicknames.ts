@@ -31,4 +31,5 @@ export const playerNicknames: Record<string, string> = {
   'Patsi': 'Patsi', 'BELCHONOKK': 'BELCHONOKK', 'hallzerk': 'hallzerk', 'Grim': 'Grim', 'r1nkle': 'r1nkle',
   'bodyy': 'bodyy', 'MATYS': 'MATYS', 'Maka': 'Maka', 'Lucky': '好运or坏运',
   'JamYoung': '小鞠', 'Mercury': '汉堡', 'Starry': '小舅子', 'somebody': 'sbd', 'Lack1': 'Lack1',
+  'tN1R': '少爷/特尼尔',
 }
