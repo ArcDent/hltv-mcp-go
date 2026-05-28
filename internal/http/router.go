@@ -20,7 +20,7 @@ func NewRouter(cfg *config.Config, f *facade.HltvFacade, frontendFS fs.FS) http.
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))
@@ -43,6 +43,7 @@ func NewRouter(cfg *config.Config, f *facade.HltvFacade, frontendFS fs.FS) http.
 	r.Get("/api/news/article", h.GetNewsArticle)
 	r.Get("/api/translate/config", h.GetTranslateConfig)
 	r.Put("/api/translate/config", h.PutTranslateConfig)
+	r.Post("/api/translate", h.PostTranslate)
 
 	// SPA fallback
 	if frontendFS != nil {
