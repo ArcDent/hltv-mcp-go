@@ -37,6 +37,7 @@
 ```
 
 ## 最近操作
+- 2026-05-28：添加 GitHub Actions CI/CD — push main 自动构建 Docker 镜像推送到 GHCR，README 补充 Watchtower 自动同步方案
 - 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、前/后端队伍简称同步、选手中文简称逐条修正并补全至 98 名、追加 tN1R→少爷/特尼尔
 - 2026-05-28：修复新闻"在 HLTV 阅读原文"链接 — NewsDetail 中 link 字段为相对路径，缺少 `https://www.hltv.org` 前缀，点击后导航到本地而非 HLTV 源站
 - 2026-05-28：代码瘦身收敛 — 删 dead types、删 helpers.go 薄包装层、删未用函数、前端复用共享 Modal、删无关文档，净减 ~810 行
@@ -89,6 +90,7 @@
 - **前端嵌入变更需重建二进制**：修改 `frontend/src/` 后，必须 `vite build` + `go build` + 重启服务，否则浏览器看到的是旧内嵌前端（即使 dist/ 已更新）
 - Docker: `GOTOOLCHAIN=auto` + `chromedp/headless-shell:latest` Chrome 路径 `/headless-shell/headless-shell`
 - SPA fallback: `feFS.Open(path)` 必须 strip 前导 `/`
+- **CI/CD**：`.github/workflows/docker-build.yml` — push main 自动构建镜像推送到 `ghcr.io/arcdent/hltv-mcp-go:latest`，用 `docker/metadata-action` 打 `latest` + commit SHA 双 tag。服务器端搭配 Watchtower 自动拉取实现零手动部署。
 
 ### 赛中文化与缓存模式
 - HLTV bracket 占位符映射：winner/loser/tbd → 胜者/败者/待定，使用 `strings.Contains` 包含匹配（HLTV 实际文本可能是 "Winner of Group A" 格式）

@@ -193,6 +193,33 @@ docker run -d --name hltv-mcp -p 8082:8082 hltv-mcp
 Docker 部署后 MCP 通过 stdio 不可用（容器隔离），如需 MCP 功能请使用直接编译方式。
 仅 Web 面板和 REST API 走 Docker，MCP 功能需单独在本地编译启动。
 
+### 预构建镜像与自动同步（GHCR + Watchtower）
+
+每次 push 到 main 分支，GitHub Actions 自动构建镜像并推送到 GHCR。服务器端用 Watchtower 自动拉取更新，无需手动重建。
+
+#### 使用预构建镜像
+
+```bash
+docker run -d --name hltv-mcp \
+  -p 8082:8082 \
+  -v hltv-chrome-data:/tmp \
+  ghcr.io/arcdent/hltv-mcp-go:latest
+```
+
+#### 自动同步
+
+```bash
+# Watchtower 每 5 分钟轮询一次，检测到新镜像自动重启容器
+docker run -d --name watchtower \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  containrrr/watchtower \
+  hltv-mcp --interval 300
+```
+
+推送代码后流程：`git push` → GitHub Actions 构建镜像推送到 GHCR → Watchtower 检测新镜像 → 自动拉取并重启容器。
+
+> **注意**：GHCR 镜像默认私有，需在 GitHub Settings → Packages 中改为 Public，或在服务器上用 Personal Access Token 登录：`echo $GITHUB_TOKEN | docker login ghcr.io -u <username> --password-stdin`
+
 ## 用法示例
 
 ### MCP 工具
