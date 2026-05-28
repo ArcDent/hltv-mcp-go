@@ -11,7 +11,7 @@ export default function NewsDetail({ url, onClose }: { url: string; onClose: () 
   const [loading, setLoading] = useState(true)
   const [translating, setTranslating] = useState(false)
   const [translated, setTranslated] = useState('')
-  const { cfg, realKey } = useTranslateConfig()
+  const { cfg } = useTranslateConfig()
 
   useEffect(() => {
     setLoading(true)
@@ -38,22 +38,17 @@ export default function NewsDetail({ url, onClose }: { url: string; onClose: () 
     if (!data?.body_text || !cfg?.configured) return
     setTranslating(true)
     try {
-      const res = await fetch(`${cfg!.provider_url}/chat/completions`, {
+      const res = await fetch('/api/translate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${realKey}` },
-        body: JSON.stringify({
-          model: cfg!.model,
-          messages: [
-            { role: 'system', content: '将以下CS电竞新闻正文翻译为简体中文' },
-            { role: 'user', content: data.body_text.slice(0, 8000) },
-          ],
-          temperature: 0.1,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: data.body_text.slice(0, 8000), type: 'article' }),
       })
-      const body = await res.text()
-      if (!res.ok) throw new Error(body)
-      const j = JSON.parse(body)
-      const zh = (j?.choices?.[0]?.message?.content as string)?.trim() ?? ''
+      if (!res.ok) {
+        const errBody = await res.text()
+        throw new Error(errBody)
+      }
+      const j = await res.json()
+      const zh = j?.translated ?? ''
       if (zh) {
         setTranslated(zh)
         try {
