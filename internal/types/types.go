@@ -168,13 +168,9 @@ type ResolveQuery struct {
 
 // TeamRecentQuery is used by hltv_team_recent
 type TeamRecentQuery struct {
-	TeamID              int    `json:"team_id,omitempty"`
-	TeamName            string `json:"team_name,omitempty"`
-	Limit               int    `json:"limit,omitempty"`
-	IncludeUpcoming     bool   `json:"include_upcoming,omitempty"`
-	IncludeRecentResults bool  `json:"include_recent_results,omitempty"`
-	Detail              string `json:"detail,omitempty"`
-	Exact               bool   `json:"exact,omitempty"`
+	TeamID   int    `json:"team_id,omitempty"`
+	TeamName string `json:"team_name,omitempty"`
+	Limit    int    `json:"limit,omitempty"`
 }
 
 // PlayerRecentQuery is used by hltv_player_recent
@@ -182,17 +178,14 @@ type PlayerRecentQuery struct {
 	PlayerID   int    `json:"player_id,omitempty"`
 	PlayerName string `json:"player_name,omitempty"`
 	Limit      int    `json:"limit,omitempty"`
-	Detail     string `json:"detail,omitempty"`
-	Exact      bool   `json:"exact,omitempty"`
 }
 
 // ResultsRecentQuery is used by hltv_results_recent
 type ResultsRecentQuery struct {
-	TeamID int    `json:"team_id,omitempty"`
-	Team   string `json:"team,omitempty"`
-	Event  string `json:"event,omitempty"`
-	Limit  int    `json:"limit,omitempty"`
-	Days   int    `json:"days,omitempty"`
+	Team  string `json:"team,omitempty"`
+	Event string `json:"event,omitempty"`
+	Limit int    `json:"limit,omitempty"`
+	Days  int    `json:"days,omitempty"`
 }
 
 // UpcomingMatchesQuery is used by hltv_matches_upcoming

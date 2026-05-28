@@ -4,22 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/arcdent/hltv-mcp/internal/config"
 	"github.com/arcdent/hltv-mcp/internal/localization"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
-// Service generates Chinese natural-language summaries from structured data
-type Service struct {
-	mode config.SummaryMode
-}
+type Service struct{}
 
-func New(mode config.SummaryMode) *Service { return &Service{mode: mode} }
+func New() *Service { return &Service{} }
 
 func (s *Service) SummarizeTeam(data *types.TeamRecentData) string {
-	if s.mode == config.SummaryRaw {
-		return "已启用 raw 模式，当前未生成自然语言摘要。"
-	}
 	if data == nil {
 		return "无法生成队伍摘要。"
 	}
@@ -44,9 +37,6 @@ func (s *Service) SummarizeTeam(data *types.TeamRecentData) string {
 }
 
 func (s *Service) SummarizePlayer(data *types.PlayerRecentData) string {
-	if s.mode == config.SummaryRaw {
-		return "已启用 raw 模式，当前未生成自然语言摘要。"
-	}
 	if data == nil {
 		return "无法生成选手摘要。"
 	}
@@ -55,9 +45,6 @@ func (s *Service) SummarizePlayer(data *types.PlayerRecentData) string {
 }
 
 func (s *Service) SummarizeMatches(items []types.NormalizedMatch, todayOnly bool) string {
-	if s.mode == config.SummaryRaw {
-		return "已启用 raw 模式。"
-	}
 	if len(items) == 0 {
 		return "暂无比赛数据。"
 	}
@@ -78,9 +65,6 @@ func (s *Service) SummarizeMatches(items []types.NormalizedMatch, todayOnly bool
 }
 
 func (s *Service) SummarizeNews(items []types.NewsItem) string {
-	if s.mode == config.SummaryRaw {
-		return "已启用 raw 模式。"
-	}
 	if len(items) == 0 {
 		return "暂无新闻。"
 	}
@@ -95,9 +79,6 @@ func (s *Service) SummarizeNews(items []types.NewsItem) string {
 }
 
 func (s *Service) SummarizeRealtimeNews(items []types.RealtimeNewsItem) string {
-	if s.mode == config.SummaryRaw {
-		return "已启用 raw 模式。"
-	}
 	if len(items) == 0 {
 		return "暂无实时新闻。"
 	}

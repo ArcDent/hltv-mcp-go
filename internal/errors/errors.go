@@ -10,9 +10,6 @@ const (
 	CodeUpstreamNotFound    ErrorCode = "UPSTREAM_NOT_FOUND"
 	CodeUpstreamUnavailable ErrorCode = "UPSTREAM_UNAVAILABLE"
 	CodeUpstreamBadData     ErrorCode = "UPSTREAM_BAD_DATA"
-	CodeRateLimited         ErrorCode = "RATE_LIMITED"
-	CodeLLMSummaryFailed    ErrorCode = "LLM_SUMMARY_FAILED"
-	CodePartialData         ErrorCode = "PARTIAL_DATA"
 	CodeInternalError       ErrorCode = "INTERNAL_ERROR"
 )
 

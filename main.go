@@ -63,7 +63,7 @@ func main() {
 	c := cache.New(cfg.CacheMaxEntries, cfg.CacheStaleWindowSec)
 	cli := client.NewHltvClient(cfg, chromeAvailable)
 	f := facade.New(cfg, c, cli)
-	r := renderer.New(summary.New(cfg.SummaryMode))
+	r := renderer.New(summary.New())
 
 	// MCP stdio goroutine
 	mcpServer := mcp.CreateServer(cfg, f, r)

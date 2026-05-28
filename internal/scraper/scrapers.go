@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -63,5 +64,6 @@ func (s *RealtimeNewsScraper) GetRealtimeNews(ctx context.Context) (*goquery.Doc
 	return goquery.NewDocumentFromReader(bytesReader(body))
 }
 
-// shared helpers
+func bytesReader(b []byte) *bytes.Reader { return bytes.NewReader(b) }
+
 func cleanText(s string) string { return strings.TrimSpace(s) }

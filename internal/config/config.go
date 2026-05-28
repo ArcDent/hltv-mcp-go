@@ -14,14 +14,6 @@ const (
 	DataSourceChromedp DataSource = "chromedp"
 )
 
-// SummaryMode controls summary output style
-type SummaryMode string
-
-const (
-	SummaryTemplate SummaryMode = "template"
-	SummaryRaw      SummaryMode = "raw"
-)
-
 // Config holds all application configuration loaded from environment variables
 type Config struct {
 	MCPServerName    string
@@ -47,7 +39,6 @@ type Config struct {
 	CacheStaleWindowSec  int
 
 	DefaultResultLimit int
-	SummaryMode        SummaryMode
 	Timezone           string
 }
 
@@ -77,7 +68,6 @@ func LoadConfig() (*Config, error) {
 		CacheStaleWindowSec:  envInt("CACHE_STALE_WINDOW_SEC", 3600),
 
 		DefaultResultLimit: envInt("DEFAULT_RESULT_LIMIT", 5),
-		SummaryMode:        SummaryMode(envStr("SUMMARY_MODE", "template")),
 		Timezone:           "Asia/Shanghai",
 	}, nil
 }

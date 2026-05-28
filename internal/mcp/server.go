@@ -55,19 +55,11 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 		mcp.WithNumber("team_id", mcp.Description("HLTV team id")),
 		mcp.WithString("team_name", mcp.Description("Team name")),
 		mcp.WithNumber("limit", mcp.Description("Result limit (1-10)")),
-		mcp.WithBoolean("include_upcoming", mcp.Description("Include upcoming matches")),
-		mcp.WithBoolean("include_recent_results", mcp.Description("Include recent results")),
-		mcp.WithString("detail", mcp.Description("Detail level: brief/standard/full")),
-		mcp.WithBoolean("exact", mcp.Description("Exact name match")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		q := types.TeamRecentQuery{
-			TeamID:              req.GetInt("team_id", 0),
-			TeamName:            req.GetString("team_name", ""),
-			Limit:               req.GetInt("limit", 0),
-			IncludeUpcoming:     req.GetBool("include_upcoming", true),
-			IncludeRecentResults: req.GetBool("include_recent_results", true),
-			Detail:              req.GetString("detail", "standard"),
-			Exact:               req.GetBool("exact", false),
+			TeamID:   req.GetInt("team_id", 0),
+			TeamName: req.GetString("team_name", ""),
+			Limit:    req.GetInt("limit", 0),
 		}
 		resp := f.GetTeamRecent(q)
 		return toolResult(r.RenderTeamRecent(resp)), nil
@@ -79,15 +71,11 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 		mcp.WithNumber("player_id", mcp.Description("HLTV player id")),
 		mcp.WithString("player_name", mcp.Description("Player name")),
 		mcp.WithNumber("limit", mcp.Description("Result limit (1-10)")),
-		mcp.WithString("detail", mcp.Description("Detail level")),
-		mcp.WithBoolean("exact", mcp.Description("Exact name match")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		q := types.PlayerRecentQuery{
 			PlayerID:   req.GetInt("player_id", 0),
 			PlayerName: req.GetString("player_name", ""),
 			Limit:      req.GetInt("limit", 0),
-			Detail:     req.GetString("detail", "standard"),
-			Exact:      req.GetBool("exact", false),
 		}
 		resp := f.GetPlayerRecent(q)
 		return toolResult(r.RenderPlayerRecent(resp)), nil
@@ -96,18 +84,16 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 	// 5. hltv_results_recent
 	s.AddTool(mcp.NewTool("hltv_results_recent",
 		mcp.WithDescription("Get recent HLTV results with optional team or event filters."),
-		mcp.WithNumber("team_id", mcp.Description("HLTV team id")),
 		mcp.WithString("team", mcp.Description("Team name filter")),
 		mcp.WithString("event", mcp.Description("Event name filter")),
 		mcp.WithNumber("limit", mcp.Description("Result limit (1-20)")),
 		mcp.WithNumber("days", mcp.Description("Time window in days (1-30)")),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		q := types.ResultsRecentQuery{
-			TeamID: req.GetInt("team_id", 0),
-			Team:   req.GetString("team", ""),
-			Event:  req.GetString("event", ""),
-			Limit:  req.GetInt("limit", 0),
-			Days:   req.GetInt("days", 0),
+			Team:  req.GetString("team", ""),
+			Event: req.GetString("event", ""),
+			Limit: req.GetInt("limit", 0),
+			Days:  req.GetInt("days", 0),
 		}
 		resp := f.GetResultsRecent(q)
 		return toolResult(r.RenderMatches(resp)), nil
@@ -199,4 +185,8 @@ func toolResult(text string) *mcp.CallToolResult {
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{mcp.NewTextContent(text)},
 	}
+}
+
+func StartStdio(s *server.MCPServer) error {
+	return server.ServeStdio(s)
 }

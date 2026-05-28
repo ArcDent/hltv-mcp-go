@@ -16,13 +16,13 @@
 ├── docker-compose.yml
 ├── internal/
 │   ├── types/                 # 全部共享类型
-│   ├── errors/                # AppError + 11 错误码
-│   ├── config/                # 18 环境变量
+│   ├── errors/                # AppError + 8 错误码
+│   ├── config/                # 17 环境变量
 │   ├── crypto/                # AES-256-GCM 加密/解密 + 密钥生成/持久化
 │   ├── cache/                 # TTL + stale 窗口 + 并发合并
 │   ├── client/                # HTTP + chromedp 反CF + fallback 记忆
-│   ├── scraper/               # 7 爬虫（team/player/results/matches/news/realtime_news/news_article）
-│   ├── localization/          # 26 队伍 + 3 赛事中英映射
+│   ├── scraper/               # 6 爬虫（team/player/results/matches/news/realtime_news/news_article）
+│   ├── localization/          # 26 队伍 + 98 选手中英映射
 │   ├── normalizer/            # HLTV HTML → 标准化类型
 │   ├── facade/                # 核心编排层（withCache + resolve + matches + news）
 │   ├── summary/               # 中文摘要生成
@@ -34,15 +34,14 @@
 │       ├── api/client.ts      # 13 API 方法（含 getNewsArticle）
 │       ├── components/        # NewsDetail, PlayerDetail, TeamDetail, SearchableList, TranslateProvider
 │       └── pages/             # Dashboard, Matches, Teams, Players, News (集成 NewsDetail 点击弹窗), Cache
-└── docs/superpowers/          # spec + plan（仅保留最新）
 ```
 
 ## 最近操作
-- 2026-05-28：昵称字典后端迁移+编辑功能 — 新增 `overrides.go` 持久化覆盖层 + `PlayerCatalog`（95 选手）+ 3 个 REST API（`GET/PUT /api/nicknames*`）+ 前端 `useNicknames` hook + TeamDetail/PlayerDetail 内联编辑，删除 `frontend/src/data/nicknames.ts`，4 任务全部完成
+- 2026-05-28：代码深度收敛 — 删 10 个文件（.clinerules-* ×5 + frontend/hltv-mcp + docs/superpowers/ ×4）、合并 shared.go/transport.go 薄包装、删除 SummaryMode/Raw 死代码路径、删除 3 个未用错误码、删除 7 个未使用查询字段，源文件 43→40 个
+- 2026-05-28：昵称字典后端迁移+编辑功能 — 新增 `overrides.go` 持久化覆盖层 + `PlayerCatalog`（95 选手）+ 3 个 REST API（`GET/PUT /api/nicknames*`）+ 前端 `useNicknames` hook + TeamDetail/PlayerDetail 内联编辑，删除 `frontend/src/data/nicknames.ts`
 - 2026-05-28：CI/CD 与文档完善 — GitHub Actions 自动构建推送 GHCR、添加 MIT 许可证、修正 GHCR 镜像路径、Docker 部署示例按平台汇总
 - 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、选手简称补全至 98 名
 - 2026-05-28：修复新闻"在 HLTV 阅读原文"链接 — NewsDetail link 相对路径缺少 https://www.hltv.org 前缀
-- 2026-05-28：代码瘦身收敛 — 删 dead types、删 helpers.go 薄包装层、删未用函数、前端复用共享 Modal，净减 ~810 行
 
 ## 进行中
 - 无
