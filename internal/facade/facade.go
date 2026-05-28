@@ -119,63 +119,27 @@ func (f *HltvFacade) GetTeamDetailCached(ctx context.Context, id int, slug strin
 		// Fetch recent matches via standard results/matches pages, filter by team name
 		if td.Profile.Name != "" {
 			name := td.Profile.Name
-			var matches []types.NormalizedMatch
-
-			// Paginate through results to find team matches (up to 3 pages)
-			for offset := 0; offset < 300 && len(matches) < 10; offset += 100 {
-				resultDoc, err := f.rs.GetResultsOffset(ctx, offset)
-				if err != nil {
-					break
-				}
-				pageResults := normalizer.NormalizeMatches(resultDoc, name)
-				for _, m := range pageResults {
-					if m.Team1 == name || m.Team2 == name || m.Opponent == name {
-						matches = append(matches, m)
-					}
-				}
-			}
-
 			if upcomingDoc, err := f.ms.GetUpcoming(ctx); err == nil {
 				allUpcoming := normalizer.NormalizeUpcomingMatches(upcomingDoc, name)
 				for _, m := range allUpcoming {
 					if m.Team1 == name || m.Team2 == name || m.Opponent == name {
-						matches = append(matches, m)
+						td.RecentMatches = append(td.RecentMatches, m)
 					}
 				}
 			}
-			normalizer.SortByPlayedAtDesc(matches)
-			if len(matches) > 10 {
-				matches = matches[:10]
-			}
-			td.RecentMatches = matches
-			// Compute stats from recent matches
-			for _, m := range matches {
-				switch m.Result {
-				case types.OutcomeWin:
+		}
+		// Compute W/L/D + win rate from highlights (team page data)
+		if td.Highlights != nil {
+			for _, m := range td.Highlights.RecentMatches {
+				if m.Result == "won" {
 					td.Stats.Wins++
-				case types.OutcomeLoss:
+				} else {
 					td.Stats.Losses++
-				case types.OutcomeDraw:
-					td.Stats.Draws++
 				}
 			}
 			total := td.Stats.Wins + td.Stats.Losses + td.Stats.Draws
 			if total > 0 {
 				td.Stats.WinRate = fmt.Sprintf("%.0f%%", float64(td.Stats.Wins)/float64(total)*100)
-			}
-			// Recent form string (last 5)
-			for i, m := range matches {
-				if i >= 5 {
-					break
-				}
-				switch m.Result {
-				case types.OutcomeWin:
-					td.Stats.RecentForm += "W"
-				case types.OutcomeLoss:
-					td.Stats.RecentForm += "L"
-				case types.OutcomeDraw:
-					td.Stats.RecentForm += "D"
-				}
 			}
 		}
 	f.cache.Set(key, td, f.cfg.CacheTTLPlayerDetail) // reuse 7d TTL

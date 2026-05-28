@@ -296,6 +296,17 @@ type PlayerRecentMatch struct {
 }
 
 // TeamDetail is the full team profile scraped from HLTV team page
+type TeamHighlightMatch struct {
+	Opponent string `json:"opponent"`
+	Result   string `json:"result"` // "won" or "lost"
+}
+
+type TeamHighlights struct {
+	WinRate       string               `json:"win_rate"`
+	WinStreak     int                  `json:"win_streak"`
+	RecentMatches []TeamHighlightMatch `json:"recent_matches"`
+}
+
 type TeamDetail struct {
 	Profile       TeamDetailProfile  `json:"profile"`
 	Ranking       TeamRanking        `json:"ranking"`
@@ -303,6 +314,7 @@ type TeamDetail struct {
 	Achievements  []TeamAchievement  `json:"achievements"`
 	Roster        []TeamRosterPlayer `json:"roster"`
 	RecentMatches []NormalizedMatch  `json:"recent_matches"`
+	Highlights    *TeamHighlights    `json:"highlights,omitempty"`
 }
 
 // TeamDetailProfile holds basic team identity

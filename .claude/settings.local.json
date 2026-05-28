@@ -65,7 +65,15 @@
       "Bash(kill 54395)",
       "Bash(kill 55694)",
       "Bash(npm run *)",
-      "Bash(python3 -m http.server 8090)"
+      "Bash(python3 -m http.server 8090)",
+      "Bash(pkill -f \"go run\")",
+      "Bash(nohup go run .)",
+      "Bash(echo \"server pid=$!\")",
+      "Bash(go run *)",
+      "Bash(disown)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://172.21.32.31:8082/)",
+      "Bash(npm *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\)['data']; print\\('Keys:', list\\(d.keys\\(\\)\\)\\); print\\('Has highlights:', 'highlights' in d\\); print\\('hl value:', d.get\\('highlights'\\)\\)\")"
     ]
   }
 }

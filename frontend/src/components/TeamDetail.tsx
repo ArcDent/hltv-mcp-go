@@ -10,6 +10,7 @@ type TeamData = {
   achievements?: { label: string; count: number; tier: string }[]
   roster?: { id: number; name: string; slug: string; rating: number; country?: string }[]
   recent_matches?: { team1?: string; team2?: string; opponent?: string; score?: string; result: string; event?: string; played_at?: string; scheduled_at?: string; map_text?: string; best_of?: string }[]
+  highlights?: { win_rate: string; win_streak: number; recent_matches?: { opponent: string; result: string }[] }
 }
 
 export default function TeamDetail({ id, onClose }: { id: number; onClose: () => void }) {
@@ -30,6 +31,7 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
   const achievements = data?.achievements ?? []
   const roster = data?.roster ?? []
   const matches = data?.recent_matches ?? []
+  const hl = data?.highlights
 
   const cnName = teamNicknames[p?.name ?? '']
 
@@ -71,27 +73,24 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
             )}
 
             {/* Stats Bar */}
-            {(stats?.wins !== undefined) && (
-              <div style={{display:'flex',marginBottom:18,border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',overflow:'hidden'}}>
-                <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)'}}>
-                  <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--green)',lineHeight:1}}>{stats!.wins}</div>
-                  <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>胜</div>
-                </div>
-                <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)',borderLeft:'1px solid var(--border)'}}>
-                  <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--red)',lineHeight:1}}>{stats!.losses}</div>
-                  <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>负</div>
-                </div>
-                <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)',borderLeft:'1px solid var(--border)'}}>
-                  <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--text)',lineHeight:1}}>{stats!.draws}</div>
-                  <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>平</div>
-                </div>
-                <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)',borderLeft:'1px solid var(--border)'}}>
-                  <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--text)',lineHeight:1}}>{stats!.win_rate || '—'}</div>
-                  <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>胜率</div>
-                  {stats!.recent_form && <div style={{fontFamily:'var(--font-mono)',fontSize:10,color:'var(--gold)',marginTop:2}}>近5场 {stats!.recent_form}</div>}
-                </div>
+            <div style={{display:'flex',marginBottom:18,border:'1px solid var(--border)',borderRadius:'var(--radius-sm)',overflow:'hidden'}}>
+              <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)'}}>
+                <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--green)',lineHeight:1}}>{stats?.wins ?? 0}</div>
+                <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>胜</div>
               </div>
-            )}
+              <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)',borderLeft:'1px solid var(--border)'}}>
+                <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--red)',lineHeight:1}}>{stats?.losses ?? 0}</div>
+                <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>负</div>
+              </div>
+              <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)',borderLeft:'1px solid var(--border)'}}>
+                <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--text)',lineHeight:1}}>{hl?.win_rate || stats?.win_rate || '—'}</div>
+                <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>胜率</div>
+              </div>
+              <div style={{flex:1,textAlign:'center',padding:'10px 6px',background:'var(--input-bg)',borderLeft:'1px solid var(--border)'}}>
+                <div style={{fontFamily:'var(--font-display)',fontSize:22,fontWeight:700,color:'var(--gold)',lineHeight:1}}>{hl?.win_streak ?? '—'}</div>
+                <div style={{fontSize:10,color:'var(--text-muted)',marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>连胜</div>
+              </div>
+            </div>
 
             {/* Achievements */}
             {achievements.length > 0 && (
@@ -111,29 +110,21 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
             {/* Two columns: recent matches + roster */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}}>
 
-              {/* Left: Recent 10 matches */}
+              {/* Left: Recent matches from highlights */}
               <div>
                 <div style={{fontFamily:'var(--font-display)',fontSize:14,fontWeight:600,color:'var(--gold)',letterSpacing:'0.05em',textTransform:'uppercase',marginBottom:10,paddingBottom:6,borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'space-between'}}>
                   近期战绩
-                  <span style={{fontSize:11,fontWeight:400,color:'var(--text-muted)',fontFamily:'var(--font-body)',textTransform:'none',letterSpacing:0}}>{matches.length} 场</span>
+                  <span style={{fontSize:11,fontWeight:400,color:'var(--text-muted)',fontFamily:'var(--font-body)',textTransform:'none',letterSpacing:0}}>{(hl?.recent_matches || matches).length} 场</span>
                 </div>
-                {matches.length === 0 && <div style={{fontSize:12,color:'var(--text-muted)',textAlign:'center',padding:'20px 0'}}>暂无数据</div>}
-                {matches.map((m, i) => (
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 0',borderBottom:i<matches.length-1?'1px solid rgba(128,128,128,0.06)':'none',fontSize:12}}>
+                {(hl?.recent_matches?.length || 0) === 0 && matches.length === 0 && <div style={{fontSize:12,color:'var(--text-muted)',textAlign:'center',padding:'20px 0'}}>暂无数据</div>}
+                {(hl?.recent_matches || matches).map((m: any, i: number) => (
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 0',borderBottom:i<(hl?.recent_matches || matches).length-1?'1px solid rgba(128,128,128,0.06)':'none',fontSize:12}}>
                     <span style={{minWidth:26,textAlign:'center',fontSize:10,fontWeight:700,fontFamily:'var(--font-mono)',padding:'2px 0',borderRadius:3,
-                      color:m.result==='win'?'var(--green)':m.result==='loss'?'var(--red)':'var(--text-muted)',
-                      background:m.result==='win'?'rgba(0,200,83,0.1)':m.result==='loss'?'rgba(255,82,82,0.1)':'var(--input-bg)'}}>
-                      {m.result==='win'?'W':m.result==='loss'?'L':'—'}
+                      color:m.result==='won'||m.result==='win'?'var(--green)':m.result==='lost'||m.result==='loss'?'var(--red)':'var(--text-muted)',
+                      background:m.result==='won'||m.result==='win'?'rgba(0,200,83,0.1)':m.result==='lost'||m.result==='loss'?'rgba(255,82,82,0.1)':'var(--input-bg)'}}>
+                      {m.result==='won'||m.result==='win'?'W':m.result==='lost'||m.result==='loss'?'L':'—'}
                     </span>
-                    <span style={{flex:1}}>
-                      <b style={{fontWeight:600}}>{p.name}</b>
-                      {m.score ? (
-                        <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',margin:'0 6px'}}>{m.score}</span>
-                      ) : (
-                        <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-muted)',margin:'0 6px'}}>vs</span>
-                      )}
-                      <span style={{fontWeight:600}}>{m.opponent || m.team2 || '待定'}</span>
-                    </span>
+                    <span style={{flex:1}}><b style={{fontWeight:600}}>{p.name}</b><span style={{margin:'0 6px',color:'var(--text-muted)'}}>vs</span><span style={{fontWeight:600}}>{m.opponent || m.team2 || '待定'}</span></span>
                     <span style={{fontSize:10,color:'var(--text-muted)',maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.event || ''}</span>
                     <span style={{fontSize:10,color:'var(--text-muted)',minWidth:48,textAlign:'right'}}>{(m.played_at || m.scheduled_at || '').slice(5,10)}</span>
                   </div>

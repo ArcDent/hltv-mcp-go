@@ -79,6 +79,10 @@ func NormalizeTeamDetail(doc *goquery.Document) types.TeamDetail {
 		})
 	})
 
+	// Highlights: win rate, win streak, last 5 matches from team page
+	hl := NormalizeTeamHighlights(doc)
+	td.Highlights = &hl
+
 	// Roster: extract only from the current lineup grid (.bodyshot-team)
 	seenIDs := make(map[int]bool)
 	doc.Find(".bodyshot-team a[href*='/player/']").Each(func(_ int, s *goquery.Selection) {
@@ -111,4 +115,54 @@ func NormalizeTeamDetail(doc *goquery.Document) types.TeamDetail {
 	})
 
 	return td
+}
+
+// NormalizeTeamHighlights extracts win rate, win streak, and last 5 matches from team page
+func NormalizeTeamHighlights(doc *goquery.Document) types.TeamHighlights {
+	h := types.TeamHighlights{}
+
+	doc.Find(".highlighted-stat").Each(func(_ int, s *goquery.Selection) {
+		text := cleanText(s.Text())
+		lower := strings.ToLower(text)
+		if strings.Contains(lower, "win rate") && strings.Contains(lower, "%") {
+			// Text is like "76.2% Win rate Last 3 months"
+			parts := strings.Fields(text)
+			if len(parts) > 0 && strings.HasSuffix(parts[0], "%") {
+				h.WinRate = parts[0]
+			}
+		}
+		if strings.Contains(lower, "current win streak") || strings.Contains(lower, "win streak") {
+			// Text is like "6 Current win streak"
+			parts := strings.Fields(text)
+			if len(parts) > 0 {
+				if streak, err := strconv.Atoi(parts[0]); err == nil {
+					h.WinStreak = streak
+				}
+			}
+		}
+	})
+
+	// Last 5 matches: opponent links + match-status are siblings in .last-5-matches
+	doc.Find(".last-5-matches").Each(func(_ int, box *goquery.Selection) {
+		var lastOpponent string
+		box.Find("*").Each(func(_ int, child *goquery.Selection) {
+			class, _ := child.Attr("class")
+			if strings.Contains(class, "highlighted-team-name") && strings.Contains(class, "text-ellipsis") {
+				lastOpponent = cleanText(child.Text())
+			}
+			if lastOpponent != "" && strings.Contains(class, "highlighted-match-status") {
+				result := "lost"
+				if strings.Contains(class, "match-won") {
+					result = "won"
+				}
+				h.RecentMatches = append(h.RecentMatches, types.TeamHighlightMatch{
+					Opponent: lastOpponent,
+					Result:   result,
+				})
+				lastOpponent = ""
+			}
+		})
+	})
+
+	return h
 }
