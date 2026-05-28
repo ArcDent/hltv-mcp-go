@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"sync"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -14,39 +15,46 @@ import (
 )
 
 var aesKey []byte
+var initOnce sync.Once
 
 const keyFilePath = "data/.encryption_key"
 
 // InitKey loads or generates the encryption passphrase, derives a 32-byte AES key,
 // and stores it in the package-level aesKey variable. Must be called once at startup.
 func InitKey() error {
-	// 1. ENCRYPTION_KEY env var
-	if key := os.Getenv("ENCRYPTION_KEY"); key != "" {
-		h := sha256.Sum256([]byte(key))
+	var initErr error
+	initOnce.Do(func() {
+		// 1. ENCRYPTION_KEY env var
+		if key := os.Getenv("ENCRYPTION_KEY"); key != "" {
+			h := sha256.Sum256([]byte(key))
+			aesKey = h[:]
+			return
+		}
+		// 2. data/.encryption_key file
+		if data, err := os.ReadFile(keyFilePath); err == nil {
+			h := sha256.Sum256(data)
+			aesKey = h[:]
+			return
+		}
+		// 3. Auto-generate
+		randomBytes := make([]byte, 32)
+		if _, err := rand.Read(randomBytes); err != nil {
+			initErr = fmt.Errorf("generate encryption key: %w", err)
+			return
+		}
+		passphrase := hex.EncodeToString(randomBytes)
+		if err := os.MkdirAll(filepath.Dir(keyFilePath), 0700); err != nil {
+			initErr = fmt.Errorf("create data dir: %w", err)
+			return
+		}
+		if err := os.WriteFile(keyFilePath, []byte(passphrase), 0600); err != nil {
+			initErr = fmt.Errorf("write .encryption_key: %w", err)
+			return
+		}
+		h := sha256.Sum256([]byte(passphrase))
 		aesKey = h[:]
-		return nil
-	}
-	// 2. data/.encryption_key file
-	if data, err := os.ReadFile(keyFilePath); err == nil {
-		h := sha256.Sum256(data)
-		aesKey = h[:]
-		return nil
-	}
-	// 3. Auto-generate
-	randomBytes := make([]byte, 32)
-	if _, err := rand.Read(randomBytes); err != nil {
-		return fmt.Errorf("generate encryption key: %w", err)
-	}
-	passphrase := hex.EncodeToString(randomBytes)
-	if err := os.MkdirAll(filepath.Dir(keyFilePath), 0700); err != nil {
-		return fmt.Errorf("create data dir: %w", err)
-	}
-	if err := os.WriteFile(keyFilePath, []byte(passphrase), 0600); err != nil {
-		return fmt.Errorf("write .encryption_key: %w", err)
-	}
-	h := sha256.Sum256([]byte(passphrase))
-	aesKey = h[:]
-	return nil
+	})
+	return initErr
 }
 
 // Encrypt encrypts plaintext with AES-256-GCM and returns base64(iv + ciphertext + tag).
