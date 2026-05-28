@@ -19,9 +19,12 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o hltv-mcp github.com/arcdent/hltv-
 # Stage 3: Runtime
 # chromedp/headless-shell provides a headless Chrome instance for chromedp
 FROM chromedp/headless-shell:latest
+WORKDIR /
+RUN mkdir -p /data
 COPY --from=builder /app/hltv-mcp /hltv-mcp
 EXPOSE 8082
 ENV HTTP_PORT=8082
 ENV HTTP_HOST=0.0.0.0
 ENV HLTV_CHROME_PATH=/headless-shell/headless-shell
+VOLUME ["/data"]
 ENTRYPOINT ["/hltv-mcp"]
