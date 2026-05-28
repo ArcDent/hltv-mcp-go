@@ -160,6 +160,9 @@ docker run -d --name hltv-mcp \
   -p 8082:8082 \
   -v hltv-chrome-data:/tmp \
   ghcr.io/arcdent/hltv-data:latest
+
+# 方式三：docker compose（GHCR 预构建镜像 + 自动拉取）
+docker compose -f docker-compose.ghcr.yml up -d
 ```
 
 #### Windows（PowerShell）
@@ -178,6 +181,9 @@ docker run -d --name hltv-mcp `
   -p 8082:8082 `
   -v hltv-chrome-data:/tmp `
   ghcr.io/arcdent/hltv-data:latest
+
+# 方式三：docker compose（GHCR 预构建镜像 + 自动拉取）
+docker compose -f docker-compose.ghcr.yml up -d
 ```
 
 > **注意**：Windows CMD 不支持 `\` 或 `` ` `` 续行，直接写一行即可。
@@ -189,23 +195,33 @@ docker run -d --name hltv-mcp `
 Docker 部署后 MCP 通过 stdio 不可用（容器隔离），如需 MCP 功能请使用直接编译方式。
 仅 Web 面板和 REST API 走 Docker，MCP 功能需单独在本地编译启动。
 
-### 预构建镜像与自动同步（GHCR + Watchtower）
+### 预构建镜像与自动同步
 
-每次 push 到 main 分支，GitHub Actions 自动构建镜像并推送到 GHCR。服务器端用 Watchtower 自动拉取更新，无需手动重建。
+每次 push 到 main 分支，GitHub Actions 自动构建镜像并推送到 GHCR。
+推荐使用 `docker compose` + 系统计划任务实现自动同步（不依赖第三方容器）。
 
-#### 自动同步
+#### 自动同步配置
+
+使用 `docker-compose.ghcr.yml`（项目内置），已配置 `pull_policy: always`：
+
+**Linux（crontab）**
 
 ```bash
-# Watchtower 每 5 分钟轮询一次，检测到新镜像自动重启容器
-docker run -d --name watchtower \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  containrrr/watchtower \
-  hltv-mcp --interval 300
+# 每 5 分钟检查更新，有则拉取重建
+*/5 * * * * cd /path/to/HLTV-data && docker compose -f docker-compose.ghcr.yml up -d --pull always
 ```
 
-推送代码后流程：`git push` → GitHub Actions 构建镜像推送到 GHCR → Watchtower 检测新镜像 → 自动拉取并重启容器。
+**Windows（PowerShell 计划任务，以管理员运行）**
 
-> **注意**：GHCR 镜像默认私有，需在 GitHub Settings → Packages 中改为 Public，或在服务器上用 Personal Access Token 登录：`echo $GITHUB_TOKEN | docker login ghcr.io -u <username> --password-stdin`
+```powershell
+$action = New-ScheduledTaskAction -Execute "docker" -Argument "compose -f D:\ArcSysFiles\HLTV-data\docker-compose.ghcr.yml up -d --pull always"
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
+Register-ScheduledTask -TaskName "HLTV-Auto-Update" -Action $action -Trigger $trigger -RunLevel Highest
+```
+
+推送代码后流程：`git push` → GitHub Actions 构建镜像推送到 GHCR → 计划任务执行 `compose up --pull always` → 有新镜像则自动拉取重建。
+
+> **注意**：GHCR 镜像默认私有，需先在 GitHub Package Settings 中改为 Public，或用 Personal Access Token 登录：`echo $GITHUB_TOKEN | docker login ghcr.io -u <username> --password-stdin`
 
 ## 用法示例
 
