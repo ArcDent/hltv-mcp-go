@@ -15,7 +15,7 @@ type overridesStore struct {
 
 var ov = &overridesStore{}
 
-const overridesFile = "data/nicknames.json"
+var overridesFile = "data/nicknames.json"
 
 type overridesData struct {
 	Teams   map[string]string `json:"teams"`
@@ -25,11 +25,14 @@ type overridesData struct {
 func InitOverrides() error {
 	data, err := os.ReadFile(overridesFile)
 	if err != nil {
-		ov.mu.Lock()
-		ov.teams = make(map[string]string)
-		ov.players = make(map[string]string)
-		ov.mu.Unlock()
-		return nil
+		if os.IsNotExist(err) {
+			ov.mu.Lock()
+			ov.teams = make(map[string]string)
+			ov.players = make(map[string]string)
+			ov.mu.Unlock()
+			return nil
+		}
+		return err
 	}
 	var d overridesData
 	if err := json.Unmarshal(data, &d); err != nil {
@@ -49,9 +52,7 @@ func InitOverrides() error {
 }
 
 func saveOverrides() error {
-	ov.mu.RLock()
 	d := overridesData{Teams: ov.teams, Players: ov.players}
-	ov.mu.RUnlock()
 	data, err := json.MarshalIndent(d, "", "  ")
 	if err != nil {
 		return err
@@ -76,22 +77,22 @@ func GetPlayerOverride(name string) string {
 
 func SetTeamOverride(name, nickname string) error {
 	ov.mu.Lock()
+	defer ov.mu.Unlock()
 	if nickname == "" {
 		delete(ov.teams, name)
 	} else {
 		ov.teams[name] = nickname
 	}
-	ov.mu.Unlock()
 	return saveOverrides()
 }
 
 func SetPlayerOverride(name, nickname string) error {
 	ov.mu.Lock()
+	defer ov.mu.Unlock()
 	if nickname == "" {
 		delete(ov.players, name)
 	} else {
 		ov.players[name] = nickname
 	}
-	ov.mu.Unlock()
 	return saveOverrides()
 }

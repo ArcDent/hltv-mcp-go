@@ -2,11 +2,22 @@ package localization
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "nicknames-test")
+	if err != nil {
+		os.Exit(1)
+	}
+	overridesFile = filepath.Join(dir, "nicknames.json")
+	code := m.Run()
+	os.RemoveAll(dir)
+	os.Exit(code)
+}
+
 func TestInitOverrides_NoFile(t *testing.T) {
-	os.Remove("../../data/nicknames.json")
 	if err := InitOverrides(); err != nil {
 		t.Fatalf("InitOverrides: %v", err)
 	}
@@ -19,7 +30,6 @@ func TestInitOverrides_NoFile(t *testing.T) {
 }
 
 func TestSetAndGetTeamOverride(t *testing.T) {
-	os.Remove("../../data/nicknames.json")
 	InitOverrides()
 
 	if err := SetTeamOverride("Vitality", "蜜蜂"); err != nil {
@@ -31,7 +41,6 @@ func TestSetAndGetTeamOverride(t *testing.T) {
 }
 
 func TestSetAndGetPlayerOverride(t *testing.T) {
-	os.Remove("../../data/nicknames.json")
 	InitOverrides()
 
 	if err := SetPlayerOverride("donk", "小驴"); err != nil {
@@ -43,7 +52,6 @@ func TestSetAndGetPlayerOverride(t *testing.T) {
 }
 
 func TestDeleteOverride_EmptyNickname(t *testing.T) {
-	os.Remove("../../data/nicknames.json")
 	InitOverrides()
 	SetTeamOverride("Vitality", "蜜蜂")
 
@@ -56,7 +64,6 @@ func TestDeleteOverride_EmptyNickname(t *testing.T) {
 }
 
 func TestOverridePersistence(t *testing.T) {
-	os.Remove("../../data/nicknames.json")
 	InitOverrides()
 	SetTeamOverride("Vitality", "蜜蜂")
 
@@ -66,11 +73,9 @@ func TestOverridePersistence(t *testing.T) {
 	if n := GetTeamOverride("Vitality"); n != "蜜蜂" {
 		t.Errorf("persistence failed, got %q", n)
 	}
-	os.Remove("../../data/nicknames.json")
 }
 
 func TestConcurrentReadWrite(t *testing.T) {
-	os.Remove("../../data/nicknames.json")
 	InitOverrides()
 	SetTeamOverride("Vitality", "test")
 
@@ -93,5 +98,8 @@ func TestConcurrentReadWrite(t *testing.T) {
 	for i := 0; i < 11; i++ {
 		<-done
 	}
-	os.Remove("../../data/nicknames.json")
+
+	if n := GetTeamOverride("Vitality"); n != "test" {
+		t.Errorf("expected 'test' after concurrent writes, got %q", n)
+	}
 }
