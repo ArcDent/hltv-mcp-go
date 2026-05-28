@@ -37,7 +37,8 @@
 ```
 
 ## 最近操作
-- 2026-05-28：前端彻底重构 — 提取共享 Modal 组件（消除 6 文件重复弹窗代码）、共享 nicknames 字典（消除 3 文件 68 行重复）、清理 api client 4 个死方法、队伍详情左对齐 + 赛程弹窗居中、构建净减 31 行
+- 2026-05-28：队伍详情高亮数据重做 — 从队伍页直接抓取胜率/连胜/最近5场（`.highlighted-stat`），替代不可靠的 results 翻页方案
+- 2026-05-28：前端彻底重构 — 提取共享 Modal 组件（消除 6 文件重复）、共享 nicknames 字典（消除 68 行重复）、清理 api client 4 个死方法、队伍详情左对齐 + 赛程弹窗居中
 - 2026-05-28：赛程日期 & UI 修复（5 backend commits）— results 页日期从 `.results-sublist > .standard-headline` 正则提取（"Results for May 28th 2026" → YYYY-MM-DD）；matches 页日期从 `.matches-list-headline` 兄弟遍历提取；队伍近期比赛翻页 offset 0/100/200；赛程卡片 MM/DD + 弹窗日期始终显示 + 右侧仅 BO3
 - 2026-05-28：三项 bug 修复 — 队伍详情 CSS 选择器重写（h1.profile-team-name / .value.h-rank / .bodyshot-team a / .trophyDescription）、近期战绩改用标准 results+upcoming API 按队名过滤、新闻正文仅提取 <p> 标签、赛程时间显示 >24h 带日期、冗余代码清理
 - 2026-05-27：Chrome DevTools 全功能验证 — 占位符翻译 winner→胜者、BO1 归一化 0:1、缓存统计真实递增（6条目/3命中/7未命中）、选手详情缓存均已确认正常；发现 Windows localhost 端口转发会缓存旧响应，需用 WSL IP 直连
