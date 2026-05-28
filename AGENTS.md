@@ -7,6 +7,7 @@
 - 灵感来源：[hltv-api](https://github.com/M3MONs/hltv-api)（Python Flask/Scrapy HLTV 爬虫 API）
 - 前端参考：[person-summon](https://github.com/arcdent/person-summon)（暗/亮双主题 CSS 变量体系 + Space Grotesk + 噪声纹理）
 - 远端仓库：[ArcDent/HLTV-data](https://github.com/ArcDent/HLTV-data)
+- 许可证：MIT
 
 ## 项目静态结构
 ```
