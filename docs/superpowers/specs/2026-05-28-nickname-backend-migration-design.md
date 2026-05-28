@@ -33,6 +33,8 @@ data/nicknames.json
 - 新增 `TeamNickname(name string) string`：先查 overrides，miss 回退 `TeamCatalog.Colloquial`
 - 新增 `PlayerNickname(name string) string`：先查 overrides，miss 回退 `PlayerCatalog`
 - 新增 `BuildFullDict() (teams, players map[string]string)`：合并默认+覆盖，返回完整字典供 API 使用
+  - teams 的 key 展开所有 variants（Canonical + Display + Aliases + Colloquial），保证前端用 HLTV 原始队名直接 lookup 不 miss
+  - players 的 key 为选手游戏 ID（Canonical）
 
 ### API
 
@@ -42,9 +44,9 @@ data/nicknames.json
 | `PUT` | `/api/nicknames/team` | `{ name, nickname }` 保存覆盖，空 nickname 删除覆盖 |
 | `PUT` | `/api/nicknames/player` | `{ name, nickname }` 保存覆盖，空 nickname 删除覆盖 |
 
-错误响应：
-- 400：`name` 不在默认 catalog 中（"team/player not found in catalog"）
-- 400：JSON 格式无效
+PUT 校验规则：
+- 队伍：接受所有 variants（Canonical/Aliases/Display），内部用 `LookupTeam(name)` 解析到 Canonical 再存储覆盖；无法解析返回 400 "team not found in catalog"
+- 选手：不校验 catalog 是否存在，允许给任意合法名称添加昵称（开放模式）
 
 ### 启动流程
 
@@ -87,5 +89,5 @@ main.go → crypto.InitKey() → handlers.MigrateConfig() → localization.InitO
 - **删除昵称**：传空 nickname 字符串，删除 override 条目，回退默认值
 - **首次启动无文件**：静默跳过，内存 map 为空，全部回退默认值
 - **并发写**：`sync.RWMutex` 保护，刷盘在持锁内完成
-- **PUT 未识别的 name**：返回 400 "not found in catalog"
+- **PUT 队伍名无法解析**：返回 400 "team not found in catalog"；选手不校验，允许新增
 - **API 失败**：前端保留旧缓存值，console.error 记录
