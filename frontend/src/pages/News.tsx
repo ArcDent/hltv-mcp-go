@@ -22,7 +22,7 @@ function hashTitle(t: string) {
 export default function News() {
   const [tab, setTab] = useState<Tab>('realtime')
   const [data, setData] = useState<any>(null)
-  const { cfg, realKey, save, open, setOpen, saveCount } = useTranslateConfig()
+  const { cfg, save, open, setOpen, saveCount } = useTranslateConfig()
   const [translations, setTranslations] = useState<Record<string, string>>({})
   const [translating, setTranslating] = useState<Set<string>>(new Set())
   const [selectedNewsUrl, setSelectedNewsUrl] = useState<string | null>(null)
@@ -61,22 +61,15 @@ export default function News() {
         active++
         setTranslating(prev => new Set(prev).add(title))
         try {
-          const res = await fetch(`${cfg!.provider_url}/chat/completions`, {
+          const res = await fetch('/api/translate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${realKey}` },
-            body: JSON.stringify({
-              model: cfg!.model,
-              messages: [
-                { role: 'system', content: '将以下CS电竞新闻标题翻译为简体中文，只输出翻译结果，不要任何解释' },
-                { role: 'user', content: title },
-              ],
-              temperature: 0.1,
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: title, type: 'title' }),
           })
           const body = await res.text()
           if (!res.ok) { console.error('translate API error', res.status, body); throw new Error(body) }
           const j = JSON.parse(body)
-          const zh = (j?.choices?.[0]?.message?.content as string)?.trim() ?? ''
+          const zh = j?.translated ?? ''
           if (zh) {
             cache[hashTitle(title)] = { zh, ts: Date.now() }
             saveCache(cache)
