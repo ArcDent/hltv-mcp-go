@@ -42,25 +42,3 @@ func FormatEventDisplay(name string) string {
 	return name
 }
 
-func ExpandEventAliases(name string) []string {
-	if e := LookupEvent(name); e != nil {
-		return dedup(append([]string{e.Canonical, e.Official, e.Colloquial}, e.Aliases...))
-	}
-	if name == "" {
-		return nil
-	}
-	return []string{name}
-}
-
-func MatchEventName(source, query string) bool {
-	sAliases := ExpandEventAliases(source)
-	qAliases := ExpandEventAliases(query)
-	for _, sa := range sAliases {
-		for _, qa := range qAliases {
-			if strings.EqualFold(sa, qa) {
-				return true
-			}
-		}
-	}
-	return false
-}

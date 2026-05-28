@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/cache"
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/config"
@@ -59,11 +58,6 @@ func (f *HltvFacade) createMeta(ttlSec int) types.ToolMeta {
 
 // withCache checks cache, then computes and caches the result
 func (f *HltvFacade) ClientIsChromeAvailable() bool { return f.client.IsChromeAvailable() }
-
-func (f *HltvFacade) ScrapePlayerDetail(ctx context.Context, id int, slug string) (*goquery.Document, error) {
-	if slug == "" { slug = fmt.Sprintf("player-%d", id) }
-	return f.ps.GetPlayer(ctx, id, slug)
-}
 
 // GetPlayerDetailCached returns cached player detail, or scrapes via chromedp and caches for 7 days
 func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {

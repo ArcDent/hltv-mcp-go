@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/arcdent/hltv-mcp/internal/errors"
+	"github.com/arcdent/hltv-mcp/internal/normalizer"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
@@ -91,14 +92,40 @@ func (f *HltvFacade) GetTeamRecent(query types.TeamRecentQuery) *types.ToolRespo
 		if err != nil {
 			return nil, err
 		}
-		profile := normalizeTeamProfile(doc, team)
+		profile := normalizer.NormalizeTeamProfile(doc, team)
 
 		matchDoc, err := f.ts.GetTeamMatches(context.Background(), team.ID)
 		if err != nil {
 			return nil, err
 		}
-		matchList := normalizeMatches(matchDoc, profile.Name)
-		return buildTeamRecentResponse(q, query, ttl, f, profile, matchList, team)
+		matchList := normalizer.NormalizeMatches(matchDoc, profile.Name)
+			recent, upcoming := normalizer.SplitTeamMatches(matchList)
+			normalizer.SortByPlayedAtDesc(recent)
+			normalizer.SortByScheduledAtAsc(upcoming)
+			if query.Limit > 0 && len(recent) > query.Limit {
+				recent = recent[:query.Limit]
+			}
+			if query.Limit > 0 && len(upcoming) > query.Limit {
+				upcoming = upcoming[:query.Limit]
+			}
+			wins, losses, draws := 0, 0, 0
+			for _, m := range recent {
+				switch m.Result {
+				case types.OutcomeWin: wins++
+				case types.OutcomeLoss: losses++
+				case types.OutcomeDraw: draws++
+				}
+			}
+			record := fmt.Sprintf("%dW-%dL", wins, losses)
+			if draws > 0 { record += fmt.Sprintf("-%dD", draws) }
+			data := types.TeamRecentData{
+				Profile: profile, RecentResults: recent, UpcomingMatches: upcoming,
+				SummaryStats: types.TeamSummaryStats{
+					Wins: wins, Losses: losses, Draws: draws, RecentRecord: record,
+				},
+			}
+			meta := f.createMeta(ttl)
+			return &types.ToolResponse{Query: q, Data: data, ResolvedEntity: team, Meta: meta}, nil
 	})
 }
 
@@ -133,21 +160,21 @@ func (f *HltvFacade) GetPlayerRecent(query types.PlayerRecentQuery) *types.ToolR
 		if err != nil {
 			return nil, err
 		}
-		profile := normalizePlayerProfile(doc, player)
+		profile := normalizer.NormalizePlayerProfile(doc, player)
 
 		overviewDoc, err := f.ps.GetPlayerOverview(context.Background(), player.ID, player.Slug)
 		if err != nil {
 			return nil, err
 		}
-		overview := normalizeOverview(overviewDoc)
+		overview := normalizer.NormalizeOverview(overviewDoc)
 
-		recentMatches := normalizeMatches(doc, profile.Name)
-		sortByPlayedAtDesc(recentMatches)
+		recentMatches := normalizer.NormalizeMatches(doc, profile.Name)
+		normalizer.SortByPlayedAtDesc(recentMatches)
 		if query.Limit > 0 && len(recentMatches) > query.Limit {
 			recentMatches = recentMatches[:query.Limit]
 		}
 
-		highlights := collectRecentHighlights(doc)
+		highlights := normalizer.CollectRecentHighlights(doc)
 		if len(highlights) > query.Limit {
 			highlights = highlights[:query.Limit]
 		}
@@ -163,6 +190,3 @@ func (f *HltvFacade) GetPlayerRecent(query types.PlayerRecentQuery) *types.ToolR
 	})
 }
 
-// Delegates to normalizer package equivalents (typed wrappers to avoid import cycle complications)
-// These are thin wrappers that keep facade accessible while normalizer stays pure.
-// In Go we can call them directly since they're all in the same module.

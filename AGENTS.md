@@ -37,9 +37,9 @@
 ```
 
 ## 最近操作
+- 2026-05-28：代码瘦身收敛 — 删 dead types（RawSummary/DetailLevel/Score/Aliases）、删 helpers.go 薄包装层（改为 normalizer 直调）、删 scraper slugify/GetResultsOffset facade ScrapePlayerDetail、删 localization 未用函数（MatchTeamName/MatchEventName/Expand*）、Dashboard/TranslateProvider 复用共享 Modal、删 frontend/README.md 和 analysis-hltv-mcp.md 无关文档
 - 2026-05-28：队伍高亮数据重做 + 前端重构 — 从队伍页直接抓取胜率/连胜/最近5场（`.highlighted-stat` / `.last-5-matches`），替代 results 翻页；提取共享 Modal（消 6 文件重复）+ 共享 nicknames（消 68 行）+ 清理死 API；赛程卡片 MM/DD + 弹窗日期时间
 - 2026-05-28：赛程日期修复（5 commits）— results 日期从 `.results-sublist > .standard-headline` 正则提取；matches 日期从 `.matches-list-headline` 兄弟遍历提取；赛季卡片 MM/DD + 弹窗日期始终显示
-- 2026-05-27：Chrome DevTools 全功能验证 + 中文化 + 选手缓存
 
 ## 进行中
 - 无

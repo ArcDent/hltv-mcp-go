@@ -47,7 +47,6 @@ func (s *PlayerScraper) Search(ctx context.Context, name string) ([]types.Resolv
 		}
 		players = append(players, types.ResolvedPlayer{
 			Type: "player", ID: id, Name: name, Slug: slug,
-			Aliases: []string{name, slug},
 		})
 	})
 	return players, nil

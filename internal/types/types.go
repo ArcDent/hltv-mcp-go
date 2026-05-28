@@ -8,20 +8,16 @@ type ResolvedTeam struct {
 	Slug    string   `json:"slug"`
 	Country string   `json:"country,omitempty"`
 	Rank    int      `json:"rank,omitempty"`
-	Score   float64  `json:"score,omitempty"`
-	Aliases []string `json:"aliases,omitempty"`
 }
 
 // ResolvedPlayer represents a player search result from HLTV
 type ResolvedPlayer struct {
-	Type    string   `json:"type"`
-	ID      int      `json:"id"`
-	Name    string   `json:"name"`
-	Slug    string   `json:"slug"`
-	Team    string   `json:"team,omitempty"`
-	Country string   `json:"country,omitempty"`
-	Score   float64  `json:"score,omitempty"`
-	Aliases []string `json:"aliases,omitempty"`
+	Type    string `json:"type"`
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Slug    string `json:"slug"`
+	Team    string `json:"team,omitempty"`
+	Country string `json:"country,omitempty"`
 }
 
 // TeamProfile represents a team's detail profile
@@ -31,7 +27,6 @@ type TeamProfile struct {
 	Slug       string `json:"slug"`
 	Country    string `json:"country,omitempty"`
 	Rank       int    `json:"rank,omitempty"`
-	RawSummary string `json:"raw_summary,omitempty"`
 }
 
 // PlayerProfile represents a player's detail profile
@@ -40,8 +35,7 @@ type PlayerProfile struct {
 	Name       string `json:"name"`
 	Slug       string `json:"slug"`
 	Team       string `json:"team,omitempty"`
-	Country    string `json:"country,omitempty"`
-	RawSummary string `json:"raw_summary,omitempty"`
+	Country string `json:"country,omitempty"`
 }
 
 // MatchOutcome is the result of a match
@@ -117,15 +111,6 @@ type PlayerRecentData struct {
 	RecentMatches    []NormalizedMatch `json:"recent_matches"`
 	RecentHighlights []string          `json:"recent_highlights"`
 }
-
-// DetailLevel controls output verbosity
-type DetailLevel string
-
-const (
-	DetailBrief    DetailLevel = "brief"
-	DetailStandard DetailLevel = "standard"
-	DetailFull     DetailLevel = "full"
-)
 
 // PaginationMeta carries pagination metadata
 type PaginationMeta struct {

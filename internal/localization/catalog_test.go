@@ -32,8 +32,3 @@ func TestFormatEventDisplay(t *testing.T) {
 	}
 }
 
-func TestMatchTeamName(t *testing.T) {
-	if !MatchTeamName([]string{"Spirit"}, []string{"绿龙"}) {
-		t.Error("expected match")
-	}
-}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Modal from './Modal'
 
 const PRESETS = [
   { label: 'OpenAI',         url: 'https://api.openai.com/v1',        model: 'gpt-4o-mini' },
@@ -41,16 +42,6 @@ export function useTranslateConfig() {
   return { cfg, realKey, save, open, setOpen, saveCount }
 }
 
-const overlay: React.CSSProperties = {
-  position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)',
-  backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-  animation: 'fadeIn 0.2s ease',
-}
-const modal: React.CSSProperties = {
-  background: 'var(--card)', border: '1px solid var(--border)',
-  borderRadius: 'var(--radius)', width: 460, maxWidth: '90vw', padding: 32,
-  boxShadow: '0 20px 60px rgba(0,0,0,0.3)', animation: 'slideUp 0.25s ease',
-}
 const inputS: React.CSSProperties = {
   width: '100%', background: 'var(--input-bg)', border: '1px solid var(--border)',
   borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: 14,
@@ -68,15 +59,9 @@ export function TranslateModal({ cfg, onSave, onClose }: {
   const applyPreset = (p: typeof PRESETS[0]) => { setUrl(p.url); setModel(p.model) }
 
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={modal} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
-            color: 'var(--gold)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>翻译设置</h2>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%',
-            border: '1px solid var(--border)', background: 'var(--card)',
-            color: 'var(--text-secondary)', fontSize: 16, cursor: 'pointer' }}>✕</button>
-        </div>
+    <Modal onClose={onClose} width={460}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
+          color: 'var(--gold)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 20 }}>翻译设置</h2>
 
         <label style={labelS}>API 地址</label>
         <input style={inputS} value={url} onChange={e => setUrl(e.target.value)}
@@ -116,7 +101,6 @@ export function TranslateModal({ cfg, onSave, onClose }: {
             {cfg?.configured ? '● 已配置' : '○ 未配置'}
           </span>
         </div>
-      </div>
-    </div>
+    </Modal>
   )
 }

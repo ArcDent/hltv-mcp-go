@@ -47,7 +47,6 @@ func (s *TeamScraper) Search(ctx context.Context, name string) ([]types.Resolved
 		}
 		teams = append(teams, types.ResolvedTeam{
 			Type: "team", ID: id, Name: name, Slug: slug,
-			Aliases: []string{name, slug},
 		})
 	})
 	return teams, nil

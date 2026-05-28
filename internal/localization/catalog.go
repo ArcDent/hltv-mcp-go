@@ -80,29 +80,3 @@ func FormatTeamDisplay(name string) string {
 	return name
 }
 
-func ExpandTeamAliases(name string) []string {
-	if e := LookupTeam(name); e != nil {
-		return allVariants(e)
-	}
-	if name == "" {
-		return nil
-	}
-	return []string{name}
-}
-
-func MatchTeamName(candidates []string, queryNames []string) bool {
-	for _, c := range candidates {
-		cAliases := ExpandTeamAliases(c)
-		for _, q := range queryNames {
-			qAliases := ExpandTeamAliases(q)
-			for _, ca := range cAliases {
-				for _, qa := range qAliases {
-					if strings.EqualFold(ca, qa) {
-						return true
-					}
-				}
-			}
-		}
-	}
-	return false
-}

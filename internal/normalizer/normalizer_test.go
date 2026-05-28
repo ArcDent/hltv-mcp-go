@@ -9,7 +9,7 @@ import (
 )
 
 func TestNormalizeMatches(t *testing.T) {
-	html := `<div class="result-con"><a class="a-reset" href="/matches/123/foo-vs-bar"><div class="result"><table><tbody><tr><td class="team-cell"><div class="line-align team1"><div class="team">Spirit</div></div></td><td class="result-score">2:1</td><td class="team-cell"><div class="line-align team2"><div class="team">Vitality</div></div></td></tr></tbody></table></div></a></div>`
+	html := `<div class="results-sublist"><div class="standard-headline">Results for May 28th 2026</div><div class="result-con"><a class="a-reset" href="/matches/123/foo-vs-bar"><div class="result"><table><tbody><tr><td class="team-cell"><div class="line-align team1"><div class="team">Spirit</div></div></td><td class="result-score">2:1</td><td class="team-cell"><div class="line-align team2"><div class="team">Vitality</div></div></td></tr></tbody></table></div></a></div></div>`
 	doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html))
 	matches := NormalizeMatches(doc, "")
 	if len(matches) == 0 {
