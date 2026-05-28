@@ -44,7 +44,7 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
               <div style={{flex:1}}>
                 <div style={{fontSize:22,fontWeight:700,color:'var(--text)',lineHeight:1.2}}>{p.name}</div>
                 {p.real_name ? <div style={{fontSize:13,color:'var(--text-muted)'}}>{p.real_name}</div> : <div style={{fontSize:13,color:'var(--text-muted)'}}>暂无</div>}
-                <div style={{marginTop:2,marginBottom:4}}>
+                <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:4,alignItems:'center'}}>
                   {editingNick ? (
                     <input
                       autoFocus
@@ -59,17 +59,14 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
                   ) : (
                     <>
                       {playerNicknames[p.name] ? (
-                        <span style={{padding:'2px 8px',borderRadius:4,fontSize:11,background:'var(--gold-dim)',color:'var(--gold)',fontWeight:600,display:'inline-flex',alignItems:'center',gap:3}}>
+                        <span onClick={() => setEditingNick(true)} style={{padding:'2px 8px',borderRadius:4,fontSize:11,background:'var(--gold-dim)',color:'var(--gold)',fontWeight:600,cursor:'pointer'}} title="点击编辑简称">
                           {playerNicknames[p.name]}
-                          <span onClick={() => setEditingNick(true)} style={{cursor:'pointer',opacity:0.6,fontSize:9}} title="编辑简称">✏️</span>
                         </span>
                       ) : (
                         <span onClick={() => setEditingNick(true)} style={{cursor:'pointer',fontSize:11,color:'var(--text-muted)',opacity:0.5}} title="添加简称">+ 添加简称</span>
                       )}
                     </>
                   )}
-                </div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}>
                   {p.country ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>{p.country}</span> : <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-muted)'}}>未知国籍</span>}
                   {p.age ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>Age {p.age}</span> : null}
                   <span style={{padding:'2px 8px',background: p.team ? 'var(--gold-dim)' : 'var(--input-bg)',borderRadius:4,fontSize:11,color: p.team ? 'var(--gold)' : 'var(--text-muted)',fontWeight: p.team ? 600 : 400}}>{p.team || '暂无队伍'}</span>

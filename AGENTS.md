@@ -37,12 +37,11 @@
 ```
 
 ## 最近操作
+- 2026-05-28：前端别名编辑 UX 改进 — TeamDetail/PlayerDetail 去掉 ✏️ 铅笔图标，改为点击别名文字本身触发编辑；PlayerDetail 的 country/age/team 移至别名同一行显示
 - 2026-05-28：deep convergence round 2 — 删 6 文件（`events.go`、`scraper/news_article.go`、`normalizer/news_article.go`、`localization/data/nicknames.json`、`frontend Teams.tsx/Players.tsx`）；去死代码（`match_command_parse` MCP tool、empty `EventCatalog`、`bytesReader` wrapper、`StartStdio` thin wrapper）；合并前端搜索页；修复 chromedp headless-shell `--headless` flag 冲突；源文件 40→35 个
 - 2026-05-28：修复 Docker 翻译 502 — `chromedp/headless-shell` 基础镜像缺少 `ca-certificates`，Go HTTP 客户端无法完成 TLS 验证；Dockerfile 新增 `apt-get install ca-certificates`；`PostTranslate` 连接错误路径新增 `log.Printf`；`PutTranslateConfig` 遮罩恢复失败时不再静默写入遮罩 key
 - 2026-05-28：代码深度收敛 — 删 10 个文件（.clinerules-* ×5 + frontend/hltv-mcp + docs/superpowers/ ×4）、合并 shared.go/transport.go 薄包装、删除 SummaryMode/Raw 死代码路径、删除 3 个未用错误码、删除 7 个未使用查询字段，源文件 43→40 个
 - 2026-05-28：昵称字典后端迁移+编辑功能 — 新增 `overrides.go` 持久化覆盖层 + `PlayerCatalog`（95 选手）+ 3 个 REST API（`GET/PUT /api/nicknames*`）+ 前端 `useNicknames` hook + TeamDetail/PlayerDetail 内联编辑，删除 `frontend/src/data/nicknames.ts`
-- 2026-05-28：CI/CD 与文档完善 — GitHub Actions 自动构建推送 GHCR、添加 MIT 许可证、修正 GHCR 镜像路径、Docker 部署示例按平台汇总
-- 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、选手简称补全至 98 名
 
 ## 进行中
 - 无

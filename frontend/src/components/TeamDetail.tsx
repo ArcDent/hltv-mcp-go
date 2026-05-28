@@ -68,9 +68,8 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
                       onBlur={e => { saveTeamNickname(p?.name ?? '', e.target.value); setEditingTeamNick(false) }}
                     />
                   ) : (
-                    <span style={{padding:'2px 10px',borderRadius:4,fontSize:11,background:'var(--gold-dim)',color:'var(--gold)',fontWeight:600,display:'inline-flex',alignItems:'center',gap:4}}>
+                    <span onClick={() => setEditingTeamNick(true)} style={{padding:'2px 10px',borderRadius:4,fontSize:11,background:'var(--gold-dim)',color:'var(--gold)',fontWeight:600,cursor:'pointer'}} title="点击编辑简称">
                       {cnName || '无简称'}
-                      <span onClick={() => setEditingTeamNick(true)} style={{cursor:'pointer',opacity:0.6,fontSize:10}} title="编辑简称">✏️</span>
                     </span>
                   )}
                 </div>
@@ -185,13 +184,12 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
                             onClick={e => e.stopPropagation()}
                           />
                         ) : (
-                          <span style={{fontSize:11,color:'var(--text-muted)',marginLeft:4,fontWeight:400}}>
+                          <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{fontSize:11,color:'var(--text-muted)',marginLeft:4,fontWeight:400,cursor:'pointer'}} title="点击编辑简称">
                             {playerNicknames[pl.name]}
-                            <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{cursor:'pointer',opacity:0.4,fontSize:9,marginLeft:2}} title="编辑简称">✏️</span>
                           </span>
                         )
                       ) : (
-                        <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{cursor:'pointer',opacity:0.4,fontSize:9,marginLeft:4}} title="添加简称">+</span>
+                        <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{cursor:'pointer',fontSize:11,color:'var(--text-muted)',marginLeft:4,fontWeight:400}} title="添加简称">+ 添加简称</span>
                       )}
                     </span>
                     {pl.rating > 0 && <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',background:'var(--input-bg)',padding:'2px 7px',borderRadius:4}}>Rating {pl.rating.toFixed(2)}</span>}
