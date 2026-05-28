@@ -129,22 +129,22 @@ export default function Matches() {
               const c1 = nicknames[m.team1 ?? ''] ?? ''
               const c2 = nicknames[m.team2 ?? ''] ?? ''
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '12px 0', borderTop: i > 0 ? '1px solid rgba(128,128,128,0.06)' : 'none', fontSize: 13 }}>
-                  <div style={{ width: 180, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderTop: i > 0 ? '1px solid rgba(128,128,128,0.06)' : 'none', fontSize: 13 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '0.03em', color: 'var(--text)' }}>{m.team1 || '待定'}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', height: 16 }}>{c1}</span>
                   </div>
                   {m.score ? (
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--text)', minWidth: 60, textAlign: 'center' }}>{m.score}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--text)', minWidth: 50, textAlign: 'center' }}>{m.score}</span>
                   ) : (
                     (() => {
                       const t = m.scheduled_at
-                      if (!t) return <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', minWidth: 60, textAlign: 'center' }}>—:—</span>
+                      if (!t) return <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', minWidth: 50, textAlign: 'center' }}>—:—</span>
                       const parts = t.split(' ')
                       const datePart = parts.length > 1 ? parts[0] : ''
                       const timePart = parts.length > 1 ? parts[1] : t
                       return (
-                        <div style={{ minWidth: 60, textAlign: 'center' }}>
+                        <div style={{ minWidth: 50, textAlign: 'center' }}>
                           <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>
                             {timePart.length >= 5 ? timePart.slice(0, 5) : timePart}
                           </div>
@@ -157,11 +157,11 @@ export default function Matches() {
                       )
                     })()
                   )}
-                  <div style={{ width: 180, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                     <span style={{ fontSize: 15, fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '0.03em', color: 'var(--text)' }}>{m.team2 || '待定'}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)', height: 16 }}>{c2}</span>
                   </div>
-                  <span style={{ fontSize: 11, color: m.score ? 'var(--text-muted)' : 'var(--gold)', minWidth: 60, textAlign: 'center' }}>
+                  <span style={{ fontSize: 11, color: m.score ? 'var(--text-muted)' : 'var(--gold)', minWidth: 60, textAlign: 'right' }}>
                     {m.best_of ? `${m.best_of.toUpperCase()}` : ''}
                   </span>
                 </div>
