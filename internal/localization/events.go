@@ -7,11 +7,7 @@ type EventEntry struct {
 	Aliases                          []string
 }
 
-var EventCatalog = []EventEntry{
-	{Canonical: "IEM Rio", Official: "IEM 里约站", Colloquial: "里约IEM", Aliases: []string{"IEM Rio", "IEM里约", "里约IEM", "里约"}},
-	{Canonical: "PGL Astana", Official: "PGL 阿斯塔纳站", Colloquial: "阿斯塔纳PGL", Aliases: []string{"PGL Astana", "PGL阿斯塔纳", "阿斯塔纳PGL"}},
-	{Canonical: "BLAST Open Lisbon", Official: "BLAST Open 里斯本站", Colloquial: "里斯本BLAST Open", Aliases: []string{"BLAST Open Lisbon", "BLAST里斯本", "里斯本BLAST"}},
-}
+var EventCatalog = []EventEntry{}
 
 var eventLookup = buildEventLookup(EventCatalog)
 

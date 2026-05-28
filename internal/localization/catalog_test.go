@@ -28,7 +28,7 @@ func TestFormatTeamDisplay(t *testing.T) {
 func TestFormatEventDisplay(t *testing.T) {
 	result := FormatEventDisplay("IEM Rio")
 	if result == "" {
-		t.Errorf("expected formatted display for IEM Rio")
+		t.Errorf("expected non-empty display")
 	}
 }
 

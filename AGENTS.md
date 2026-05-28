@@ -37,6 +37,7 @@
 ```
 
 ## 最近操作
+- 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、前/后端队伍简称同步、选手中文简称逐条修正并补全至 97 名
 - 2026-05-28：修复新闻"在 HLTV 阅读原文"链接 — NewsDetail 中 link 字段为相对路径，缺少 `https://www.hltv.org` 前缀，点击后导航到本地而非 HLTV 源站
 - 2026-05-28：代码瘦身收敛 — 删 dead types、删 helpers.go 薄包装层、删未用函数、前端复用共享 Modal、删无关文档，净减 ~810 行
 - 2026-05-28：队伍高亮数据重做 + 前端重构 — 从队伍页直接抓取胜率/连胜/最近5场，提取共享 Modal + 共享 nicknames，赛程卡片 MM/DD + 弹窗日期时间
@@ -51,6 +52,12 @@
 - 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源
 
 ## 关键发现
+
+### 本地化
+- **队伍简称在前后端两处维护**：后端 `internal/localization/catalog.go` 的 `TeamCatalog.Colloquial` 和前端 `frontend/src/data/nicknames.ts` 的 `teamNicknames` 必须保持同步
+- **选手简称仅在前端**：`frontend/src/data/nicknames.ts` 的 `playerNicknames`，后端无对应结构
+- **赛事翻译已全部移除**：`events.go` 中 `EventCatalog` 清空，`FormatEventDisplay` 回退为原文输出
+- 当前 26 支队伍 + 97 名选手的简称字典已逐条人工确认
 
 ### 爬虫
 - 5/6 端点 HTTP 直连，仅 `/matches` 需 chromedp
