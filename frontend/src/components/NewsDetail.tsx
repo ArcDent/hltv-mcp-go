@@ -105,7 +105,7 @@ export default function NewsDetail({ url, onClose }: { url: string; onClose: () 
                 </button>
               )}
               {data.link && (
-                <a href={data.link} target="_blank" rel="noopener noreferrer" style={{
+                <a href={data.link.startsWith('/') ? `https://www.hltv.org${data.link}` : data.link} target="_blank" rel="noopener noreferrer" style={{
                   padding:'8px 20px',background:'var(--input-bg)',color:'var(--text-secondary)',border:'1px solid var(--border)',
                   borderRadius:'var(--radius-sm)',fontSize:14,textDecoration:'none',
                 }}>
