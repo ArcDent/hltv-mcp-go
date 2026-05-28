@@ -44,6 +44,9 @@ func NewRouter(cfg *config.Config, f *facade.HltvFacade, frontendFS fs.FS) http.
 	r.Get("/api/translate/config", h.GetTranslateConfig)
 	r.Put("/api/translate/config", h.PutTranslateConfig)
 	r.Post("/api/translate", h.PostTranslate)
+		r.Get("/api/nicknames", h.GetNicknames)
+		r.Put("/api/nicknames/team", h.PutTeamNickname)
+		r.Put("/api/nicknames/player", h.PutPlayerNickname)
 
 	// SPA fallback
 	if frontendFS != nil {
