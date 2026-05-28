@@ -2,6 +2,8 @@
 
 Go 单二进制全栈 HLTV MCP 服务 — MCP stdio + HTTP REST + React 管理面板。
 
+> 灵感来源：[hltv-api](https://github.com/M3MONs/hltv-api)（Python Flask/Scrapy HLTV 爬虫 API），使用 Go 完全重建，去除 Python 上游依赖。
+
 ## 功能特性
 
 - **10 个 MCP 工具**：队伍/选手解析、赛程/赛果查询、实时/归档新闻
@@ -31,6 +33,18 @@ docker run -d --name hltv-mcp \
   -p 8082:8082 \
   -v hltv-chrome-data:/tmp \
   ghcr.io/arcdent/hltv-data:latest
+```
+
+### 端口与进程管理
+
+默认端口 `8082`（通过 `HTTP_PORT` 环境变量可修改）。
+
+```bash
+# 按端口杀进程
+kill $(lsof -t -i:8082) 2>/dev/null || fuser -k 8082/tcp
+
+# 按进程名杀
+pkill -f hltv-mcp
 ```
 
 ### 自动同步
@@ -63,7 +77,22 @@ curl http://localhost:8082/api/search?q=Vitality&type=team
 curl http://localhost:8082/api/news/realtime?limit=10
 ```
 
-### MCP 注册（搭配 Docker）
+### MCP 工具列表
+
+| 工具名 | 作用 | 主要参数 |
+|--------|------|---------|
+| `resolve_team` | 解析队伍名称为 HLTV 身份候选 | `name`(必填), `exact`, `limit` |
+| `resolve_player` | 解析选手名称为 HLTV 身份候选 | `name`(必填), `exact`, `limit` |
+| `hltv_team_recent` | 查询队伍近况、近期战绩和即将到来的比赛 | `team_id`, `team_name`, `limit` |
+| `hltv_player_recent` | 查询选手近况和统计数据 | `player_id`, `player_name`, `limit` |
+| `hltv_results_recent` | 查询近期赛果（支持队伍/赛事筛选） | `team`, `event`, `limit`(1-20), `days`(1-30) |
+| `hltv_matches_upcoming` | 查询即将到来的比赛 | `team_id`, `team`, `event`, `limit`(1-20), `days`(1-30) |
+| `hltv_matches_today` | 查询今日全部赛程（亚洲时区） | 无参数 |
+| `match_command_parse` | 解析 `/match` 命令参数 | `raw_args` |
+| `hltv_realtime_news` | 获取 HLTV 实时/最新新闻 | `limit`(1-50), `page`, `offset` |
+| `hltv_news_digest` | 获取 HLTV 月度归档新闻 | `limit`, `tag`, `year`, `month`, `page` |
+
+### MCP 注册
 
 Docker 部署后 MCP stdio 不可用（容器隔离）。如需 MCP 功能，使用手动编译启动（见下方）。
 
@@ -154,3 +183,7 @@ cd HLTV-data
 docker build -t hltv-mcp .
 docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 ```
+
+## 灵感来源
+
+本项目是对 [hltv-api](https://github.com/M3MONs/hltv-api) 的 Go 语言完全重建。将原 TypeScript MCP 服务（基于 [hltv-api](https://github.com/M3MONs/hltv-api) Python 爬虫 API 构建）统一为 Go 单一二进制，去掉外部 Python 依赖，保留全部 10 个 MCP 工具和中文本地化体系，并增加 React Web 管理面板。
