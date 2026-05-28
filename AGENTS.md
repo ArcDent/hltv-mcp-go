@@ -37,15 +37,12 @@
 ```
 
 ## 最近操作
-- 2026-05-28：队伍详情高亮数据重做 — 从队伍页直接抓取胜率/连胜/最近5场（`.highlighted-stat`），替代不可靠的 results 翻页方案
-- 2026-05-28：前端彻底重构 — 提取共享 Modal 组件（消除 6 文件重复）、共享 nicknames 字典（消除 68 行重复）、清理 api client 4 个死方法、队伍详情左对齐 + 赛程弹窗居中
-- 2026-05-28：赛程日期 & UI 修复（5 backend commits）— results 页日期从 `.results-sublist > .standard-headline` 正则提取（"Results for May 28th 2026" → YYYY-MM-DD）；matches 页日期从 `.matches-list-headline` 兄弟遍历提取；队伍近期比赛翻页 offset 0/100/200；赛程卡片 MM/DD + 弹窗日期始终显示 + 右侧仅 BO3
-- 2026-05-28：三项 bug 修复 — 队伍详情 CSS 选择器重写（h1.profile-team-name / .value.h-rank / .bodyshot-team a / .trophyDescription）、近期战绩改用标准 results+upcoming API 按队名过滤、新闻正文仅提取 <p> 标签、赛程时间显示 >24h 带日期、冗余代码清理
-- 2026-05-27：Chrome DevTools 全功能验证 — 占位符翻译 winner→胜者、BO1 归一化 0:1、缓存统计真实递增（6条目/3命中/7未命中）、选手详情缓存均已确认正常；发现 Windows localhost 端口转发会缓存旧响应，需用 WSL IP 直连
-- 2026-05-27：全量中文化 + BO1 归一化 + 选手缓存 + 缓存统计修复（8 commits，7 tasks）
+- 2026-05-28：队伍高亮数据重做 + 前端重构 — 从队伍页直接抓取胜率/连胜/最近5场（`.highlighted-stat` / `.last-5-matches`），替代 results 翻页；提取共享 Modal（消 6 文件重复）+ 共享 nicknames（消 68 行）+ 清理死 API；赛程卡片 MM/DD + 弹窗日期时间
+- 2026-05-28：赛程日期修复（5 commits）— results 日期从 `.results-sublist > .standard-headline` 正则提取；matches 日期从 `.matches-list-headline` 兄弟遍历提取；赛季卡片 MM/DD + 弹窗日期始终显示
+- 2026-05-27：Chrome DevTools 全功能验证 + 中文化 + 选手缓存
 
 ## 进行中
-- 无 — 赛程日期修复 6 任务全部完成
+- 无
 
 ## 下一步
 - 队伍详情 W/L/D 战绩数据优化（当前依赖 results 页面含该队伍的匹配，休赛期数据为空）
@@ -67,8 +64,11 @@
 - **比赛链接** 从 `.playerpage-matchbox[href]` 正则 `/stats/matches/(\d+)/([^"\s]+)` 提取 match ID + slug
 - **球员无队伍** `.playerTeam` 内 `<span itemprop="text">No team</span>` 表示无队伍，这是正常状态
 - **球员有合约链接** 部分球员 .playerTeam 内包含 `<a class="contract-link">Link</a>`（合约来源链接），会被误抓为队伍名
-- **队伍页** (`/team/{id}/{slug}`) — `h1.profile-team-name`(队名) / `.profile-team-container`(国家+队名，空格分隔取首词为国别) / `.value.h-rank`(HLTV 世界排名，#N 格式) / `.profile-team-stat`(含 "World ranking#N") / `.bodyshot-team.g-grid a[href*='/player/']`(现役 5 队员，精确去重) / `.trophySection .trophyDescription[title]`(奖杯名称) / `.trophySection .trophy[data-trophy-num]`(奖杯链接) / **队员链接在整个页面重复出现 5-10 次**（bodyshot / FAQ / playersBox / timeline / tooltip / transfer），必须限定在 `.bodyshot-team` 容器内才能取到现役队员
-- **队伍赛程页** (`/team/{id}/matches`) — 使用非标准 `table.match-table` + `.carousel-slider` 布局，**不与**标准 results/matches 页面共享 `.result-con` / `.match` 选择器，无法用现有 normalizer 提取。替代方案：用标准 `/results` + `/matches` 页面获取全部匹配后按队名过滤
+- **队伍页** — `h1.profile-team-name` / `.profile-team-container` / `.value.h-rank` / `.bodyshot-team.g-grid a[href*='/player/']`(现役5人) / `.trophySection .trophyDescription[title]` / **队员链接重复5-10次**，须限定 `.bodyshot-team`
+- **队伍高亮** — `.highlighted-stat`(含胜率"76.2%"+"Win rate" / 连胜"6"+"Current win streak") / `.last-5-matches`(最近5场) / `.highlighted-team-name.text-ellipsis`(对手名) / `.highlighted-match-status.match-won/.match-lost`(胜负) — **无具体比分**，仅对手名+W/L
+- **结果页日期** `.results-sublist > .standard-headline`("Results for May 28th 2026")
+- **赛程页日期** `.matches-list-headline`("Thursday - 2026-05-28")，Live 区 `.liveMatches` 无日期，默认当天
+- **队伍赛程页** `/team/{id}/matches` — 非标准 `table.match-table` 布局，无法用现有 normalizer
 - **新闻文章页** — `.news-block` 内正文在 `<p>` 标签中，页面底部含 `.related-news` / `.player-card` / `.teammate` / `.comment-section` 等推荐卡片。提取时必须只取 `<p>` 标签（`doc.Find(".news-block p")`），不可用 `.Text()` 取整个容器否则会混入推荐新闻/选手卡片等垃圾内容
 
 ### CF 阻断分层
