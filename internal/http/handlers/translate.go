@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -70,7 +71,12 @@ func MigrateConfig() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(configPath(), data, 0600)
+	if err := os.WriteFile(configPath(), data, 0600); err != nil {
+		return err
+	}
+	// Remove the old plaintext config so the key isn't left in two places
+	os.Remove(oldPath)
+	return nil
 }
 
 func loadTranslateConfig() (TranslateConfig, error) {
@@ -232,7 +238,8 @@ func (h *Handlers) PostTranslate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if resp.StatusCode != http.StatusOK {
-		writeError(w, http.StatusBadGateway, fmt.Sprintf("翻译服务返回错误(%d): %s", resp.StatusCode, string(respBody)))
+		log.Printf("translate proxy: LLM API returned %d: %s", resp.StatusCode, string(respBody))
+		writeError(w, http.StatusBadGateway, fmt.Sprintf("翻译服务返回错误(%d)", resp.StatusCode))
 		return
 	}
 
