@@ -22,9 +22,10 @@
 ### 1. 加密模块 `internal/crypto/crypto.go`
 
 - 算法: AES-256-GCM（Go 标准库 `crypto/aes` + `crypto/cipher`）
-- Key: `ENCRYPTION_KEY` 环境变量 → SHA-256 → 32 字节
+- 密钥推导: passphrase → SHA-256 → 32 字节 AES 密钥（与 person-summon `crypto.ts` 完全一致）
+- passphrase 来源: `ENCRYPTION_KEY` 环境变量 或 `data/.encryption_key` 文件（存 hex 串，64 字符）
 - IV: 每次加密随机生成 12 字节
-- 格式: `base64(IV + ciphertext + tag)`
+- 存储格式: `base64(IV(12) + ciphertext + auth_tag(16))`
 - 与 person-summon `crypto.ts` 格式兼容
 
 ```go
@@ -34,10 +35,11 @@ func Decrypt(ciphertext string) (string, error)
 
 ### 2. 存储改造 `internal/http/handlers/translate.go`
 
-- 配置文件路径改为 `./data/translate_config.json`（统一持久化目录）
+- 配置文件路径改为 `./data/translate_config.json`（`data/` = `os.Getwd() + "/data"`，Docker 统一 `WORKDIR /`）
 - 新增 `encrypted: true` 字段标记加密状态
 - 加载时自动检测：明文旧格式自动加密回写升级
 - 保存前自动加密 `api_key` 字段
+- 启动时检查旧路径（`os.Executable()` 同级）是否存在旧格式 `translate_config.json`，存在则迁移到 `./data/` 并加密
 
 ### 3. 翻译代理 `POST /api/translate`
 
@@ -51,38 +53,48 @@ func Decrypt(ciphertext string) (string, error)
 { "translated": "..." }
 ```
 
-内部流程: 加载配置 → 解密 key → 构造 OpenAI 兼容请求 → 调用 LLM → 返回译文
+内部流程:
+1. 加载已保存的 provider_url / model / 解密 api_key
+2. 检查是否已配置（configured），未配置返回 400
+3. 根据 type 选择 system prompt:
+   - `title`: `"将以下CS电竞新闻标题翻译为简体中文，只输出翻译结果，不要任何解释"`
+   - `article`: `"将以下CS电竞新闻正文翻译为简体中文"`
+4. 构造 OpenAI 兼容请求 → 调用 LLM API
+5. 解析 `choices[0].message.content` → 返回译文
 
 ### 4. 前端简化
 
 - `TranslateProvider.tsx`: 删除 `realKey`、`sessionStorage` 逻辑
-- `NewsDetail.tsx`: `fetch('/api/translate', ...)` 替代直调 LLM
-- `News.tsx`: 同上
+- `NewsDetail.tsx`: `fetch('/api/translate', {body: {text, type:'article'}})` 替代直调 LLM
+- `News.tsx`: `fetch('/api/translate', {body: {text, type:'title'}})` 替代直调 LLM
 
 ### 5. 密钥自动管理
 
-启动优先级:
-1. `ENCRYPTION_KEY` 环境变量
-2. `data/.encryption_key` 文件
-3. 自动生成随机 32 字节写入 `data/.encryption_key`
+启动时在 `main.go` 中执行，优先级:
+
+1. `ENCRYPTION_KEY` 环境变量存在 → 作为 passphrase
+2. `data/.encryption_key` 文件存在 → 读取其内容作为 passphrase
+3. 都不存在 → 生成 64 字符随机 hex 串，写入 `data/.encryption_key` 作为 passphrase
+
+passphrase 统一经过 SHA-256 推导 32 字节 AES 密钥，存入全局变量供 crypto 模块使用。
 
 ### 6. 部署变更
 
-- Dockerfile: 创建 `/data` 目录，声明 VOLUME
+- Dockerfile: 创建 `/data` 目录（`RUN mkdir -p /data`），声明 `VOLUME ["/data"]`，添加 `WORKDIR /`
 - docker-compose.yml: 挂载 `./data:/data` 持久化 volume
-- `ENCRYPTION_KEY` 可选，不设则自动生成
+- `ENCRYPTION_KEY` 环境变量可选，不设则自动生成到 volume 中
 
 ## 文件变更清单
 
-| 操作 | 文件 |
-|------|------|
-| 新增 | `internal/crypto/crypto.go` |
-| 新增 | `internal/crypto/crypto_test.go` |
-| 修改 | `internal/http/handlers/translate.go` |
-| 修改 | `internal/http/router.go` |
-| 修改 | `frontend/src/components/TranslateProvider.tsx` |
-| 修改 | `frontend/src/components/NewsDetail.tsx` |
-| 修改 | `frontend/src/pages/News.tsx` |
-| 修改 | `Dockerfile` |
-| 修改 | `docker-compose.yml` |
-| 修改 | `main.go`（加密密钥初始化） |
+| 操作 | 文件 | 说明 |
+|------|------|------|
+| 新增 | `internal/crypto/crypto.go` | AES-256-GCM 加解密 |
+| 新增 | `internal/crypto/crypto_test.go` | 加解密单元测试 |
+| 修改 | `internal/http/handlers/translate.go` | 加密存储、路径迁移、翻译代理端点 |
+| 修改 | `internal/http/router.go` | 注册 POST /api/translate |
+| 修改 | `frontend/src/components/TranslateProvider.tsx` | 删除 realKey/sessionStorage |
+| 修改 | `frontend/src/components/NewsDetail.tsx` | 走后端代理翻译 |
+| 修改 | `frontend/src/pages/News.tsx` | 走后端代理翻译 |
+| 修改 | `Dockerfile` | /data 目录 + WORKDIR / |
+| 修改 | `docker-compose.yml` | data volume 挂载 |
+| 修改 | `main.go` | 启动时密钥初始化（读 ENV/文件/自动生成） |
