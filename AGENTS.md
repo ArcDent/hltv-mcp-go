@@ -38,23 +38,36 @@
 ```
 
 ## 最近操作
-- 2026-05-28：翻译持久化+加密 — AES-256-GCM 加密存储 API Key、后端翻译代理 `POST /api/translate`、密钥自动管理（ENCRYPTION_KEY env → data/.encryption_key → 自动生成）、旧明文配置自动迁移加密、配置路径改为 `data/translate_config.json`、前端移除 sessionStorage/realKey 直调 LLM、Docker `/data` volume 持久化、代码收敛（删 .clinerules×5、cmd/e2e、旧 docs×15、明文 translate_config.json，净删 ~1700 行）
+- 2026-05-28：昵称字典后端迁移+编辑功能 — 新增 `overrides.go` 持久化覆盖层 + `PlayerCatalog`（95 选手）+ 3 个 REST API（`GET/PUT /api/nicknames*`）+ 前端 `useNicknames` hook + TeamDetail/PlayerDetail 内联编辑，删除 `frontend/src/data/nicknames.ts`，4 任务全部完成
 - 2026-05-28：CI/CD 与文档完善 — GitHub Actions 自动构建推送 GHCR、添加 MIT 许可证、修正 GHCR 镜像路径、Docker 部署示例按平台汇总
 - 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、选手简称补全至 98 名
 - 2026-05-28：修复新闻"在 HLTV 阅读原文"链接 — NewsDetail link 相对路径缺少 https://www.hltv.org 前缀
 - 2026-05-28：代码瘦身收敛 — 删 dead types、删 helpers.go 薄包装层、删未用函数、前端复用共享 Modal，净减 ~810 行
 
 ## 进行中
-- 无（翻译持久化+加密功能已全部完成）
+- 无
 
 ## 下一步
-- 无计划中任务
+- 用户确认后推送到远程仓库
 
 ## 关键发现
 
+### nickname 覆盖层
+- **`internal/localization/overrides.go`**：线程安全的内存缓存 + JSON 文件持久化
+- `data/nicknames.json` 结构 `{"teams": {...}, "players": {...}}`，仅存用户编辑条目
+- `SetTeamOverride("name", "")` / `SetPlayerOverride("name", "")` 空值语义 = 删除条目
+- 写操作：先更新内存 map（持写锁），释放锁后写磁盘（持读锁读数据），避免磁盘 I/O 被锁阻塞
+- 测试从 `internal/localization/` 目录运行，`data/nicknames.json` 相对路径 `../../data/nicknames.json`
+
+### nickname API
+- `PUT /api/nicknames/team` 先通过 `LookupTeam` 解析为 canonical 名再存储（支持别名输入）
+- `PUT /api/nicknames/player` 直接按输入名存储（开放模式，不限制 catalog 内选手）
+- `GET /api/nicknames` 返回 `{"teams": {...}, "players": {...}}`，所有变体已展开，覆盖已应用
+
 ### 本地化
-- **队伍简称在前后端两处维护**：后端 `internal/localization/catalog.go` 的 `TeamCatalog.Colloquial` 和前端 `frontend/src/data/nicknames.ts` 的 `teamNicknames` 必须保持同步
-- **选手简称仅在前端**：`frontend/src/data/nicknames.ts` 的 `playerNicknames`，后端无对应结构
+- **nickname 已完全迁移到后端**：前端硬编码 `frontend/src/data/nicknames.ts` 已删除，改用 `useNicknames` hook 从 `GET /api/nicknames` 获取
+- **前端内联编辑**：TeamDetail 队伍简称 badge 和队员昵称、PlayerDetail 选手昵称均可点击铅笔图标编辑，Enter/Escape/失焦保存
+- **nickname 核心在后端**：`internal/localization/catalog.go` 的 `TeamCatalog.Colloquial` + `PlayerCatalog.Nicknames`，overrides 通过 `data/nicknames.json` 持久化
 - **赛事翻译已全部移除**：`events.go` 中 `EventCatalog` 清空，`FormatEventDisplay` 回退为原文输出
 - 当前 26 支队伍 + 98 名选手的简称字典已逐条人工确认
 
