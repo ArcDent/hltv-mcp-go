@@ -18,6 +18,7 @@
 │   ├── types/                 # 全部共享类型
 │   ├── errors/                # AppError + 11 错误码
 │   ├── config/                # 18 环境变量
+│   ├── crypto/                # AES-256-GCM 加密/解密 + 密钥生成/持久化
 │   ├── cache/                 # TTL + stale 窗口 + 并发合并
 │   ├── client/                # HTTP + chromedp 反CF + fallback 记忆
 │   ├── scraper/               # 7 爬虫（team/player/results/matches/news/realtime_news/news_article）
@@ -33,25 +34,21 @@
 │       ├── api/client.ts      # 13 API 方法（含 getNewsArticle）
 │       ├── components/        # NewsDetail, PlayerDetail, TeamDetail, SearchableList, TranslateProvider
 │       └── pages/             # Dashboard, Matches, Teams, Players, News (集成 NewsDetail 点击弹窗), Cache
-├── cmd/                       # 调试/验证工具（scrapercheck, antifp, e2e）
-└── docs/superpowers/          # spec + plan
+└── docs/superpowers/          # spec + plan（仅保留最新）
 ```
 
 ## 最近操作
-- 2026-05-28：添加 GitHub Actions CI/CD — push main 自动构建 Docker 镜像推送到 GHCR，README 补充 Watchtower 自动同步方案
-- 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、前/后端队伍简称同步、选手中文简称逐条修正并补全至 98 名、追加 tN1R→少爷/特尼尔
-- 2026-05-28：修复新闻"在 HLTV 阅读原文"链接 — NewsDetail 中 link 字段为相对路径，缺少 `https://www.hltv.org` 前缀，点击后导航到本地而非 HLTV 源站
-- 2026-05-28：代码瘦身收敛 — 删 dead types、删 helpers.go 薄包装层、删未用函数、前端复用共享 Modal、删无关文档，净减 ~810 行
-- 2026-05-28：队伍高亮数据重做 + 前端重构 — 从队伍页直接抓取胜率/连胜/最近5场，提取共享 Modal + 共享 nicknames，赛程卡片 MM/DD + 弹窗日期时间
-- 2026-05-28：赛程日期修复 — results 日期从 `.results-sublist > .standard-headline` 正则提取；matches 日期从 `.matches-list-headline` 兄弟遍历提取
+- 2026-05-28：翻译持久化+加密 — AES-256-GCM 加密存储 API Key、后端翻译代理 `POST /api/translate`、密钥自动管理（ENCRYPTION_KEY env → data/.encryption_key → 自动生成）、旧明文配置自动迁移加密、配置路径改为 `data/translate_config.json`、前端移除 sessionStorage/realKey 直调 LLM、Docker `/data` volume 持久化、代码收敛（删 .clinerules×5、cmd/e2e、旧 docs×15、明文 translate_config.json，净删 ~1700 行）
+- 2026-05-28：CI/CD 与文档完善 — GitHub Actions 自动构建推送 GHCR、添加 MIT 许可证、修正 GHCR 镜像路径、Docker 部署示例按平台汇总
+- 2026-05-28：本地化字典全面修正 + 补全 — Official 字段清空、G2/HEROIC/Complexity/MongolZ/fnatic/EF/RED Canids Colloquial 修正、赛事翻译全部删除、选手简称补全至 98 名
+- 2026-05-28：修复新闻"在 HLTV 阅读原文"链接 — NewsDetail link 相对路径缺少 https://www.hltv.org 前缀
+- 2026-05-28：代码瘦身收敛 — 删 dead types、删 helpers.go 薄包装层、删未用函数、前端复用共享 Modal，净减 ~810 行
 
 ## 进行中
-- 无
+- 无（翻译持久化+加密功能已全部完成）
 
 ## 下一步
-- 队伍详情 W/L/D 战绩数据优化（当前依赖 results 页面含该队伍的匹配，休赛期数据为空）
-- 完整 70+ 队伍 localization 扩展
-- 比赛个人 rating 数据获取 — 选手页 `.playerpage-match-rating` 始终为空，需要其他数据源
+- 无计划中任务
 
 ## 关键发现
 

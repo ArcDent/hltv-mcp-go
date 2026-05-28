@@ -6,3 +6,4 @@ frontend/dist/
 hltv-mcp
 .env
 translate_config.json
+data/

@@ -324,7 +324,7 @@ curl http://localhost:8082/api/news/realtime?limit=10
 │   └── http/          # chi router + REST API
 ├── frontend/          # React + Vite + Tailwind
 │   └── src/pages/     # 6 个管理面板页面
-├── cmd/               # 调试/验证工具
+├── docs/              # 设计文档
 └── docs/superpowers/  # 设计文档
 ```
 
