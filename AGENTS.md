@@ -6,7 +6,7 @@
 - 技术栈：Go 1.26, mark3labs/mcp-go, chi, goquery, chromedp, React 18, Vite, Tailwind CSS v4
 - 灵感来源：[hltv-api](https://github.com/M3MONs/hltv-api)（Python Flask/Scrapy HLTV 爬虫 API）
 - 前端参考：[person-summon](https://github.com/arcdent/person-summon)（暗/亮双主题 CSS 变量体系 + Space Grotesk + 噪声纹理）
-- 远端仓库：[ArcDent/hltv-mcp-go](https://github.com/ArcDent/hltv-mcp-go)
+- 远端仓库：[ArcDent/HLTV-data](https://github.com/ArcDent/HLTV-data)
 
 ## 项目静态结构
 ```
@@ -90,7 +90,7 @@
 - **前端嵌入变更需重建二进制**：修改 `frontend/src/` 后，必须 `vite build` + `go build` + 重启服务，否则浏览器看到的是旧内嵌前端（即使 dist/ 已更新）
 - Docker: `GOTOOLCHAIN=auto` + `chromedp/headless-shell:latest` Chrome 路径 `/headless-shell/headless-shell`
 - SPA fallback: `feFS.Open(path)` 必须 strip 前导 `/`
-- **CI/CD**：`.github/workflows/docker-build.yml` — push main 自动构建镜像推送到 `ghcr.io/arcdent/hltv-mcp-go:latest`，用 `docker/metadata-action` 打 `latest` + commit SHA 双 tag。服务器端搭配 Watchtower 自动拉取实现零手动部署。
+- **CI/CD**：`.github/workflows/docker-build.yml` — push main 自动构建镜像推送到 `ghcr.io/arcdent/hltv-data:latest`，用 `docker/metadata-action` 打 `latest` + commit SHA 双 tag。服务器端搭配 Watchtower 自动拉取实现零手动部署。
 
 ### 赛中文化与缓存模式
 - HLTV bracket 占位符映射：winner/loser/tbd → 胜者/败者/待定，使用 `strings.Contains` 包含匹配（HLTV 实际文本可能是 "Winner of Group A" 格式）
