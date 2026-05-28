@@ -14,8 +14,10 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/cache"
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/config"
+	"github.com/arcdent/hltv-mcp/internal/crypto"
 	"github.com/arcdent/hltv-mcp/internal/facade"
 	httppkg "github.com/arcdent/hltv-mcp/internal/http"
+	"github.com/arcdent/hltv-mcp/internal/http/handlers"
 	"github.com/arcdent/hltv-mcp/internal/mcp"
 	"github.com/arcdent/hltv-mcp/internal/renderer"
 	"github.com/arcdent/hltv-mcp/internal/summary"
@@ -31,6 +33,16 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("config: %v", err)
+	}
+
+	// Initialize encryption key (env → file → auto-generate)
+	if err := crypto.InitKey(); err != nil {
+		log.Fatalf("crypto init: %v", err)
+	}
+
+	// Migrate old config to encrypted data/ directory
+	if err := handlers.MigrateConfig(); err != nil {
+		log.Printf("config migration note: %v", err)
 	}
 
 	// Chrome detection (spec: warn and degrade to direct if not available)
