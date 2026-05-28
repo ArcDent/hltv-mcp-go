@@ -36,15 +36,15 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 	if chromedpAllocCtx == nil {
 		chromePath, _ := findChromePath(c.cfg.ChromePath)
 		userDir, _ := os.MkdirTemp("", "hltv-chrome-*")
+		// DefaultExecAllocatorOptions includes Headless (--headless), which
+		// breaks headless-shell (already headless, flag prevents startup).
+		// Override with false; chromedp's Allocate() skips bool-flags set to false.
 		opts := append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.ExecPath(chromePath),
-			chromedp.Flag("headless", true),
-			chromedp.Flag("disable-gpu", true),
-			chromedp.Flag("no-sandbox", true),
-			chromedp.Flag("disable-dev-shm-usage", true),
+			chromedp.Flag("headless", false),
 			chromedp.Flag("disable-blink-features", "AutomationControlled"),
 			chromedp.Flag("disable-features", "TranslateUI,BlinkGenPropertyTrees"),
-			chromedp.Flag("window-size", "1920,1080"),
+			chromedp.WindowSize(1920, 1080),
 			chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36"),
 			chromedp.UserDataDir(userDir),
 		)
@@ -52,7 +52,28 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 	}
 
 	url := hltvBaseURL + path
-	taskCtx, cancel := chromedp.NewContext(chromedpAllocCtx)
+
+	// Start a browser tab with a 10s deadline. When the allocator's Chrome
+	// process is dead, chromedp.NewContext hangs forever trying to connect
+	// to DevTools. The goroutine+select pattern avoids parent-context
+	// cancellation propagation issues.
+	type newCtxResult struct {
+		ctx    context.Context
+		cancel context.CancelFunc
+	}
+	ch := make(chan newCtxResult, 1)
+	go func() {
+		ctx, cancel := chromedp.NewContext(chromedpAllocCtx)
+		ch <- newCtxResult{ctx, cancel}
+	}()
+	var taskCtx context.Context
+	var cancel context.CancelFunc
+	select {
+	case res := <-ch:
+		taskCtx, cancel = res.ctx, res.cancel
+	case <-time.After(10 * time.Second):
+		return nil, fmt.Errorf("chromedp: NewContext timed out (Chrome may be dead)")
+	}
 	defer cancel()
 	taskCtx, cancel = context.WithTimeout(taskCtx, 30*time.Second)
 	defer cancel()

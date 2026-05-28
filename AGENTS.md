@@ -21,22 +21,23 @@
 │   ├── crypto/                # AES-256-GCM 加密/解密 + 密钥生成/持久化
 │   ├── cache/                 # TTL + stale 窗口 + 并发合并
 │   ├── client/                # HTTP + chromedp 反CF + fallback 记忆
-│   ├── scraper/               # 6 爬虫（team/player/results/matches/news/realtime_news/news_article）
-│   ├── localization/          # 26 队伍 + 98 选手中英映射
-│   ├── normalizer/            # HLTV HTML → 标准化类型
+│   ├── scraper/               # 5 爬虫（team/player/results/matches/news/realtime_news + article in scrapers.go）
+│   ├── localization/          # 43 队伍 + 92 选手中英映射（EventCatalog 已删除）
+│   ├── normalizer/            # HLTV HTML → 标准化类型（news_article 已合并入 news.go）
 │   ├── facade/                # 核心编排层（withCache + resolve + matches + news）
 │   ├── summary/               # 中文摘要生成
 │   ├── renderer/              # 中文格式化 MCP 输出
-│   ├── mcp/                   # 10 MCP 工具注册 + stdio 传输
+│   ├── mcp/                   # 9 MCP 工具注册（已删除 match_command_parse）
 │   └── http/                  # chi router + 12 REST API + SPA fallback
 ├── frontend/                  # React + Vite + Tailwind
 │   └── src/
 │       ├── api/client.ts      # 13 API 方法（含 getNewsArticle）
 │       ├── components/        # NewsDetail, PlayerDetail, TeamDetail, SearchableList, TranslateProvider
-│       └── pages/             # Dashboard, Matches, Teams, Players, News (集成 NewsDetail 点击弹窗), Cache
+│       └── pages/             # Dashboard, Matches, SearchPage, News (集成 NewsDetail 点击弹窗), Cache
 ```
 
 ## 最近操作
+- 2026-05-28：deep convergence round 2 — 删 6 文件（`events.go`、`scraper/news_article.go`、`normalizer/news_article.go`、`localization/data/nicknames.json`、`frontend Teams.tsx/Players.tsx`）；去死代码（`match_command_parse` MCP tool、empty `EventCatalog`、`bytesReader` wrapper、`StartStdio` thin wrapper）；合并前端搜索页；修复 chromedp headless-shell `--headless` flag 冲突；源文件 40→35 个
 - 2026-05-28：修复 Docker 翻译 502 — `chromedp/headless-shell` 基础镜像缺少 `ca-certificates`，Go HTTP 客户端无法完成 TLS 验证；Dockerfile 新增 `apt-get install ca-certificates`；`PostTranslate` 连接错误路径新增 `log.Printf`；`PutTranslateConfig` 遮罩恢复失败时不再静默写入遮罩 key
 - 2026-05-28：代码深度收敛 — 删 10 个文件（.clinerules-* ×5 + frontend/hltv-mcp + docs/superpowers/ ×4）、合并 shared.go/transport.go 薄包装、删除 SummaryMode/Raw 死代码路径、删除 3 个未用错误码、删除 7 个未使用查询字段，源文件 43→40 个
 - 2026-05-28：昵称字典后端迁移+编辑功能 — 新增 `overrides.go` 持久化覆盖层 + `PlayerCatalog`（95 选手）+ 3 个 REST API（`GET/PUT /api/nicknames*`）+ 前端 `useNicknames` hook + TeamDetail/PlayerDetail 内联编辑，删除 `frontend/src/data/nicknames.ts`
@@ -47,7 +48,7 @@
 - 无
 
 ## 下一步
-- 无
+- 如 chromedp 功能非必需，可设 `HLTV_DATA_SOURCE=direct` 完全绕过 Chrome 依赖
 
 ## 关键发现
 
@@ -106,6 +107,11 @@
 - Docker: `GOTOOLCHAIN=auto` + `chromedp/headless-shell:latest` Chrome 路径 `/headless-shell/headless-shell`
 - SPA fallback: `feFS.Open(path)` 必须 strip 前导 `/`
 - **CI/CD**：`.github/workflows/docker-build.yml` — push main 自动构建镜像推送到 `ghcr.io/arcdent/hltv-data:latest`，用 `docker/metadata-action` 打 `latest` + commit SHA 双 tag。服务器端搭配 Watchtower 自动拉取实现零手动部署。
+
+### headless-shell --headless flag
+- **`chromedp/headless-shell`（Chromium 148）传入 `--headless` 会无法启动**（DevTools 端口不监听），去掉 flag 后正常。因为 headless-shell 已经是 headless 模式。
+- **修复**：`chromedp.DefaultExecAllocatorOptions` 内置 `Headless`（`--headless`），在 `opts` 末尾追加 `chromedp.Flag("headless", false)` 覆盖（chromedp 的 `Allocate()` 跳过 `bool false` 的 flag）。
+- **10s NewContext 超时保护**：`chromedp.NewContext` 包装在 goroutine + select 中，10 秒超时即报错返回，防止 Chrome 进程死亡时永久挂起。
 
 ### 赛中文化与缓存模式
 - HLTV bracket 占位符映射：winner/loser/tbd → 胜者/败者/待定，使用 `strings.Contains` 包含匹配（HLTV 实际文本可能是 "Winner of Group A" 格式）

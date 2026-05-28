@@ -25,13 +25,6 @@ func TestFormatTeamDisplay(t *testing.T) {
 	}
 }
 
-func TestFormatEventDisplay(t *testing.T) {
-	result := FormatEventDisplay("IEM Rio")
-	if result == "" {
-		t.Errorf("expected non-empty display")
-	}
-}
-
 func TestPlayerNickname_Builtin(t *testing.T) {
 	if n := PlayerNickname("ZywOo"); n != "载物" {
 		t.Errorf("expected 载物, got %q", n)

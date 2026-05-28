@@ -19,7 +19,7 @@ func (s *ResultsScraper) GetResults(ctx context.Context) (*goquery.Document, err
 	if err != nil {
 		return nil, err
 	}
-	return goquery.NewDocumentFromReader(bytesReader(body))
+	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }
 
 type MatchesScraper struct{ cli *client.HltvClient }
@@ -31,7 +31,7 @@ func (s *MatchesScraper) GetUpcoming(ctx context.Context) (*goquery.Document, er
 	if err != nil {
 		return nil, err
 	}
-	return goquery.NewDocumentFromReader(bytesReader(body))
+	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }
 
 type NewsScraper struct{ cli *client.HltvClient }
@@ -47,7 +47,7 @@ func (s *NewsScraper) GetNews(ctx context.Context, year int, month string) (*goq
 	if err != nil {
 		return nil, err
 	}
-	return goquery.NewDocumentFromReader(bytesReader(body))
+	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }
 
 type RealtimeNewsScraper struct{ cli *client.HltvClient }
@@ -61,9 +61,22 @@ func (s *RealtimeNewsScraper) GetRealtimeNews(ctx context.Context) (*goquery.Doc
 	if err != nil {
 		return nil, err
 	}
-	return goquery.NewDocumentFromReader(bytesReader(body))
+	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }
 
-func bytesReader(b []byte) *bytes.Reader { return bytes.NewReader(b) }
+// NewsArticleScraper scrapes individual HLTV news article pages
+type NewsArticleScraper struct{ cli *client.HltvClient }
+
+func NewNewsArticleScraper(cli *client.HltvClient) *NewsArticleScraper {
+	return &NewsArticleScraper{cli: cli}
+}
+
+func (s *NewsArticleScraper) GetArticle(ctx context.Context, url string) (*goquery.Document, error) {
+	body, err := s.cli.FetchHTML(ctx, url, "news_article")
+	if err != nil {
+		return nil, err
+	}
+	return goquery.NewDocumentFromReader(bytes.NewReader(body))
+}
 
 func cleanText(s string) string { return strings.TrimSpace(s) }

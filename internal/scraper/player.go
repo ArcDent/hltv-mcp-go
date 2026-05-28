@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"bytes"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -24,7 +25,7 @@ func (s *PlayerScraper) Search(ctx context.Context, name string) ([]types.Resolv
 	if err != nil {
 		return nil, err
 	}
-	doc, err := goquery.NewDocumentFromReader(bytesReader(body))
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func (s *PlayerScraper) GetPlayer(ctx context.Context, id int, slug string) (*go
 	if err != nil {
 		return nil, err
 	}
-	return goquery.NewDocumentFromReader(bytesReader(body))
+	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }
 
 func (s *PlayerScraper) GetPlayerOverview(ctx context.Context, id int, slug string) (*goquery.Document, error) {
@@ -67,5 +68,5 @@ func (s *PlayerScraper) GetPlayerOverview(ctx context.Context, id int, slug stri
 	if err != nil {
 		return nil, err
 	}
-	return goquery.NewDocumentFromReader(bytesReader(body))
+	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }

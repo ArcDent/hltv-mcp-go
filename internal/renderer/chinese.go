@@ -80,7 +80,7 @@ func (r *Renderer) RenderMatches(resp *types.ToolResponse) string {
 			fmt.Fprintf(&b, " — %s", m.Score)
 		}
 		if m.Event != "" {
-			fmt.Fprintf(&b, " — %s", localization.FormatEventDisplay(m.Event))
+			fmt.Fprintf(&b, " — %s", m.Event)
 		}
 		fmt.Fprintln(&b)
 	}

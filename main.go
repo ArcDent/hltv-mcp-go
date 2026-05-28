@@ -21,6 +21,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/localization"
 	"github.com/arcdent/hltv-mcp/internal/mcp"
 	"github.com/arcdent/hltv-mcp/internal/renderer"
+	"github.com/mark3labs/mcp-go/server"
 	"github.com/arcdent/hltv-mcp/internal/summary"
 )
 
@@ -69,7 +70,7 @@ func main() {
 	mcpServer := mcp.CreateServer(cfg, f, r)
 	go func() {
 		log.Println("MCP stdio server starting")
-		if err := mcp.StartStdio(mcpServer); err != nil {
+		if err := server.ServeStdio(mcpServer); err != nil {
 			log.Printf("MCP stdio error: %v", err)
 		}
 	}()

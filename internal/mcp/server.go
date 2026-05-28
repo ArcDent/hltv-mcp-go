@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -13,7 +12,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
-// CreateServer registers all 10 MCP tools and returns the configured server
+// CreateServer registers all 9 MCP tools and returns the configured server
 func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer) *server.MCPServer {
 	s := server.NewMCPServer(cfg.MCPServerName, cfg.MCPServerVersion)
 
@@ -127,20 +126,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 		return toolResult(r.RenderMatches(resp)), nil
 	})
 
-	// 8. match_command_parse
-	s.AddTool(mcp.NewTool("match_command_parse",
-		mcp.WithDescription("Parse explicit /match filter text. Skip for bare /match — call hltv_matches_today directly."),
-		mcp.WithString("raw_args", mcp.Description("The exact raw argument string from /match command")),
-	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		rawArgs := req.GetString("raw_args", "")
-		if rawArgs != "" {
-			return toolResult("`/match` 现在只支持无参数，只用于查询今日赛程；请删除参数后重试。"), nil
-		}
-		payload, _ := json.Marshal(types.UpcomingMatchesQuery{TodayOnly: true})
-		return toolResult(string(payload)), nil
-	})
-
-	// 9. hltv_realtime_news
+// 8. hltv_realtime_news
 	s.AddTool(mcp.NewTool("hltv_realtime_news",
 		mcp.WithDescription("Get realtime/latest HLTV news."),
 		mcp.WithNumber("limit", mcp.Description("Result limit (1-50, default 25)")),
@@ -156,7 +142,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 		return toolResult(r.RenderRealtimeNews(resp)), nil
 	})
 
-	// 10. hltv_news_digest
+// 9. hltv_news_digest
 	s.AddTool(mcp.NewTool("hltv_news_digest",
 		mcp.WithDescription("Get HLTV monthly archive news."),
 		mcp.WithNumber("limit", mcp.Description("Result limit (1-50)")),
@@ -187,6 +173,3 @@ func toolResult(text string) *mcp.CallToolResult {
 	}
 }
 
-func StartStdio(s *server.MCPServer) error {
-	return server.ServeStdio(s)
-}
