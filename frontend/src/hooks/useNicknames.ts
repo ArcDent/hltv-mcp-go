@@ -18,8 +18,11 @@ async function ensureLoaded(): Promise<void> {
     cachedTeams = data.teams ?? {}
     cachedPlayers = data.players ?? {}
   })()
-  await fetchPromise
-  fetchPromise = null
+  try {
+    await fetchPromise
+  } finally {
+    fetchPromise = null
+  }
 }
 
 async function saveNickname(type: 'team' | 'player', name: string, nickname: string): Promise<void> {
@@ -50,17 +53,27 @@ export default function useNicknames() {
       setTeamNicknames(cachedTeams!)
       setPlayerNicknames(cachedPlayers!)
       setLoading(false)
+    }).catch(() => {
+      setLoading(false)
     })
   }, [])
 
   const saveTeamNickname = useCallback(async (name: string, nickname: string) => {
-    await saveNickname('team', name, nickname)
-    setTeamNicknames({ ...cachedTeams! })
+    try {
+      await saveNickname('team', name, nickname)
+      setTeamNicknames({ ...cachedTeams! })
+    } catch (e) {
+      console.error('save team nickname failed:', e)
+    }
   }, [])
 
   const savePlayerNickname = useCallback(async (name: string, nickname: string) => {
-    await saveNickname('player', name, nickname)
-    setPlayerNicknames({ ...cachedPlayers! })
+    try {
+      await saveNickname('player', name, nickname)
+      setPlayerNicknames({ ...cachedPlayers! })
+    } catch (e) {
+      console.error('save player nickname failed:', e)
+    }
   }, [])
 
   return { teamNicknames, playerNicknames, saveTeamNickname, savePlayerNickname, loading }

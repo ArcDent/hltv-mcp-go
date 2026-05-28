@@ -190,9 +190,9 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
                             <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{cursor:'pointer',opacity:0.4,fontSize:9,marginLeft:2}} title="编辑简称">✏️</span>
                           </span>
                         )
-                      ) : !playerNicknames[pl.name] && editingPlayerId !== pl.id ? (
+                      ) : (
                         <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{cursor:'pointer',opacity:0.4,fontSize:9,marginLeft:4}} title="添加简称">+</span>
-                      ) : null}
+                      )}
                     </span>
                     {pl.rating > 0 && <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',background:'var(--input-bg)',padding:'2px 7px',borderRadius:4}}>Rating {pl.rating.toFixed(2)}</span>}
                     {pl.id > 0 && <span style={{fontSize:10,color:'var(--gold)',opacity:0.5}}>→</span>}
