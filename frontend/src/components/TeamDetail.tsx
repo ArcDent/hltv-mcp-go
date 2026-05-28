@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
 import PlayerDetail from './PlayerDetail'
-import { teamNicknames, playerNicknames } from '../data/nicknames'
+import useNicknames from '../hooks/useNicknames'
 
 type TeamData = {
   profile: { id: number; name: string; slug: string; country?: string; region?: string }
@@ -17,6 +17,9 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
   const [data, setData] = useState<TeamData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null)
+  const { teamNicknames, playerNicknames, saveTeamNickname, savePlayerNickname } = useNicknames()
+  const [editingTeamNick, setEditingTeamNick] = useState(false)
+  const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -53,7 +56,23 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
                 <div style={{fontSize:12,color:'var(--text-muted)',marginTop:2}}>{p.country || '—'}{roster.length > 0 ? ` · 队员 ${roster.length} 人` : ''}{p.region ? ` · ${p.region}` : ''}</div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}>
                   {p.country ? <span style={{padding:'2px 10px',borderRadius:4,fontSize:11,background:'var(--input-bg)',color:'var(--text-secondary)',fontWeight:500}}>{p.country}</span> : null}
-                  {cnName ? <span style={{padding:'2px 10px',borderRadius:4,fontSize:11,background:'var(--gold-dim)',color:'var(--gold)',fontWeight:600}}>{cnName}</span> : null}
+                  {editingTeamNick ? (
+                    <input
+                      autoFocus
+                      defaultValue={cnName}
+                      style={{padding:'2px 8px',borderRadius:4,fontSize:11,background:'var(--input-bg)',border:'1px solid var(--gold)',color:'var(--text)',width:80,outline:'none'}}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { saveTeamNickname(p?.name ?? '', (e.target as HTMLInputElement).value); setEditingTeamNick(false) }
+                        if (e.key === 'Escape') setEditingTeamNick(false)
+                      }}
+                      onBlur={e => { saveTeamNickname(p?.name ?? '', e.target.value); setEditingTeamNick(false) }}
+                    />
+                  ) : (
+                    <span style={{padding:'2px 10px',borderRadius:4,fontSize:11,background:'var(--gold-dim)',color:'var(--gold)',fontWeight:600,display:'inline-flex',alignItems:'center',gap:4}}>
+                      {cnName || '无简称'}
+                      <span onClick={() => setEditingTeamNick(true)} style={{cursor:'pointer',opacity:0.6,fontSize:10}} title="编辑简称">✏️</span>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -152,7 +171,28 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
                     </span>
                     <span style={{fontWeight:600,flex:1}}>
                       {pl.name}
-                      {(playerNicknames[pl.name]) && <span style={{fontSize:11,color:'var(--text-muted)',marginLeft:4,fontWeight:400}}>{playerNicknames[pl.name]}</span>}
+                      {(playerNicknames[pl.name] || editingPlayerId === pl.id) ? (
+                        editingPlayerId === pl.id ? (
+                          <input
+                            autoFocus
+                            defaultValue={playerNicknames[pl.name] ?? ''}
+                            style={{fontSize:11,background:'var(--input-bg)',border:'1px solid var(--gold)',borderRadius:3,padding:'1px 4px',color:'var(--text)',width:60,outline:'none',marginLeft:4}}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') { savePlayerNickname(pl.name, (e.target as HTMLInputElement).value); setEditingPlayerId(null) }
+                              if (e.key === 'Escape') setEditingPlayerId(null)
+                            }}
+                            onBlur={e => { savePlayerNickname(pl.name, e.target.value); setEditingPlayerId(null) }}
+                            onClick={e => e.stopPropagation()}
+                          />
+                        ) : (
+                          <span style={{fontSize:11,color:'var(--text-muted)',marginLeft:4,fontWeight:400}}>
+                            {playerNicknames[pl.name]}
+                            <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{cursor:'pointer',opacity:0.4,fontSize:9,marginLeft:2}} title="编辑简称">✏️</span>
+                          </span>
+                        )
+                      ) : !playerNicknames[pl.name] && editingPlayerId !== pl.id ? (
+                        <span onClick={e => { e.stopPropagation(); setEditingPlayerId(pl.id) }} style={{cursor:'pointer',opacity:0.4,fontSize:9,marginLeft:4}} title="添加简称">+</span>
+                      ) : null}
                     </span>
                     {pl.rating > 0 && <span style={{fontFamily:'var(--font-mono)',fontSize:11,color:'var(--text-secondary)',background:'var(--input-bg)',padding:'2px 7px',borderRadius:4}}>Rating {pl.rating.toFixed(2)}</span>}
                     {pl.id > 0 && <span style={{fontSize:10,color:'var(--gold)',opacity:0.5}}>→</span>}

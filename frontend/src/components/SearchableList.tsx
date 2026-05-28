@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import PlayerDetail from './PlayerDetail'
 import TeamDetail from './TeamDetail'
-import { teamNicknames, playerNicknames } from '../data/nicknames'
+import useNicknames from '../hooks/useNicknames'
 
 type Props = {
   type: 'team' | 'player'
@@ -41,6 +41,7 @@ export default function SearchableList({ type, placeholder, emptyHint, apiSearch
   const [loading, setLoading] = useState(false)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
+  const { teamNicknames, playerNicknames } = useNicknames()
 
   const search = async () => {
     if (!q.trim()) return

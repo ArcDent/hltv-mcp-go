@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
-import { teamNicknames as nicknames } from '../data/nicknames'
+import useNicknames from '../hooks/useNicknames'
 import Modal from '../components/Modal'
 
 type Tab = 'today' | 'upcoming' | 'results'
@@ -17,6 +17,7 @@ export default function Matches() {
   const [other, setOther] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
+  const { teamNicknames: nicknames } = useNicknames()
 
   useEffect(() => {
     setLoading(true)

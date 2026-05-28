@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import useNicknames from '../hooks/useNicknames'
 import Modal from './Modal'
 
 type PlayerData = {
@@ -14,6 +15,8 @@ type PlayerData = {
 export default function PlayerDetail({ id, onClose }: { id: number; onClose: () => void }) {
   const [data, setData] = useState<PlayerData | null>(null)
   const [loading, setLoading] = useState(true)
+  const { playerNicknames, savePlayerNickname } = useNicknames()
+  const [editingNick, setEditingNick] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -41,6 +44,31 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
               <div style={{flex:1}}>
                 <div style={{fontSize:22,fontWeight:700,color:'var(--text)',lineHeight:1.2}}>{p.name}</div>
                 {p.real_name ? <div style={{fontSize:13,color:'var(--text-muted)'}}>{p.real_name}</div> : <div style={{fontSize:13,color:'var(--text-muted)'}}>暂无</div>}
+                <div style={{marginTop:2,marginBottom:4}}>
+                  {editingNick ? (
+                    <input
+                      autoFocus
+                      defaultValue={playerNicknames[p.name] ?? ''}
+                      style={{fontSize:12,background:'var(--input-bg)',border:'1px solid var(--gold)',borderRadius:3,padding:'2px 6px',color:'var(--text)',width:100,outline:'none'}}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { savePlayerNickname(p.name, (e.target as HTMLInputElement).value); setEditingNick(false) }
+                        if (e.key === 'Escape') setEditingNick(false)
+                      }}
+                      onBlur={e => { savePlayerNickname(p.name, e.target.value); setEditingNick(false) }}
+                    />
+                  ) : (
+                    <>
+                      {playerNicknames[p.name] ? (
+                        <span style={{padding:'2px 8px',borderRadius:4,fontSize:11,background:'var(--gold-dim)',color:'var(--gold)',fontWeight:600,display:'inline-flex',alignItems:'center',gap:3}}>
+                          {playerNicknames[p.name]}
+                          <span onClick={() => setEditingNick(true)} style={{cursor:'pointer',opacity:0.6,fontSize:9}} title="编辑简称">✏️</span>
+                        </span>
+                      ) : (
+                        <span onClick={() => setEditingNick(true)} style={{cursor:'pointer',fontSize:11,color:'var(--text-muted)',opacity:0.5}} title="添加简称">+ 添加简称</span>
+                      )}
+                    </>
+                  )}
+                </div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}>
                   {p.country ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>{p.country}</span> : <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-muted)'}}>未知国籍</span>}
                   {p.age ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>Age {p.age}</span> : null}
