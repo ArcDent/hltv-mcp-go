@@ -147,9 +147,9 @@ func (f *HltvFacade) GetUpcomingMatches(query types.UpcomingMatchesQuery) *types
 		team = ""
 		event = ""
 	}
-	todayOnly := query.TodayOnly || (query.TeamID == 0 && team == "" && event == "" && query.Limit == 0 && query.Days == 0)
+	todayOnly := query.TodayOnly
 	if query.Limit == 0 {
-		query.Limit = f.cfg.DefaultResultLimit
+		query.Limit = f.cfg.DefaultResultLimit * 10 // wider coverage for upcoming matches
 	}
 	q := map[string]any{"team": team, "event": event, "today_only": todayOnly}
 	key := fmt.Sprintf("matches_upcoming:%s:%s:%v", team, event, todayOnly)

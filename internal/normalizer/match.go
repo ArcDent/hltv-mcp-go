@@ -88,12 +88,11 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 
 	// Find parent container holding both headlines and match-wrappers
 	headline := doc.Find(".matches-list-headline").First()
-	var parent *goquery.Selection
+	var parent *goquery.Selection = doc.Find("body").First()
 	if headline.Length() > 0 {
-		parent = headline.Parent()
-	}
-	if parent.Length() == 0 {
-		parent = doc.Find("body").First()
+		if p := headline.Parent(); p != nil && p.Length() > 0 {
+			parent = p
+		}
 	}
 
 	parent.Children().Each(func(_ int, child *goquery.Selection) {

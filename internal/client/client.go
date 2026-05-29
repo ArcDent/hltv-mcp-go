@@ -110,8 +110,8 @@ func (c *HltvClient) fetchHTTP(ctx context.Context, path string) ([]byte, error)
 			lastErr = err
 			continue
 		}
-		if resp.StatusCode == 404 {
-			return nil, errors.New(errors.CodeUpstreamNotFound, fmt.Sprintf("404 for %s", path), false, nil)
+		if resp.StatusCode == 403 || resp.StatusCode == 404 {
+			return nil, errors.New(errors.CodeUpstreamNotFound, fmt.Sprintf("%d for %s", resp.StatusCode, path), false, nil)
 		}
 		if resp.StatusCode >= 500 {
 			lastErr = fmt.Errorf("status %d", resp.StatusCode)

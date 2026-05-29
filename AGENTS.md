@@ -33,9 +33,10 @@
 ```
 
 ## 最近操作
-- 2026-05-29：选手数据分层修复 — 新增 `PlayerSummary` 类型解析 `.highlighted-stat`（新/旧布局均可用）；移除 `PlayerCareer.Rating` 避免与 3 月 Rating 混淆；前端新增生涯概览网格
-- 2026-05-29：深度收敛 — 删 9 个文件（.clinerules-*×5, .playwright-mcp/, SummaryHint 字段, PlayerNickname/TeamNickname 函数, NormalizeCareerFromOverview, cleanText 重复定义, 4 未用错误码, 5 未用类型字段）；前端 API 调用收敛
-- 2026-05-28：HLTV 选手页 A/B 改版适配 — 发现新版页面移除 `.all-time-stat`；前端修复 React 零值渲染陷阱 + chromedp/Docker/昵称字典修复
+- 2026-05-29：HLTV CF 封锁修复 — HLTV 全面启用 Cloudflare 防护（/matches /results / 全返回 403）；修复 NormalizeUpcomingMatches nil pointer panic（CF Challenge 页无 .matches-list-headline）；所有 handler 添加超时上下文（搜索 30s / 赛程 45s）；fetchHTTP 添加 403 处理；GetUpcomingMatches todayOnly 默认改为 false；chromedp 添加 recover 防崩溃；/team/* 和 /search 仍可直连访问
+- 2026-05-29：选手数据分层修复 — 新增 `PlayerSummary` 类型解析 `.highlighted-stat`；移除 `PlayerCareer.Rating` 避免与 3 月 Rating 混淆
+- 2026-05-29：深度收敛 — 删 9 个文件；前端 API 调用收敛
+- 2026-05-28：HLTV 选手页 A/B 改版适配 — 前端修复 React 零值渲染陷阱 + chromedp/Docker/昵称字典修复
 
 ## 关键发现
 
@@ -55,9 +56,10 @@
 - **不存在独立"生涯 Rating"**：HLTV 页面只展示近 3 月 Rating 3.0，不可将 `.player-stat` 的 Rating 误当生涯 Rating
 
 ### CF 分层
-- HTTP 直连可用：`/player/`、`/results`、`/matches`、`/team/`、`/news/`
-- chromedp 可用：`/player/`、`/results`、`/matches`、`/team/`
-- **被阻断**：`/stats/matches/`、`/stats/players/`（JS Challenge 在 headless-shell 中无法完成）
+- **HTTP 直连可用**：`/player/`、`/team/`、`/search`、`/news/`
+- **被 Cloudflare 封锁 (403)**：`/matches`、`/results`、`/`（2026-05-29 起 HLTV 升级 CF 防护）
+- **chromedp**：CF 挑战在 headless Chrome 中也无法绕过（`--headless=new` 同样被检测），仅保留框架代码
+- **/stats/matches/、/stats/players/**：JS Challenge 在 headless-shell 中无法完成
 
 ### chromedp 关键配置
 - `chromedp.DefaultExecAllocatorOptions` 内置 `--headless`，headless-shell 需 `Flag("headless", false)` 覆盖
@@ -77,3 +79,11 @@
 - Docker 三阶段构建 → `ghcr.io/arcdent/hltv-data:latest`
 - CI/CD：push main → GitHub Actions 自动构建 + Watchtower 自动拉取
 - 前端变更需 `vite build` + `go build` + 重启服务
+
+## 下一步
+- `/matches` CF 封锁问题 — 探索 FlareSolverr 或代理方案恢复赛程抓取
+- 队伍页面的近期赛程可作为 team-specific 替代方案
+
+## 进行中
+- 无（2026-05-29 HLTV CF 封锁修复已完成）
+

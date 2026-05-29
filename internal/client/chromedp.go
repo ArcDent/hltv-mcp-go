@@ -36,9 +36,6 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 	if chromedpAllocCtx == nil {
 		chromePath, _ := findChromePath(c.cfg.ChromePath)
 		userDir, _ := os.MkdirTemp("", "hltv-chrome-*")
-		// DefaultExecAllocatorOptions includes Headless (--headless), which
-		// breaks headless-shell (already headless, flag prevents startup).
-		// Override with false; chromedp's Allocate() skips bool-flags set to false.
 		opts := append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.ExecPath(chromePath),
 			chromedp.Flag("headless", false),
@@ -53,10 +50,7 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 
 	url := hltvBaseURL + path
 
-	// Start a browser tab with a 10s deadline. When the allocator's Chrome
-	// process is dead, chromedp.NewContext hangs forever trying to connect
-	// to DevTools. The goroutine+select pattern avoids parent-context
-	// cancellation propagation issues.
+	// Start a browser tab with a 10s deadline
 	type newCtxResult struct {
 		ctx    context.Context
 		cancel context.CancelFunc
@@ -75,29 +69,47 @@ func (c *HltvClient) fetchChromedp(ctx context.Context, path string) ([]byte, er
 		return nil, fmt.Errorf("chromedp: NewContext timed out (Chrome may be dead)")
 	}
 	defer cancel()
-	taskCtx, cancel = context.WithTimeout(taskCtx, 30*time.Second)
+	taskCtx, cancel = context.WithTimeout(taskCtx, 90*time.Second)
 	defer cancel()
 
+	// CF challenge JS often causes ERR_ABORTED navigation errors.
+	// Use recover to prevent crashes from nil cdp.Executor after tab closes.
 	var html string
-	if err := chromedp.Run(taskCtx,
-		chromedp.Navigate(url),
-		chromedp.WaitReady("body"),
-		chromedp.Sleep(2*time.Second),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			// Wait up to 20s for CF challenge to resolve
-			for i := 0; i < 20; i++ {
-				var title string
-				chromedp.Title(&title).Do(ctx)
-				if title != "" && !strings.Contains(title, "Just a moment") && !strings.Contains(title, "Attention Required") {
-					return nil
-				}
-				time.Sleep(1 * time.Second)
+	func() {
+		defer func() { recover() }()
+		chromedp.Run(taskCtx,
+			chromedp.ActionFunc(func(ctx context.Context) error {
+				chromedp.Navigate(url).Do(ctx)
+				return nil
+			}),
+		)
+	}()
+
+	// Poll for real HLTV content — small pages are CF challenges
+	for i := 0; i < 120; i++ {
+		if html != "" {
+			break
+		}
+		select {
+		case <-taskCtx.Done():
+			break
+		default:
+		}
+		func() {
+			defer func() { recover() }()
+			var body string
+			if err := chromedp.OuterHTML("html", &body).Do(taskCtx); err == nil &&
+				len(body) > 2000 &&
+				!strings.Contains(body, "Just a moment") &&
+				!strings.Contains(body, "cf-browser-verify") {
+				html = body
 			}
-			return nil // proceed even if still on challenge page
-		}),
-		chromedp.OuterHTML("html", &html),
-	); err != nil {
-		return nil, err
+		}()
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	if html == "" || len(html) < 500 {
+		return nil, fmt.Errorf("chromedp: page load failed (CF challenge may have blocked)")
 	}
 	return []byte(html), nil
 }
