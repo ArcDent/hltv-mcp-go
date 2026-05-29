@@ -47,6 +47,23 @@ kill $(lsof -t -i:8082) 2>/dev/null || fuser -k 8082/tcp
 pkill -f hltv-mcp
 ```
 
+### 更新镜像
+
+```bash
+# 拉取最新镜像
+docker pull ghcr.io/arcdent/hltv-data:latest
+
+# 停止旧容器 → 删除 → 启动新容器
+docker rm -f hltv-mcp \
+  && docker run -d --name hltv-mcp \
+    -p 8082:8082 \
+    -v hltv-chrome-data:/tmp \
+    ghcr.io/arcdent/hltv-data:latest
+
+# 一行更新
+docker pull ghcr.io/arcdent/hltv-data:latest && docker rm -f hltv-mcp && docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp ghcr.io/arcdent/hltv-data:latest
+```
+
 ### 自动同步
 
 每次 push 到 main 分支，GitHub Actions 自动构建镜像推送到 GHCR。搭配系统计划任务实现自动更新：
