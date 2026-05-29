@@ -119,11 +119,11 @@ matches 表按时间维度三种条件检索：
 | `scheduled_at` | TEXT | 赛程时间 |
 | `played_at` | TEXT | 比赛日期 |
 | `map_text` | TEXT | 地图信息 |
-| `source` | TEXT | upcoming/results — 区分赛程和赛果 |
 | `fetched_at` | TEXT | 抓取时间 |
 | `updated_at` | TEXT | 更新时间 |
 
 > `scheduled_at` 和 `played_at` 各建索引，支撑三分类时间查询。
+> **BatchUpsert 部分更新语义**：同一 `match_id` 可能先后被 upcoming scrape 和 results scrape 写入，后写入的字段若为空不得覆盖已有的非空值（`COALESCE(new, old)`），避免 results 写入时将 upcoming 写入的 `scheduled_at` 抹空。
 
 ### news
 | 列 | 类型 | 说明 |
