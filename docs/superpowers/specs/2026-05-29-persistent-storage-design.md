@@ -8,21 +8,60 @@
 
 ## 数据流
 
+### Type A：单实体查询（PlayerDetail / TeamDetail / NewsArticle）
+
 ```
-请求 (GET /api/players/123)
+请求 (GET /api/players/7998)
   │
-  ├─ Cache hit → 返回 (不变)
+  ├─ Cache hit → 返回 (fresh)
   │
   └─ Cache miss
        │
-       ├─ SQLite hit → 立即返回 (stale=true)
-       │     │
-       │     └─ 后台 goroutine → 抓 HLTV → SQLite upsert → Cache set
-       │                                                  │
-       │                                          SSE broadcast → 前端重取
-       │
-       └─ SQLite miss → 同步抓 HLTV → SQLite upsert → Cache set → 返回 (fresh)
+       ├─ SQLite: SELECT * FROM players WHERE id=7998
+       │    │
+       │    ├─ hit → 返回 (stale) + 后台 goroutine:
+       │    │         scrape → DB upsert → Cache set → SSE broadcast
+       │    │
+       │    └─ miss → 同步 scrape → DB upsert → Cache set → 返回 (fresh)
 ```
+
+### Type B：列表查询（Matches / News）
+
+```
+请求 (GET /api/events?type=upcoming)
+  │
+  ├─ Cache hit → 返回 (fresh)
+  │
+  └─ Cache miss
+       │
+       ├─ SQLite: SELECT * FROM matches WHERE scheduled_at分类过滤
+       │    │
+       │    ├─ hit → 后端整合 → 返回 (stale) + 后台 goroutine:
+       │    │         scrape → DB upsert → Cache set → SSE broadcast
+       │    │
+       │    └─ miss → 同步 scrape → DB upsert → Cache set → 返回 (fresh)
+```
+
+### 赛程三分类查询
+
+matches 表按时间维度三种条件检索：
+
+| 分类 | SQL 条件 | 场景 |
+|---|---|---|
+| 未来赛程 | `scheduled_at >= date('now')` | `/api/events?type=upcoming` |
+| 今日赛程 | `scheduled_at LIKE date('now')||'%'` | `/api/events?type=today` |
+| 已结束 | `played_at < date('now')` | `/api/events?type=results` |
+
+后端从 SQLite 查出后整合排序，返回与当前 API 格式一致的结构。SSE 推送 `{entity: "matches"}` 通知前端重取。
+
+### SSE 推送
+
+- 端点: `GET /api/events`
+- 两种事件粒度：
+  - 精确: `{entity: "player", id: 7998, name: "ZywOo"}` — 单实体更新，前端只刷新该组件
+  - 宽泛: `{entity: "matches"}` — 列表更新，前端重取整个列表 API
+- 30s keep-alive 心跳
+- SSE hub 作为可选接口注入 facade（nil 安全），后台 goroutine 内部调用 `hub.Broadcast()`
 
 ## 数据表设计（5 张表）
 
@@ -84,6 +123,8 @@
 | `fetched_at` | TEXT | 抓取时间 |
 | `updated_at` | TEXT | 更新时间 |
 
+> `scheduled_at` 和 `played_at` 各建索引，支撑三分类时间查询。
+
 ### news
 | 列 | 类型 | 说明 |
 |---|---|---|
@@ -125,14 +166,6 @@
 
 启动时执行一次清理，之后每 24 小时循环。
 
-## SSE 推送
-
-- 端点: `GET /api/events`
-- 后台刷新完成后 broadcast，前端 `EventSource` 监听
-- 事件格式: `{entity: "player"|"team"|"matches"|"news", id: 123, name: "..."}`
-- 30s keep-alive 心跳
-- SSE hub 单例，全局 register/unregister/broadcast
-
 ## 错误处理
 
 | 场景 | 行为 |
@@ -151,14 +184,16 @@
 | `internal/storage/storage.go` | **新增** — Store 结构体、DB 生命周期 |
 | `internal/storage/teams.go` | **新增** — TeamDetail Upsert/Get |
 | `internal/storage/players.go` | **新增** — PlayerDetail Upsert/Get |
-| `internal/storage/matches.go` | **新增** — NormalizedMatch Upsert/Get/Query |
-| `internal/storage/news.go` | **新增** — NewsItem/NewsArticle/RealtimeNews Upsert/Get |
+| `internal/storage/matches.go` | **新增** — NormalizedMatch BatchUpsert/QueryByTime/GetByID |
+| `internal/storage/news.go` | **新增** — NewsItem/NewsArticle/RealtimeNews BatchUpsert/Query/Get |
 | `internal/storage/migration.go` | **新增** — 建表 + 迁移 + 清理 |
 | `internal/http/sse.go` | **新增** — SSE hub + handler |
 | `internal/http/router.go` | **改** — 注册 `/api/events` |
-| `internal/facade/facade.go` | **改** — 每个 GetXxxCached 插入 db.Get → db.Upsert + SSE broadcast |
+| `internal/facade/facade.go` | **改** — GetPlayerDetailCached/GetTeamDetailCached/GetNewsArticleCached 注入 SSE hub 和 Store，增加三层回退 |
+| `internal/facade/matches.go` | **改** — GetUpcomingMatches/GetResultsRecent/GetEvents compute 闭包内先 BatchUpsert 再包装 ToolResponse；cache miss 时查 SQLite |
+| `internal/facade/news.go` | **改** — GetRealtimeNews/GetNewsDigest compute 闭包内先 BatchUpsert 再包装 ToolResponse；cache miss 时查 SQLite |
 | `internal/config/config.go` | **改** — 新增 DBPath / retention 配置项 |
-| `main.go` | **改** — storage init/shutdown，SSE hub 初始化 |
+| `main.go` | **改** — storage init/shutdown，SSE hub 初始化，注入 facade |
 | `Dockerfile` | **微改** — 声明 data volume |
 | `docker-compose.yml` | **改** — 挂载 data volume |
 | `README.md` | **改** — 更新 Docker 启动命令 |
