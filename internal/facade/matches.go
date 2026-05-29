@@ -148,8 +148,9 @@ func (f *HltvFacade) GetUpcomingMatches(query types.UpcomingMatchesQuery) *types
 		event = ""
 	}
 	todayOnly := query.TodayOnly
+	userSetLimit := query.Limit // 0 means no explicit limit from user
 	if query.Limit == 0 {
-		query.Limit = f.cfg.DefaultResultLimit * 10 // wider coverage for upcoming matches
+		query.Limit = 300 // internal max to prevent unbounded response
 	}
 	q := map[string]any{"team": team, "event": event, "today_only": todayOnly}
 	key := fmt.Sprintf("matches_upcoming:%s:%s:%v", team, event, todayOnly)
@@ -165,8 +166,11 @@ func (f *HltvFacade) GetUpcomingMatches(query types.UpcomingMatchesQuery) *types
 		if todayOnly {
 			items = filterToday(items)
 		}
-		if !todayOnly && query.Limit > 0 && len(items) > query.Limit {
-			items = items[:query.Limit]
+		if userSetLimit > 0 && len(items) > userSetLimit {
+			items = items[:userSetLimit]
+		}
+		if !todayOnly && len(items) > query.Limit {
+			items = items[:query.Limit] // hard cap at 300
 		}
 		meta := f.createMeta(ttl)
 		return &types.ToolResponse{Query: q, Items: items, Meta: meta}, nil

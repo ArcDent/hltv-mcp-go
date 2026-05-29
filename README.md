@@ -133,6 +133,7 @@ Docker 部署后 MCP stdio 不可用（容器隔离）。如需 MCP 功能，使
 | `HTTP_HOST` | `0.0.0.0` | HTTP 监听地址 |
 | `HLTV_DATA_SOURCE` | `auto` | `auto` / `direct` / `chromedp` |
 | `HLTV_CHROME_PATH` | 自动查找 | Chrome/Chromium 路径 |
+| `FIRECRAWL_API_KEY` | — | Firecrawl API Key（绕过 CF 封锁赛程抓取） |
 | `HLTV_HTTP_TIMEOUT_MS` | `8000` | HTTP 超时（毫秒） |
 | `HLTV_RETRY_COUNT` | `2` | HTTP 重试次数 |
 | `DEFAULT_RESULT_LIMIT` | `5` | 默认查询结果数 |
@@ -204,7 +205,8 @@ docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 
 ### 2026-05-29
 
-- **HLTV Cloudflare 封锁修复**：HLTV 全面启用 Cloudflare 防护，`/matches`、`/results` 等页面返回 403 Challenge；修复 `NormalizeUpcomingMatches` nil pointer panic（CF 页面无 `.matches-list-headline`）；所有 HTTP handler 添加超时保护（搜索 30s / 赛程 45s）；`fetchHTTP` 新增 403 状态码处理；`GetUpcomingMatches` 移除了自动限制今日赛程的默认行为
+- **Firecrawl 集成 + 赛程全面恢复**：通过 Firecrawl API 绕过 HLTV Cloudflare 封锁，`/matches` 端点恢复正常，覆盖范围从今日到 IEM Cologne Major 2026 主赛事（6 月 11 日），共 67 场比赛；重写 `NormalizeUpcomingMatches` 支持多个 `.matches-list-section` 容器；新增 `FIRECRAWL_API_KEY` 环境变量；匹配详情增加 `GoFrame` 兼容性修复
+- **HLTV Cloudflare 封锁修复**：HLTV 全面启用 Cloudflare 防护，`/matches`、`/results` 等页面返回 403 Challenge；修复 `NormalizeUpcomingMatches` nil pointer panic；所有 HTTP handler 添加超时保护
 - **选手数据分层修复**：HLTV 新版选手页无 `.all-time-stat`，代码改为先行尝试旧版生涯战斗统计，再回退到 `.highlighted-stat` 提取生涯概览；3 月 Rating 与生涯统计明确分离不再混淆；前端新增 `生涯概览` 网格和 `StatBadge` 组件
 - **HLTV 爬虫适应新布局**：HLTV 选手页正在进行 A/B 式改版，前端修复 React 条件渲染零值陷阱
 

@@ -33,10 +33,10 @@
 ```
 
 ## 最近操作
-- 2026-05-29：HLTV CF 封锁修复 — HLTV 全面启用 Cloudflare 防护（/matches /results / 全返回 403）；修复 NormalizeUpcomingMatches nil pointer panic（CF Challenge 页无 .matches-list-headline）；所有 handler 添加超时上下文（搜索 30s / 赛程 45s）；fetchHTTP 添加 403 处理；GetUpcomingMatches todayOnly 默认改为 false；chromedp 添加 recover 防崩溃；/team/* 和 /search 仍可直连访问
-- 2026-05-29：选手数据分层修复 — 新增 `PlayerSummary` 类型解析 `.highlighted-stat`；移除 `PlayerCareer.Rating` 避免与 3 月 Rating 混淆
-- 2026-05-29：深度收敛 — 删 9 个文件；前端 API 调用收敛
-- 2026-05-28：HLTV 选手页 A/B 改版适配 — 前端修复 React 零值渲染陷阱 + chromedp/Docker/昵称字典修复
+- 2026-05-29：Firecrawl 集成 — 新增 `FIRECRAWL_API_KEY` 配置 + `internal/client/firecrawl.go`；MatchesScraper.GetUpcoming 在 HTTP 403 时自动回退到 Firecrawl；重写 NormalizeUpcomingMatches 遍历所有 .matches-list-section 容器（支持 26 个日期分区的 67+ 场赛程，覆盖 IEM Cologne Major 2026 Stage 1/2/Main Event）；GetUpcomingMatches 默认 limit 提升至 300
+- 2026-05-29：HLTV CF 封锁修复 — 所有 handler 超时；fetchHTTP 403 处理；nil pointer panic 修复；chromedp recover 防崩溃
+- 2026-05-29：选手数据分层修复 — `PlayerSummary` 解析 `.highlighted-stat`
+- 2026-05-28：HLTV 选手页 A/B 改版适配 — React 零值渲染陷阱修复
 
 ## 关键发现
 
@@ -57,9 +57,9 @@
 
 ### CF 分层
 - **HTTP 直连可用**：`/player/`、`/team/`、`/search`、`/news/`
-- **被 Cloudflare 封锁 (403)**：`/matches`、`/results`、`/`（2026-05-29 起 HLTV 升级 CF 防护）
+- **Firecrawl 回退**：`/matches`（通过 Firecrawl API 绕过 CF，需 `FIRECRAWL_API_KEY`）
+- **被 Cloudflare 封锁 (403)**：`/matches`、`/results`、`/`（2026-05-29 起 HLTV 升级 CF 防护，Firecrawl 可突破）
 - **chromedp**：CF 挑战在 headless Chrome 中也无法绕过（`--headless=new` 同样被检测），仅保留框架代码
-- **/stats/matches/、/stats/players/**：JS Challenge 在 headless-shell 中无法完成
 
 ### chromedp 关键配置
 - `chromedp.DefaultExecAllocatorOptions` 内置 `--headless`，headless-shell 需 `Flag("headless", false)` 覆盖
@@ -81,9 +81,10 @@
 - 前端变更需 `vite build` + `go build` + 重启服务
 
 ## 下一步
-- `/matches` CF 封锁问题 — 探索 FlareSolverr 或代理方案恢复赛程抓取
-- 队伍页面的近期赛程可作为 team-specific 替代方案
+- Firecrawl 集成已完成，赛程正常覆盖到科隆 Major
+- 考虑为 /results 页面也添加 Firecrawl 回退
+- 监控 Firecrawl API 配额消耗
 
 ## 进行中
-- 无（2026-05-29 HLTV CF 封锁修复已完成）
+- 无（2026-05-29 Firecrawl 集成已完成）
 

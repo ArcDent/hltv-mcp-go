@@ -14,7 +14,7 @@ func (h *Handlers) GetTodayMatches(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetUpcomingMatches(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
 	defer cancel()
 
 	q := r.URL.Query()

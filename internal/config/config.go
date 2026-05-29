@@ -21,10 +21,11 @@ type Config struct {
 	HTTPPort         int
 	HTTPHost         string
 
-	DataSource DataSource
-	ChromePath string
+	DataSource    DataSource
+	ChromePath    string
+	FirecrawlKey  string
 	HTTPTimeoutMs int
-	RetryCount int
+	RetryCount    int
 
 	CacheTTLEntity       int
 	CacheTTLTeam         int
@@ -52,6 +53,7 @@ func LoadConfig() (*Config, error) {
 
 		DataSource:    DataSource(envStr("HLTV_DATA_SOURCE", "auto")),
 		ChromePath:    envStr("HLTV_CHROME_PATH", ""),
+		FirecrawlKey:  envStr("FIRECRAWL_API_KEY", ""),
 		HTTPTimeoutMs: envInt("HLTV_HTTP_TIMEOUT_MS", 8000),
 		RetryCount:    envInt("HLTV_RETRY_COUNT", 2),
 

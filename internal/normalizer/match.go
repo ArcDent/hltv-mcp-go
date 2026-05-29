@@ -84,26 +84,18 @@ func normalizeResultsCon(doc *goquery.Document, perspective string) []types.Norm
 
 func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
 	var matches []types.NormalizedMatch
-	currentDate := strings.Split(time.Now().UTC().Format(time.RFC3339), "T")[0] // "2006-01-02"
+	currentDate := strings.Split(time.Now().UTC().Format(time.RFC3339), "T")[0]
 
-	// Find parent container holding both headlines and match-wrappers
-	headline := doc.Find(".matches-list-headline").First()
-	var parent *goquery.Selection = doc.Find("body").First()
-	if headline.Length() > 0 {
-		if p := headline.Parent(); p != nil && p.Length() > 0 {
-			parent = p
+	// Iterate over all .matches-list-section containers — each holds one date's matches
+	doc.Find(".matches-list-section").Each(func(_ int, section *goquery.Selection) {
+		// Extract date from headline in this section
+		headlineText := cleanText(section.Find(".matches-list-headline").First().Text())
+		if idx := strings.LastIndex(headlineText, "- "); idx >= 0 {
+			currentDate = strings.TrimSpace(headlineText[idx+2:])
 		}
-	}
 
-	parent.Children().Each(func(_ int, child *goquery.Selection) {
-		if child.HasClass("matches-list-headline") {
-			text := cleanText(child.Text())
-			if idx := strings.LastIndex(text, "- "); idx >= 0 {
-				currentDate = strings.TrimSpace(text[idx+2:])
-			}
-			return
-		}
-		child.Find(".match").Each(func(_ int, s *goquery.Selection) {
+		// Find all .match within this section's match-wrapper containers
+		section.Find(".match").Each(func(_ int, s *goquery.Selection) {
 			m := types.NormalizedMatch{Result: types.OutcomeScheduled}
 
 			m.Event = cleanText(s.Find(".match-top").First().Text())

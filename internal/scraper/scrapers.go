@@ -28,7 +28,11 @@ func NewMatchesScraper(cli *client.HltvClient) *MatchesScraper { return &Matches
 func (s *MatchesScraper) GetUpcoming(ctx context.Context) (*goquery.Document, error) {
 	body, err := s.cli.FetchHTML(ctx, "/matches", "matches_upcoming")
 	if err != nil {
-		return nil, err
+		// Fall back to Firecrawl when direct HTTP is blocked by Cloudflare
+		body, err = s.cli.FetchViaFirecrawl(ctx, "/matches")
+		if err != nil {
+			return nil, err
+		}
 	}
 	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }
