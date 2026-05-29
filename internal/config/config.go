@@ -28,6 +28,11 @@ type Config struct {
 	CacheMaxEntries        int
 	CacheStaleWindowSec  int
 
+	DBPath              string
+	DBRetentionMatches  int
+	DBRetentionNews     int
+	DBRetentionRealtime int
+
 	DefaultResultLimit int
 	Timezone           string
 }
@@ -55,6 +60,11 @@ func LoadConfig() (*Config, error) {
 		CacheTTLNewsArticle:    envInt("CACHE_TTL_NEWS_ARTICLE_SEC", 100*365*24*3600), // ~100 years = infinite
 		CacheMaxEntries:        envInt("CACHE_MAX_ENTRIES", 500),
 		CacheStaleWindowSec:  envInt("CACHE_STALE_WINDOW_SEC", 3600),
+
+		DBPath:              envStr("HLTV_DB_PATH", "data/hltv.db"),
+		DBRetentionMatches:  envInt("HLTV_DB_RETENTION_MATCHES", 90),
+		DBRetentionNews:     envInt("HLTV_DB_RETENTION_NEWS", 30),
+		DBRetentionRealtime: envInt("HLTV_DB_RETENTION_REALTIME_NEWS", 7),
 
 		DefaultResultLimit: envInt("DEFAULT_RESULT_LIMIT", 5),
 		Timezone:           "Asia/Shanghai",
