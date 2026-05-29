@@ -33,7 +33,8 @@
 ```
 
 ## 最近操作
-- 2026-05-30：长期化存储全部实现完成 — 7 个 Group（16 任务）全部编译通过 + 12 测试套件通过 + 端到端验证（health/SSE/SQLite）；5 次 commit
+- 2026-05-30：前端 SSE 集成 — `useSSE` hook（模块级单例 EventSource）+ 4 页面自动刷新（Matches/TeamDetail/PlayerDetail/News）；构建验证通过
+- 2026-05-30：长期化存储全部实现完成 — 7 Group（16 任务）编译通过 + 12 测试套件通过 + 端到端验证（health/SSE/SQLite）；6 次 commit
 - 2026-05-29：Group D facade + router 集成 — Type A/B 三层回退、withCacheOrStore、SSE 路由注册
 - 2026-05-29：Group B storage 包 — 6 文件（migration + Store + 4 CRUD）
 - 2026-05-29：Group C SSE hub — SSEHub + SSEHandler
@@ -90,9 +91,8 @@
 - 前端变更需 `vite build` + `go build` + 重启服务
 
 ## 下一步
-- 前端集成 SSE（EventSource 监听 + 收到事件后重取 API）
-- 重新部署 Docker 容器（补充 FIRECRAWL_API_KEY）
-- push 到 GitHub 触发 CI/CD 构建新镜像
+- push → CI/CD 构建新镜像 → `docker pull` 部署（补充 FIRECRAWL_API_KEY）
+- 考虑为 /results 页面也添加 Firecrawl 回退
 
 ## 进行中
 - 无
