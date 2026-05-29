@@ -32,7 +32,8 @@
 ```
 
 ## 最近操作
-- 2026-05-29：队名截断修复 — HLTV 更新 match 页面 HTML，队名移至 `.match-teamname` 子元素；旧 `strings.Fields` 解析器截断多词队名（Natus Vincere→Natus）；改用 goquery 选择器 `.match-team.team1/team2 .match-teamname` 直接提取
+- 2026-05-29：赛程覆盖面修复 — HLTV 嵌套 `.match` div 导致 `section.Find(".match")` 双重计数且遗漏后期比赛；改用 `.match-wrapper` 选择器 + `data-match-id` 属性去重；收录条件放宽为至少一方已知（含淘汰赛待定对手），覆盖范围从 36 场/5 天扩展到 55 场/7 天
+- 2026-05-29：队名截断修复 — HLTV 更新 match 页面 HTML，队名移至 `.match-teamname` 子元素；旧 `strings.Fields` 解析器截断多词队名；改用 goquery 选择器 `.match-team.team1/team2 .match-teamname` 直接提取
 - 2026-05-29：依赖收敛 — 删除 chromedp、`internal/errors` 包、4跳死参数链；Docker alpine；scraper fetchDoc；ToolError error 接口
 - 2026-05-29：搜索页面切换 bug 修复 — SearchableList 添加 `key={type}`；embed 指令 `dist/*` → `dist`
 - 2026-05-29：Firecrawl 集成 — MatchesScraper.GetUpcoming 403 时回退到 Firecrawl；重写 NormalizeUpcomingMatches
@@ -45,7 +46,7 @@
 - **队伍页**: `h1.profile-team-name` / `.value.h-rank` / `.bodyshot-team a[href*='/player/']`(队员) / `.trophySection .trophyDescription[title]` / `.highlighted-stat`(胜率/连胜)
 - **比赛链接**: `.playerpage-matchbox[href]` 正则 `/stats/matches/(\d+)/([^"\s]+)`
 - **赛果**: `.result-con` > `.line-align.team1 .team` / `.result-score` / `.event-name`
-- **赛程**: `.matches-list-section` > `.matches-list-headline`(日期) + `.match`(比赛)
+- **赛程**: `.matches-list-section` > `.match-wrapper`(比赛容器，每场比赛唯一) > `.match`(可能嵌套两层) / `.match-team.team1/team2 .match-teamname`(队名) / `.match-event`(赛事名) / `.match-info`(时间/boN) / `.match-no-info`(无队伍时的占位描述)；`data-match-id` 属性获取比赛 ID；`.match-wrapper` 的 `team1`/`team2` 属性在队伍未定时为空
 - **新闻**: `.newstext` / `.news-block p`(正文) — 不可用 `.Text()` 取整个容器
 - **搜索**: `table tbody tr > a[href*='/player/']` 正则 `/player/(\d+)/(.+)`
 

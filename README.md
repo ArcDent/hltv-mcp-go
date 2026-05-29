@@ -207,6 +207,7 @@ docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 
 ### 2026-05-29
 
+- **赛程覆盖面修复**：HLTV 新版 `.match` 嵌套两层导致选择器双重匹配、遗漏 6 月后赛程；改用 `.match-wrapper` 精确去重 + `data-match-id` 属性提取 ID；收录条件放宽为至少一方已知，覆盖范围从 36 场（5 天）扩展到 55 场（7 天，含淘汰赛待定对手）
 - **赛程多词队名截断修复**：HLTV 赛程 HTML 改为 `.match-teamname` 子元素结构，旧 `strings.Fields` 解析器截断 NaVi（Natus Vincere）、The MongolZ 等多词队名；改用 goquery 选择器直接提取
 - **依赖收敛**：删除 chromedp 依赖和 115 行死代码；删除 `internal/errors` 包；删除 4 跳死参数链；Docker 镜像缩小 ~90%；合并 docker-compose；scraper 提取共享 `fetchDoc` 消除 10+ 处重复样板
 - **搜索页路由切换修复**：`SearchableList` 添加 `key={type}` 强制重新挂载；修正 Go embed 指令
