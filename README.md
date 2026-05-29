@@ -187,7 +187,8 @@ docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 
 ### 2026-05-29
 
-- **HLTV 爬虫适应新布局**：HLTV 选手页正在进行 A/B 式改版（部分选手已移除 `.all-time-stat` 生涯统计区域），新增 `NormalizeCareerFromOverview` 解析 `/stats/players/` 统计页数据；前端修复 React 条件渲染零值陷阱（`{0 && <Component/>}` 渲染为文字 "0"）
+- **选手数据分层修复**：HLTV 新版选手页无 `.all-time-stat`，代码改为先行尝试旧版生涯战斗统计（Matches/K/D/Win Rate），再回退到 `.highlighted-stat` 提取生涯概览（效力战队数/Major 冠军/LAN 冠军/奖杯/MVP/EVP 等）；3 月 Rating 与生涯统计明确分离不再混淆；前端新增 `生涯概览` 网格和 `StatBadge` 组件
+- **HLTV 爬虫适应新布局**：HLTV 选手页正在进行 A/B 式改版（部分选手已移除 `.all-time-stat` 生涯统计区域），前端修复 React 条件渲染零值陷阱（`{0 && <Component/>}` 渲染为文字 "0"）
 
 ### 2026-05-28
 

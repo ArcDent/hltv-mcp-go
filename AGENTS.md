@@ -33,14 +33,14 @@
 ```
 
 ## 最近操作
-- 2026-05-29：深度收敛 — 删 9 个文件（.clinerules-*×5, .playwright-mcp/, SummaryHint 字段, PlayerNickname/TeamNickname 函数, NormalizeCareerFromOverview, cleanText 重复定义, 4 未用错误码, 5 未用类型字段）；前端 API 调用收敛（3 组件改回使用 api.* 方法）
-- 2026-05-29：HLTV 选手页 A/B 改版适配 — 发现新版页面移除 `.all-time-stat`；前端修复 React 零值渲染陷阱
-- 2026-05-28：前端别名编辑 UX 改进 + chromedp headless-shell flag 修复 + Docker SSL 修复 + 昵称字典后端迁移
+- 2026-05-29：选手数据分层修复 — 新增 `PlayerSummary` 类型解析 `.highlighted-stat`（新/旧布局均可用）；移除 `PlayerCareer.Rating` 避免与 3 月 Rating 混淆；前端新增生涯概览网格
+- 2026-05-29：深度收敛 — 删 9 个文件（.clinerules-*×5, .playwright-mcp/, SummaryHint 字段, PlayerNickname/TeamNickname 函数, NormalizeCareerFromOverview, cleanText 重复定义, 4 未用错误码, 5 未用类型字段）；前端 API 调用收敛
+- 2026-05-28：HLTV 选手页 A/B 改版适配 — 发现新版页面移除 `.all-time-stat`；前端修复 React 零值渲染陷阱 + chromedp/Docker/昵称字典修复
 
 ## 关键发现
 
 ### HLTV HTML 选择器（核心参考）
-- **选手页**: `.playerNickname` / `.playerRealname` / `.playerTeam a[itemprop="text"]` / `.player-stat` > `.statsVal p b`(能力值) / `.stats-window`(maps数) / `.playerpage-matchbox`(近期比赛) / `.playerpage-match-result`(比分) / `.playerpage-match-date` / `.majorWinner b`(Major冠军数) / `.mvp-count`(MVP数) / `.all-time-stat` > `.stat` + `.description`(生涯统计，旧版) / `.playerInfoRow.playerAge` / `.playerTop20`
+- **选手页**: `.playerNickname` / `.playerRealname` / `.playerTeam a[itemprop="text"]` / `.player-stat` > `.statsVal p b`(能力值) / `.stats-window`(maps数) / `.playerpage-matchbox`(近期比赛) / `.playerpage-match-result`(比分) / `.playerpage-match-date` / `.majorWinner b`(Major冠军数) / `.mvp-count`(MVP数) / `.all-time-stat` > `.stat` + `.description`(生涯战斗统计，旧版) / `.highlighted-stat` > `.stat` + `.description`(生涯概览，新版通用) / `.playerInfoRow.playerAge` / `.playerTop20`
 - **队伍页**: `h1.profile-team-name` / `.value.h-rank` / `.bodyshot-team a[href*='/player/']`(队员) / `.trophySection .trophyDescription[title]` / `.highlighted-stat`(胜率/连胜)
 - **比赛链接**: `.playerpage-matchbox[href]` 正则 `/stats/matches/(\d+)/([^"\s]+)`
 - **赛果**: `.result-con` > `.line-align.team1 .team` / `.result-score` / `.event-name`
@@ -49,8 +49,10 @@
 - **搜索**: `table tbody tr > a[href*='/player/']` 正则 `/player/(\d+)/(.+)`
 
 ### HLTV 选手页 A/B 改版
-- **sh1ro 为新版**：无 `.all-time-stat`，生涯数据在 `/stats/players/` 页（`.stats-rows > .stats-row > span` 结构，headless-shell 无法通过 CF）
-- **s1mple/ZywOo 为旧版**：`.all-time-stat` 仍存在，生涯数据正常提取
+- **旧版**（s1mple/ZywOo）：`.all-time-stat` 包含 Matches / Win rate / Win streak / KDR(K/D) / Headshots
+- **新版**（sh1ro）：无 `.all-time-stat`，改用 `.highlighted-stat`（Teams / Days in team / Majors / LANs / Trophies / MVPs / EVPs）
+- **两者都有的**：`.player-stat`(3月能力值) / `.playerTop20` / `.majorWinner` / `.mvp-count`
+- **不存在独立"生涯 Rating"**：HLTV 页面只展示近 3 月 Rating 3.0，不可将 `.player-stat` 的 Rating 误当生涯 Rating
 
 ### CF 分层
 - HTTP 直连可用：`/player/`、`/results`、`/matches`、`/team/`、`/news/`

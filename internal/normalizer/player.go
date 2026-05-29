@@ -105,7 +105,7 @@ func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 		pd.Abilities = append(pd.Abilities, ab)
 	}
 
-	// All-time stats — try legacy .all-time-stat first, then .stats-rows from overview
+	// All-time stats from .all-time-stat (old layout): Matches, K/D, Win rate, Headshots, Win streak
 	doc.Find(".all-time-stat").Each(func(_ int, s *goquery.Selection) {
 		valText := cleanText(s.Find(".stat").Text())
 		desc := cleanText(s.Find(".description").Text())
@@ -117,15 +117,34 @@ func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 		case desc == "Matches": pd.Career.Matches, _ = strconv.Atoi(valText)
 		}
 	})
-	// Career rating
-	if pd.Career.Rating == 0 {
-		doc.Find(".all-time-stat, .player-stat").Each(func(_ int, s *goquery.Selection) {
-			if strings.Contains(strings.ToLower(s.Text()), "rating") && pd.Career.Rating == 0 {
-				if v, err := strconv.ParseFloat(cleanText(s.Find(".stat, .statsVal p").First().Text()), 64); err == nil {
-					pd.Career.Rating = v
-				}
-			}
-		})
+
+	// Summary stats from .highlighted-stat (available on both old and new layout)
+	var sum types.PlayerSummary
+	doc.Find(".highlighted-stat").Each(func(_ int, s *goquery.Selection) {
+		valText := cleanText(s.Find(".stat").Text())
+		desc := cleanText(s.Find(".description").Text())
+		if desc == "" {
+			desc = cleanText(strings.Replace(s.Text(), valText, "", 1))
+		}
+		v, _ := strconv.Atoi(strings.ReplaceAll(valText, ",", ""))
+		switch {
+		case desc == "Teams": sum.Teams = v
+		case desc == "Days in current team": sum.DaysInTeam = v
+		case desc == "Days in teams": sum.DaysInTeams = v
+		case desc == "Major won": sum.MajorWon = v
+		case desc == "Majors played": sum.MajorsPlayed = v
+		case desc == "LANs won": sum.LANsWon = v
+		case desc == "LANs played": sum.LANsPlayed = v
+		case desc == "Major trophies": sum.MajorTrophies = v
+		case desc == "Notable trophies": sum.NotableTrophies = v
+		case desc == "Major MVPs": sum.MajorMVPs = v
+		case desc == "Total MVPs": sum.TotalMVPs = v
+		case desc == "Major EVPs": sum.MajorEVPs = v
+		case desc == "Total EVPs": sum.TotalEVPs = v
+		}
+	})
+	if sum.Teams > 0 || sum.MajorWon > 0 || sum.LANsWon > 0 || sum.MajorTrophies > 0 {
+		pd.Summary = &sum
 	}
 
 	// Top 20 — from .playerInfoRow.playerTop20

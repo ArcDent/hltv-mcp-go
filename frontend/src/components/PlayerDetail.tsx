@@ -7,7 +7,8 @@ type PlayerData = {
   profile: { id: number; name: string; real_name?: string; slug: string; country?: string; age?: number; team?: string }
   rating: { value: number; maps: number }
   abilities: { key: string; label_en: string; label_zh: string; value: number; max: number; format?: string }[]
-  career: { rating?: number; matches?: number; win_rate?: string; kd?: number; headshot_pct?: string; win_streak?: number }
+  career: { matches?: number; win_rate?: string; kd?: number; headshot_pct?: string; win_streak?: number }
+  summary?: { teams: number; days_in_team: number; days_in_teams: number; major_won: number; majors_played: number; lans_won: number; lans_played: number; major_trophies: number; notable_trophies: number; major_mvps: number; total_mvps: number; major_evps: number; total_evps: number }
   top20_ranks?: Record<string, number>
   honors?: { label: string; value: number }[]
   recent_matches?: { date: string; team: string; opponent: string; score: string; result: string; rating: number; kills: number; deaths: number; event: string }[]
@@ -119,18 +120,41 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
               </div>
             </div>
 
-            {(data.career.rating || data.career.matches) && (
+            {data.summary && (
+              <div style={{fontFamily:'var(--font-display)',fontSize:16,fontWeight:600,color:'var(--gold)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:10,paddingBottom:8,borderBottom:'1px solid var(--border)'}}>
+                生涯概览
+              </div>
+            )}
+
+            {data.summary && (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(140px, 1fr))',gap:6,marginBottom:14}}>
+                {data.summary.teams > 0 && <StatBadge label="效力战队" value={data.summary.teams} />}
+                {data.summary.days_in_team > 0 && <StatBadge label="当前队天数" value={data.summary.days_in_team} />}
+                {data.summary.days_in_teams > 0 && <StatBadge label="生涯总天数" value={data.summary.days_in_teams} />}
+                {data.summary.major_won > 0 && <StatBadge label="Major 冠军" value={data.summary.major_won} gold />}
+                {data.summary.majors_played > 0 && <StatBadge label="Major 参赛" value={data.summary.majors_played} />}
+                {data.summary.lans_won > 0 && <StatBadge label="LAN 冠军" value={data.summary.lans_won} gold />}
+                {data.summary.lans_played > 0 && <StatBadge label="LAN 参赛" value={data.summary.lans_played} />}
+                {data.summary.major_trophies > 0 && <StatBadge label="Major 奖杯" value={data.summary.major_trophies} gold />}
+                {data.summary.notable_trophies > 0 && <StatBadge label="知名奖杯" value={data.summary.notable_trophies} />}
+                {data.summary.major_mvps > 0 && <StatBadge label="Major MVP" value={data.summary.major_mvps} gold />}
+                {data.summary.total_mvps > 0 && <StatBadge label="总 MVP" value={data.summary.total_mvps} />}
+                {data.summary.major_evps > 0 && <StatBadge label="Major EVP" value={data.summary.major_evps} />}
+                {data.summary.total_evps > 0 && <StatBadge label="总 EVP" value={data.summary.total_evps} />}
+              </div>
+            )}
+
+            {(data.career.matches ?? 0) > 0 && (
               <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:16,marginBottom:14,fontSize:13,color:'var(--text-secondary)'}}>
-                {data.career.rating && <><span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.rating}</span> 生涯 Rating</span><span style={{color:'var(--border)'}}>|</span></>}
-                {(data.career.matches ?? 0) > 0 && <><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.matches}</span> 比赛</>}
+                <span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.matches}</span> 比赛</span>
                 {data.career.win_rate && <><span style={{color:'var(--border)'}}>|</span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.win_rate}</span> 胜率</>}
                 {(data.career.kd ?? 0) > 0 && <><span style={{color:'var(--border)'}}>|</span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.kd}</span> K/D</>}
               </div>
             )}
 
-            {data.honors && data.honors.length > 0 && (
+            {(data.career.headshot_pct || data.career.win_streak || (data.honors && data.honors.length > 0)) && (
               <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center',marginBottom:14}}>
-                {data.honors.map(h => (
+                {data.honors && data.honors.map(h => (
                   <span key={h.label} style={{fontSize:11,padding:'2px 10px',borderRadius:10,background:'rgba(196,138,10,0.06)',color:'var(--gold)',fontWeight:500}}>{h.label} {h.value}×</span>
                 ))}
                 {data.career.headshot_pct && <span style={{fontSize:11,padding:'2px 10px',borderRadius:10,background:'rgba(196,138,10,0.06)',color:'var(--gold)',fontWeight:500}}>爆头率 {data.career.headshot_pct}</span>}
@@ -163,4 +187,18 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
         )}
       </Modal>
     )
+}
+
+function StatBadge({ label, value, gold }: { label: string; value: number; gold?: boolean }) {
+  return (
+    <div style={{
+      display:'flex',justifyContent:'space-between',alignItems:'center',
+      padding:'6px 10px',borderRadius:6,fontSize:12,
+      background: gold ? 'rgba(196,138,10,0.08)' : 'var(--input-bg)',
+      border: gold ? '1px solid rgba(196,138,10,0.2)' : '1px solid var(--border)',
+    }}>
+      <span style={{color:'var(--text-secondary)'}}>{label}</span>
+      <span style={{fontFamily:'var(--font-display)',fontWeight:700,fontSize:14,color: gold ? 'var(--gold)' : 'var(--text)'}}>{value.toLocaleString()}</span>
+    </div>
+  )
 }

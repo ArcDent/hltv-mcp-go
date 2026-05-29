@@ -219,6 +219,7 @@ type PlayerDetail struct {
 	Rating        PlayerRating        `json:"rating"`
 	Abilities     []PlayerAbility     `json:"abilities"`
 	Career        PlayerCareer        `json:"career"`
+	Summary       *PlayerSummary      `json:"summary,omitempty"`
 	Top20Ranks    map[string]int      `json:"top20_ranks"`
 	Honors        []PlayerHonor       `json:"honors,omitempty"`
 	RecentMatches []PlayerRecentMatch `json:"recent_matches,omitempty"`
@@ -245,12 +246,26 @@ type PlayerAbility struct {
 	Format  string  `json:"format,omitempty"`
 }
 type PlayerCareer struct {
-	Rating       float64 `json:"rating"`
-	Matches      int     `json:"matches"`
-	WinRate      string  `json:"win_rate"`
-	KD           float64 `json:"kd"`
-	HeadshotPct  string  `json:"headshot_pct"`
-	WinStreak    int     `json:"win_streak"`
+	Matches     int     `json:"matches"`
+	WinRate     string  `json:"win_rate"`
+	KD          float64 `json:"kd"`
+	HeadshotPct string  `json:"headshot_pct"`
+	WinStreak   int     `json:"win_streak"`
+}
+type PlayerSummary struct {
+	Teams           int `json:"teams"`
+	DaysInTeam      int `json:"days_in_team"`
+	DaysInTeams     int `json:"days_in_teams"`
+	MajorWon        int `json:"major_won"`
+	MajorsPlayed    int `json:"majors_played"`
+	LANsWon         int `json:"lans_won"`
+	LANsPlayed      int `json:"lans_played"`
+	MajorTrophies   int `json:"major_trophies"`
+	NotableTrophies int `json:"notable_trophies"`
+	MajorMVPs       int `json:"major_mvps"`
+	TotalMVPs       int `json:"total_mvps"`
+	MajorEVPs       int `json:"major_evps"`
+	TotalEVPs       int `json:"total_evps"`
 }
 type PlayerHonor struct {
 	Label string `json:"label"`
