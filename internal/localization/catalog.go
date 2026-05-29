@@ -213,7 +213,7 @@ func BuildFullDict() (teams, players map[string]string) {
 			}
 		}
 	}
-	// Apply team overrides — resolve canonical to all variants
+	// Apply team overrides — resolve canonical to all variants + direct mapping
 	ov.mu.RLock()
 	for canonicalName, nickname := range ov.teams {
 		if nickname == "" {
@@ -226,6 +226,8 @@ func BuildFullDict() (teams, players map[string]string) {
 				}
 			}
 		}
+		// Direct mapping ensures non-catalog teams and exact name matches work
+		teams[canonicalName] = nickname
 	}
 	ov.mu.RUnlock()
 

@@ -33,14 +33,13 @@ func (h *Handlers) PutTeamNickname(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Resolve to canonical via alias lookup
-	e := localization.LookupTeam(req.Name)
-	if e == nil {
-		writeError(w, http.StatusBadRequest, "team not found in catalog")
-		return
+	// Resolve to canonical via alias lookup if possible, fallback to raw name
+	name := req.Name
+	if e := localization.LookupTeam(req.Name); e != nil {
+		name = e.Canonical
 	}
 
-	if err := localization.SetTeamOverride(e.Canonical, req.Nickname); err != nil {
+	if err := localization.SetTeamOverride(name, req.Nickname); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to save")
 		return
 	}
