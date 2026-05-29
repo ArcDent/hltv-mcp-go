@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Modal from './Modal'
 import PlayerDetail from './PlayerDetail'
 import useNicknames from '../hooks/useNicknames'
+import { api } from '../api/client'
 
 type TeamData = {
   profile: { id: number; name: string; slug: string; country?: string; region?: string }
@@ -23,7 +24,7 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
 
   useEffect(() => {
     setLoading(true)
-    fetch(`/api/teams/${id}`).then(r => r.json()).then(d => {
+    api.getTeam(id).then((d: any) => {
       setData(d.data ?? null); setLoading(false)
     }).catch(() => setLoading(false))
   }, [id])

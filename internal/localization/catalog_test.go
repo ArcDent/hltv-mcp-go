@@ -25,30 +25,6 @@ func TestFormatTeamDisplay(t *testing.T) {
 	}
 }
 
-func TestPlayerNickname_Builtin(t *testing.T) {
-	if n := PlayerNickname("ZywOo"); n != "载物" {
-		t.Errorf("expected 载物, got %q", n)
-	}
-	if n := PlayerNickname("donk"); n != "小驴" {
-		t.Errorf("expected 小驴, got %q", n)
-	}
-}
-
-func TestPlayerNickname_Unknown(t *testing.T) {
-	if n := PlayerNickname("UnknownPlayerXYZ"); n != "" {
-		t.Errorf("expected empty for unknown player, got %q", n)
-	}
-}
-
-func TestTeamNickname(t *testing.T) {
-	if n := TeamNickname("Spirit"); n != "绿龙" {
-		t.Errorf("expected 绿龙 via alias, got %q", n)
-	}
-	if n := TeamNickname("Vitality"); n != "小蜜蜂" {
-		t.Errorf("expected 小蜜蜂, got %q", n)
-	}
-}
-
 func TestBuildFullDict_TeamsHasVariants(t *testing.T) {
 	teams, _ := BuildFullDict()
 	if teams["Spirit"] != "绿龙" {
@@ -69,25 +45,20 @@ func TestBuildFullDict_Players(t *testing.T) {
 	}
 }
 
-func TestTeamNickname_WithOverride(t *testing.T) {
+func TestOverrides(t *testing.T) {
 	InitOverrides()
 	SetTeamOverride("Vitality", "蜜蜂战队")
-
-	if n := TeamNickname("Vitality"); n != "蜜蜂战队" {
-		t.Errorf("expected 蜜蜂战队 override, got %q", n)
-	}
-	SetTeamOverride("Vitality", "")
-	InitOverrides()
-}
-
-func TestPlayerNickname_WithOverride(t *testing.T) {
-	InitOverrides()
 	SetPlayerOverride("donk", "小驴子")
 
-	if n := PlayerNickname("donk"); n != "小驴子" {
-		t.Errorf("expected 小驴子 override, got %q", n)
+	teams, players := BuildFullDict()
+	if teams["Vitality"] != "蜜蜂战队" {
+		t.Errorf("expected Vitality→蜜蜂战队 override, got %q", teams["Vitality"])
 	}
+	if players["donk"] != "小驴子" {
+		t.Errorf("expected donk→小驴子 override, got %q", players["donk"])
+	}
+
+	SetTeamOverride("Vitality", "")
 	SetPlayerOverride("donk", "")
 	InitOverrides()
 }
-

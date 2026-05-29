@@ -117,21 +117,6 @@ func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 		case desc == "Matches": pd.Career.Matches, _ = strconv.Atoi(valText)
 		}
 	})
-	// New HLTV layout: career stats moved to /stats/players/ page in .stats-rows
-	if pd.Career.Matches == 0 && pd.Career.KD == 0 {
-		doc.Find(".stats-rows .stats-row").Each(func(_ int, s *goquery.Selection) {
-			spans := s.Find("span")
-			if spans.Length() != 2 { return }
-			label := cleanText(spans.Eq(0).Text())
-			value := cleanText(spans.Eq(1).Text())
-			switch {
-			case strings.Contains(label, "Maps played"): pd.Career.Matches, _ = strconv.Atoi(strings.ReplaceAll(value, ",", ""))
-			case strings.Contains(label, "K/D Ratio"): pd.Career.KD, _ = strconv.ParseFloat(value, 64)
-			case strings.Contains(label, "Headshot"): pd.Career.HeadshotPct = value
-			}
-		})
-	}
-
 	// Career rating
 	if pd.Career.Rating == 0 {
 		doc.Find(".all-time-stat, .player-stat").Each(func(_ int, s *goquery.Selection) {
@@ -272,27 +257,6 @@ func normalizeBO1Score(score string) string {
 	return score
 }
 
-// NormalizeCareerFromOverview extracts career stats from the /stats/players/ overview page
-func NormalizeCareerFromOverview(doc *goquery.Document) types.PlayerCareer {
-	var c types.PlayerCareer
-	doc.Find(".stats-rows .stats-row").Each(func(_ int, s *goquery.Selection) {
-		spans := s.Find("span")
-		if spans.Length() != 2 {
-			return
-		}
-		label := cleanText(spans.Eq(0).Text())
-		value := cleanText(spans.Eq(1).Text())
-		switch {
-		case strings.Contains(label, "Maps played"):
-			c.Matches, _ = strconv.Atoi(strings.ReplaceAll(value, ",", ""))
-		case strings.Contains(label, "K/D Ratio"):
-			c.KD, _ = strconv.ParseFloat(value, 64)
-		case strings.Contains(label, "Headshot"):
-			c.HeadshotPct = value
-		}
-	})
-	return c
-}
 func CollectRecentHighlights(doc *goquery.Document) []string {
 	var highlights []string
 	doc.Find(".achievement, .highlight, .trophy").Each(func(_ int, s *goquery.Selection) {

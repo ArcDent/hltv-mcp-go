@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import useNicknames from '../hooks/useNicknames'
 import Modal from './Modal'
+import { api } from '../api/client'
 
 type PlayerData = {
-  profile: { id: number; name: string; real_name?: string; slug: string; country?: string; age?: number; team?: string; prize_money?: string }
+  profile: { id: number; name: string; real_name?: string; slug: string; country?: string; age?: number; team?: string }
   rating: { value: number; maps: number }
   abilities: { key: string; label_en: string; label_zh: string; value: number; max: number; format?: string }[]
   career: { rating?: number; matches?: number; win_rate?: string; kd?: number; headshot_pct?: string; win_streak?: number }
@@ -20,7 +21,7 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
 
   useEffect(() => {
     setLoading(true)
-    fetch(`/api/players/${id}`).then(r => r.json()).then(d => {
+    api.getPlayer(id).then((d: any) => {
       setData(d.data ?? null); setLoading(false)
     }).catch(() => setLoading(false))
   }, [id])
@@ -70,7 +71,6 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
                   {p.country ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>{p.country}</span> : <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-muted)'}}>未知国籍</span>}
                   {p.age ? <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>Age {p.age}</span> : null}
                   <span style={{padding:'2px 8px',background: p.team ? 'var(--gold-dim)' : 'var(--input-bg)',borderRadius:4,fontSize:11,color: p.team ? 'var(--gold)' : 'var(--text-muted)',fontWeight: p.team ? 600 : 400}}>{p.team || '暂无队伍'}</span>
-                  {p.prize_money && <span style={{padding:'2px 8px',background:'var(--input-bg)',borderRadius:4,fontSize:11,color:'var(--text-secondary)'}}>{p.prize_money}</span>}
                 </div>
               </div>
             </div>

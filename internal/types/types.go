@@ -73,7 +73,6 @@ type NewsItem struct {
 	Title       string `json:"title"`
 	Link        string `json:"link,omitempty"`
 	PublishedAt string `json:"published_at,omitempty"`
-	SummaryHint string `json:"summary_hint,omitempty"`
 	Tag         string `json:"tag,omitempty"`
 }
 
@@ -85,7 +84,6 @@ type RealtimeNewsItem struct {
 	RelativeTime string `json:"relative_time,omitempty"`
 	Comments     string `json:"comments,omitempty"`
 	Link         string `json:"link,omitempty"`
-	SummaryHint  string `json:"summary_hint,omitempty"`
 }
 
 // TeamRecentData contains a team's recent results, upcoming matches, and stats
@@ -233,7 +231,6 @@ type PlayerDetailProfile struct {
 	Country    string `json:"country"`
 	Age        int    `json:"age,omitempty"`
 	Team       string `json:"team"`
-	PrizeMoney string `json:"prize_money,omitempty"`
 }
 type PlayerRating struct {
 	Value float64 `json:"value"`
@@ -301,7 +298,6 @@ type TeamDetailProfile struct {
 	Name    string `json:"name"`
 	Slug    string `json:"slug"`
 	Country string `json:"country"`
-	Region  string `json:"region,omitempty"`
 }
 
 // TeamRanking holds world ranking and points
@@ -316,7 +312,6 @@ type TeamStats struct {
 	Losses     int    `json:"losses"`
 	Draws      int    `json:"draws"`
 	WinRate    string `json:"win_rate"`
-	RecentForm string `json:"recent_form"`
 }
 
 // TeamAchievement represents a trophy or record
@@ -332,7 +327,6 @@ type TeamRosterPlayer struct {
 	Name    string  `json:"name"`
 	Slug    string  `json:"slug"`
 	Rating  float64 `json:"rating"`
-	Country string  `json:"country,omitempty"`
 }
 
 // NewsArticle is the full text of a news article scraped from HLTV

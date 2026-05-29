@@ -193,28 +193,6 @@ func FormatTeamDisplay(name string) string {
 	return name
 }
 
-// PlayerNickname returns the colloquial name for a player.
-// Checks overrides first, then falls back to the built-in catalog.
-func PlayerNickname(name string) string {
-	if n := GetPlayerOverride(name); n != "" {
-		return n
-	}
-	return playerCatalogMap[name]
-}
-
-// TeamNickname returns the colloquial name for a team.
-// Checks overrides first, then falls back to TeamCatalog.Colloquial.
-func TeamNickname(name string) string {
-	if n := GetTeamOverride(name); n != "" {
-		return n
-	}
-	e := LookupTeam(name)
-	if e == nil || e.Colloquial == "" {
-		return ""
-	}
-	return e.Colloquial
-}
-
 // BuildFullDict returns the complete team+player nickname dictionaries
 // with all variants expanded and user overrides applied on top.
 func BuildFullDict() (teams, players map[string]string) {

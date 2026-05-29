@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/client"
@@ -79,4 +78,4 @@ func (s *NewsArticleScraper) GetArticle(ctx context.Context, url string) (*goque
 	return goquery.NewDocumentFromReader(bytes.NewReader(body))
 }
 
-func cleanText(s string) string { return strings.TrimSpace(s) }
+

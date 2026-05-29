@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
+import { api } from '../api/client'
 import { useTranslateConfig } from './TranslateProvider'
 
 type ArticleData = {
@@ -15,7 +16,7 @@ export default function NewsDetail({ url, onClose }: { url: string; onClose: () 
 
   useEffect(() => {
     setLoading(true)
-    fetch(`/api/news/article?url=${encodeURIComponent(url)}`).then(r => r.json()).then(d => {
+    api.getNewsArticle(url).then(d => {
       setData(d.data ?? null); setLoading(false)
     }).catch(() => setLoading(false))
   }, [url])

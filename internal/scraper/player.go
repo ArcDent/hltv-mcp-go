@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/client"
@@ -42,7 +43,7 @@ func (s *PlayerScraper) Search(ctx context.Context, name string) ([]types.Resolv
 		}
 		id, _ := strconv.Atoi(m[1])
 		slug := m[2]
-		name := cleanText(link.Text())
+		name := strings.TrimSpace(link.Text())
 		if name == "" || id == 0 {
 			return
 		}

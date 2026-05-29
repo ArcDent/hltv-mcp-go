@@ -80,7 +80,6 @@ func (f *HltvFacade) GetNewsDigest(query types.NewsDigestQuery) *types.ToolRespo
 		for _, item := range allItems {
 			if tag == "" ||
 				strings.Contains(strings.ToLower(item.Title), strings.ToLower(tag)) ||
-				strings.Contains(strings.ToLower(item.SummaryHint), strings.ToLower(tag)) ||
 				strings.Contains(strings.ToLower(item.Tag), strings.ToLower(tag)) {
 				filtered = append(filtered, item)
 			}
