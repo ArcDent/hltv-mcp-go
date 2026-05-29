@@ -79,20 +79,27 @@ func parseDate(headline string) string {
 func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
 	var matches []types.NormalizedMatch
 	currentDate := strings.Split(time.Now().UTC().Format(time.RFC3339), "T")[0]
+	seen := make(map[int]bool)
 
-	// Iterate over all .matches-list-section containers — each holds one date's matches
 	doc.Find(".matches-list-section").Each(func(_ int, section *goquery.Selection) {
-		// Extract date from headline in this section
 		headlineText := cleanText(section.Find(".matches-list-headline").First().Text())
 		if idx := strings.LastIndex(headlineText, "- "); idx >= 0 {
 			currentDate = strings.TrimSpace(headlineText[idx+2:])
 		}
 
-		// Find all .match within this section's match-wrapper containers
-		section.Find(".match").Each(func(_ int, s *goquery.Selection) {
+		// Target .match-wrapper to avoid double-counting nested .match divs
+		section.Find(".match-wrapper").Each(func(_ int, s *goquery.Selection) {
 			m := types.NormalizedMatch{Result: types.OutcomeScheduled}
 
-			m.Event = cleanText(s.Find(".match-top").First().Text())
+			// Match ID from data attribute (most reliable)
+			if mid, ok := s.Attr("data-match-id"); ok {
+				m.MatchID, _ = strconv.Atoi(mid)
+			}
+			if m.MatchID > 0 && seen[m.MatchID] {
+				return
+			}
+
+			m.Event = cleanText(s.Find(".match-event").First().Text())
 
 			infoText := cleanText(s.Find(".match-info").First().Text())
 			if idx := strings.Index(infoText, " "); idx > 0 {
@@ -105,7 +112,6 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 			m.Team1 = cleanText(s.Find(".match-team.team1 .match-teamname").First().Text())
 			m.Team2 = cleanText(s.Find(".match-team.team2 .match-teamname").First().Text())
 
-			// Fallback: parse .match-teams text for older HLTV page formats
 			if m.Team1 == "" || m.Team2 == "" {
 				teamsText := cleanText(s.Find(".match-teams").First().Text())
 				teamsText = strings.ReplaceAll(teamsText, "\n", " ")
@@ -116,13 +122,15 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 				}
 			}
 
-			s.Find("a").Each(func(_ int, a *goquery.Selection) {
-				if href, ok := a.Attr("href"); ok {
-					if id := parseMatchID(href); id > 0 {
-						m.MatchID = id
+			if m.MatchID == 0 {
+				s.Find("a").Each(func(_ int, a *goquery.Selection) {
+					if href, ok := a.Attr("href"); ok {
+						if id := parseMatchID(href); id > 0 {
+							m.MatchID = id
+						}
 					}
-				}
-			})
+				})
+			}
 
 			if perspective != "" {
 				if m.Team1 == perspective {
@@ -135,13 +143,17 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 			m.Team2 = TranslatePlaceholder(m.Team2)
 			m.Opponent = TranslatePlaceholder(m.Opponent)
 
-			if m.Team1 != "" && m.Team2 != "" {
+			if m.Team1 != "" || m.Team2 != "" {
+				if m.MatchID > 0 {
+					seen[m.MatchID] = true
+				}
 				matches = append(matches, m)
 			}
 		})
 	})
 	return matches
 }
+
 
 func cleanText(s string) string {
 	return strings.TrimSpace(s)
