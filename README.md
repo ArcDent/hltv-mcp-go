@@ -187,7 +187,7 @@ docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 
 ### 2026-05-29
 
-- **PlayerDetail 显示修复**：修复 React 条件渲染零值陷阱 — `{0 && <Component/>}` 返回数字 `0` 被渲染为可见文字，影响选手生涯数据中零值字段的显示（`matches`、`kd`、`win_streak`）
+- **HLTV 爬虫适应新布局**：HLTV 选手页正在进行 A/B 式改版（部分选手已移除 `.all-time-stat` 生涯统计区域），新增 `NormalizeCareerFromOverview` 解析 `/stats/players/` 统计页数据；前端修复 React 条件渲染零值陷阱（`{0 && <Component/>}` 渲染为文字 "0"）
 
 ### 2026-05-28
 
