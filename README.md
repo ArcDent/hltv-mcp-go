@@ -209,6 +209,7 @@ docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 
 ### 2026-05-29
 
+- **搜索页路由切换修复**：修复队伍/选手搜索页面切换时 state 不刷新的 bug（React Router 复用相同组件类型导致），`SearchableList` 添加 `key={type}` 强制重新挂载；修正 Go embed 指令 `dist/*` → `dist` 确保 `dist/assets/` 子目录静态资源嵌入
 - **Firecrawl 集成 + 赛程全面恢复**：通过 Firecrawl API 绕过 HLTV Cloudflare 封锁，`/matches` 端点恢复正常，覆盖范围从今日到 IEM Cologne Major 2026 主赛事（6 月 11 日），共 67 场比赛；重写 `NormalizeUpcomingMatches` 支持多个 `.matches-list-section` 容器；新增 `FIRECRAWL_API_KEY` 环境变量；匹配详情增加 `GoFrame` 兼容性修复
 - **HLTV Cloudflare 封锁修复**：HLTV 全面启用 Cloudflare 防护，`/matches`、`/results` 等页面返回 403 Challenge；修复 `NormalizeUpcomingMatches` nil pointer panic；所有 HTTP handler 添加超时保护
 - **选手数据分层修复**：HLTV 新版选手页无 `.all-time-stat`，代码改为先行尝试旧版生涯战斗统计，再回退到 `.highlighted-stat` 提取生涯概览；3 月 Rating 与生涯统计明确分离不再混淆；前端新增 `生涯概览` 网格和 `StatBadge` 组件
