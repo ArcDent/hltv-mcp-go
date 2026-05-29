@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
 import useNicknames from '../hooks/useNicknames'
+import { useSSE } from '../hooks/useSSE'
 import Modal from '../components/Modal'
 
 type Tab = 'today' | 'upcoming' | 'results'
@@ -19,7 +20,7 @@ export default function Matches() {
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const { teamNicknames: nicknames } = useNicknames()
 
-  useEffect(() => {
+  const fetchEvents = useCallback(() => {
     setLoading(true)
     setEvents([])
     setOther([])
@@ -29,6 +30,11 @@ export default function Matches() {
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [tab])
+
+  useEffect(() => { fetchEvents() }, [fetchEvents])
+
+  // SSE: background refresh pushes updated match data
+  useSSE('matches', () => { fetchEvents() })
 
   const cardStyle: React.CSSProperties = {
     background: 'var(--card)', border: '1px solid var(--border)',

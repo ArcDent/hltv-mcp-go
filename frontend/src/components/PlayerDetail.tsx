@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import useNicknames from '../hooks/useNicknames'
+import { useSSE } from '../hooks/useSSE'
 import Modal from './Modal'
 import { api } from '../api/client'
 
@@ -20,12 +21,19 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
   const { playerNicknames, savePlayerNickname } = useNicknames()
   const [editingNick, setEditingNick] = useState(false)
 
-  useEffect(() => {
+  const fetchPlayer = useCallback(() => {
     setLoading(true)
     api.getPlayer(id).then((d: any) => {
       setData(d.data ?? null); setLoading(false)
     }).catch(() => setLoading(false))
   }, [id])
+
+  useEffect(() => { fetchPlayer() }, [fetchPlayer])
+
+  // SSE: background refresh pushes updated player data
+  useSSE('player', (evt) => {
+    if (evt.id === id) { fetchPlayer() }
+  })
 
   const p = data?.profile
   const abilities = data?.abilities ?? []

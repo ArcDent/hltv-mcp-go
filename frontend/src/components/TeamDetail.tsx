@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Modal from './Modal'
 import PlayerDetail from './PlayerDetail'
 import useNicknames from '../hooks/useNicknames'
+import { useSSE } from '../hooks/useSSE'
 import { api } from '../api/client'
 
 type TeamData = {
@@ -22,12 +23,19 @@ export default function TeamDetail({ id, onClose }: { id: number; onClose: () =>
   const [editingTeamNick, setEditingTeamNick] = useState(false)
   const [editingPlayerId, setEditingPlayerId] = useState<number | null>(null)
 
-  useEffect(() => {
+  const fetchTeam = useCallback(() => {
     setLoading(true)
     api.getTeam(id).then((d: any) => {
       setData(d.data ?? null); setLoading(false)
     }).catch(() => setLoading(false))
   }, [id])
+
+  useEffect(() => { fetchTeam() }, [fetchTeam])
+
+  // SSE: background refresh pushes updated team data
+  useSSE('team', (evt) => {
+    if (evt.id === id) { fetchTeam() }
+  })
 
   const p = data?.profile
   const rank = data?.ranking

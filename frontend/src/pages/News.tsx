@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
+import { useSSE } from '../hooks/useSSE'
 import { useTranslateConfig, TranslateModal } from '../components/TranslateProvider'
 import NewsDetail from '../components/NewsDetail'
 
@@ -27,11 +28,16 @@ export default function News() {
   const [translating, setTranslating] = useState<Set<string>>(new Set())
   const [selectedNewsUrl, setSelectedNewsUrl] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetchNews = useCallback(() => {
     setData(null)
     if (tab === 'realtime') api.realtimeNews().then(setData)
     else api.newsDigest({ limit: '30' }).then(setData)
   }, [tab])
+
+  useEffect(() => { fetchNews() }, [fetchNews])
+
+  // SSE: background refresh pushes updated news data
+  useSSE('news', () => { fetchNews() })
 
   useEffect(() => {
     const items: any[] = data?.items ?? []

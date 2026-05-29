@@ -23,7 +23,8 @@
 │   ├── summary/             # 中文摘要
 │   ├── renderer/            # 中文格式化 MCP 输出
 │   ├── mcp/                 # 9 MCP 工具
-│   └── http/                # chi router + REST API + SPA fallback
+│   ├── http/                # chi router + REST API + SSE + SPA fallback
+│   └── storage/             # SQLite 持久化（migration + Store + CRUD）
 ├── frontend/                # React + Vite + Tailwind
 │   └── src/
 │       ├── api/client.ts    # API 客户端
@@ -32,13 +33,11 @@
 ```
 
 ## 最近操作
-- 2026-05-29：队伍简称修复 — `PutTeamNickname` 强制 `LookupTeam` 门禁导致非目录队伍无法保存；移除门禁改为直接保存（有 canonical 则解析）；`BuildFullDict` 新增 override 直接 key-value 映射确保赛程页面同步
-- 2026-05-29：赛程覆盖面修复 — HLTV 嵌套 `.match` div 导致 `section.Find(".match")` 双重计数且遗漏后期比赛；改用 `.match-wrapper` 选择器 + `data-match-id` 属性去重；收录条件放宽为至少一方已知（含淘汰赛待定对手），覆盖范围从 36 场/5 天扩展到 55 场/7 天
-- 2026-05-29：队名截断修复 — HLTV 更新 match 页面 HTML，队名移至 `.match-teamname` 子元素；旧 `strings.Fields` 解析器截断多词队名；改用 goquery 选择器 `.match-team.team1/team2 .match-teamname` 直接提取
-- 2026-05-29：依赖收敛 — 删除 chromedp、`internal/errors` 包、4跳死参数链；Docker alpine；scraper fetchDoc；ToolError error 接口
-- 2026-05-29：搜索页面切换 bug 修复 — SearchableList 添加 `key={type}`；embed 指令 `dist/*` → `dist`
-- 2026-05-29：Firecrawl 集成 — MatchesScraper.GetUpcoming 403 时回退到 Firecrawl；重写 NormalizeUpcomingMatches
-- 2026-05-29：HLTV CF 封锁修复 — handler 超时；nil pointer panic 修复
+- 2026-05-30：长期化存储全部实现完成 — 7 个 Group（16 任务）全部编译通过 + 12 测试套件通过 + 端到端验证（health/SSE/SQLite）；5 次 commit
+- 2026-05-29：Group D facade + router 集成 — Type A/B 三层回退、withCacheOrStore、SSE 路由注册
+- 2026-05-29：Group B storage 包 — 6 文件（migration + Store + 4 CRUD）
+- 2026-05-29：Group C SSE hub — SSEHub + SSEHandler
+- 2026-05-29：赛程覆盖面修复 — `.match-wrapper` + `data-match-id` 去重
 
 ## 关键发现
 
@@ -56,8 +55,15 @@
 - **Firecrawl 回退**：`/matches`（HTTP 403 时自动回退，需 `FIRECRAWL_API_KEY`）
 - **被 Cloudflare 封锁 (403)**：`/matches`、`/results`、`/`
 
+### 三层回退 (Cache -> SQLite -> HLTV)
+- **Type A**（player/team/news article detail）：`GetXxxCached` 方法内联三层逻辑，Tier 2 命中后后台 goroutine `refreshXxx` 更新缓存，调用 `broadcast` 推送 SSE 事件
+- **Type B**（matches/events/news lists）：通过 `withCacheOrStore` 方法，Tier 1 检查缓存（含 stale），Tier 2 查询 SQLite（命中则回缓存 + 后台 `RunOnce` 刷新），Tier 3 直接爬取并存库
+- `scrapeXxx` 辅助方法执行实际抓取并写入 SQLite（nil-store 安全）
+- `store *storage.Store` 为 nil 时自动降级为 Cache-only 模式
+- `notify` 回调桥接 facade -> SSEHub.Broadcast，用于前端实时刷新
+
 ### 缓存模式
-- `PlayerDetail` 不走 `withCache`，直接用 `cache.Get/Set`，key 格式 `player_detail:<id>`
+- `PlayerDetail`/`TeamDetail`/`NewsArticle` 走三层回退 Type A，`withCacheOrStore` 用于 Type B
 - `sync/atomic.Int64` 计数器，与 `sync.RWMutex` 无锁竞争
 
 ### nickname 覆盖层
@@ -84,9 +90,10 @@
 - 前端变更需 `vite build` + `go build` + 重启服务
 
 ## 下一步
-- 考虑为 /results 页面也添加 Firecrawl 回退
-- 监控 Firecrawl API 配额消耗
+- 前端集成 SSE（EventSource 监听 + 收到事件后重取 API）
+- 重新部署 Docker 容器（补充 FIRECRAWL_API_KEY）
+- push 到 GitHub 触发 CI/CD 构建新镜像
 
 ## 进行中
-- 无（2026-05-29 依赖收敛已完成）
+- 无
 
