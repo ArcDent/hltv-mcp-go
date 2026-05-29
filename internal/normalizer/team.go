@@ -80,7 +80,7 @@ func NormalizeTeamDetail(doc *goquery.Document) types.TeamDetail {
 	})
 
 	// Highlights: win rate, win streak, last 5 matches from team page
-	hl := NormalizeTeamHighlights(doc)
+	hl := normalizeTeamHighlights(doc)
 	td.Highlights = &hl
 
 	// Roster: extract only from the current lineup grid (.bodyshot-team)
@@ -117,8 +117,8 @@ func NormalizeTeamDetail(doc *goquery.Document) types.TeamDetail {
 	return td
 }
 
-// NormalizeTeamHighlights extracts win rate, win streak, and last 5 matches from team page
-func NormalizeTeamHighlights(doc *goquery.Document) types.TeamHighlights {
+// normalizeTeamHighlights extracts win rate, win streak, and last 5 matches from team page
+func normalizeTeamHighlights(doc *goquery.Document) types.TeamHighlights {
 	h := types.TeamHighlights{}
 
 	doc.Find(".highlighted-stat").Each(func(_ int, s *goquery.Selection) {

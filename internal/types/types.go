@@ -145,6 +145,8 @@ type ToolError struct {
 	Details   map[string]any `json:"details,omitempty"`
 }
 
+func (e *ToolError) Error() string { return e.Message }
+
 // ToolResponse is the unified response type for all MCP tools and REST API
 type ToolResponse struct {
 	Query          map[string]any `json:"query"`

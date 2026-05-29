@@ -3,21 +3,20 @@
 ## 项目身份
 - 类型：HLTV MCP 服务 Go 全栈
 - 目标：Go 单二进制，MCP stdio + HTTP REST + React 管理面板
-- 技术栈：Go 1.26, mark3labs/mcp-go, chi, goquery, chromedp, React 18, Vite, Tailwind CSS v4
+- 技术栈：Go 1.26, mark3labs/mcp-go, chi, goquery, React 18, Vite, Tailwind CSS v4
 - 远端仓库：[ArcDent/HLTV-data](https://github.com/ArcDent/HLTV-data)
 
 ## 项目静态结构
 ```
 ├── main.go                  # MCP stdio + HTTP :8082 双 goroutine
-├── Dockerfile               # 三阶段：frontend → Go → chromedp/headless-shell
+├── Dockerfile               # 三阶段：frontend → Go → alpine
 ├── internal/
-│   ├── types/               # 共享类型
-│   ├── errors/              # AppError（4 错误码）
+│   ├── types/               # 共享类型 + ToolError
 │   ├── config/              # 环境变量配置
 │   ├── crypto/              # AES-256-GCM 加解密
 │   ├── cache/               # TTL + stale + 并发合并
-│   ├── client/              # HTTP + chromedp 反CF
-│   ├── scraper/             # team/player/results/matches/news
+│   ├── client/              # HTTP + Firecrawl 客户端
+│   ├── scraper/             # fetchDoc 共享 + 7 爬虫模块
 │   ├── localization/        # 26 队伍 + 98 选手中英映射
 │   ├── normalizer/          # HLTV HTML → 标准化类型
 │   ├── facade/              # 核心编排层
@@ -28,43 +27,31 @@
 ├── frontend/                # React + Vite + Tailwind
 │   └── src/
 │       ├── api/client.ts    # API 客户端
-│       ├── components/      # 6 组件
-│       └── pages/           # 6 页面
+│       ├── components/      # Modal, Details, SearchableList
+│       └── pages/           # 5 页面
 ```
 
 ## 最近操作
-- 2026-05-29：搜索页面切换 bug 修复 — SearchableList 添加 `key={type}` 强制路由切换时重新挂载；embed 指令 `dist/*` → `dist` 修复子目录静态资源嵌入
-- 2026-05-29：Firecrawl 集成 — 新增 `FIRECRAWL_API_KEY` 配置 + `internal/client/firecrawl.go`；MatchesScraper.GetUpcoming 在 HTTP 403 时自动回退到 Firecrawl；重写 NormalizeUpcomingMatches
-- 2026-05-29：HLTV CF 封锁修复 — 所有 handler 超时；fetchHTTP 403 处理；nil pointer panic 修复
-- 2026-05-29：选手数据分层修复 — `PlayerSummary` 解析 `.highlighted-stat`
+- 2026-05-29：依赖收敛 — 删除 chromedp（115行+依赖）、`internal/errors` 包、4跳死参数链、空目录和过期文件；Docker 基础镜像从 headless-shell → alpine；scraper 提取共享 fetchDoc；normalizer 内联薄包装；ToolError 实现 error 接口
+- 2026-05-29：搜索页面切换 bug 修复 — SearchableList 添加 `key={type}`；embed 指令 `dist/*` → `dist`
+- 2026-05-29：Firecrawl 集成 — MatchesScraper.GetUpcoming 403 时回退到 Firecrawl；重写 NormalizeUpcomingMatches
+- 2026-05-29：HLTV CF 封锁修复 — handler 超时；nil pointer panic 修复
 
 ## 关键发现
 
 ### HLTV HTML 选择器（核心参考）
-- **选手页**: `.playerNickname` / `.playerRealname` / `.playerTeam a[itemprop="text"]` / `.player-stat` > `.statsVal p b`(能力值) / `.stats-window`(maps数) / `.playerpage-matchbox`(近期比赛) / `.playerpage-match-result`(比分) / `.playerpage-match-date` / `.majorWinner b`(Major冠军数) / `.mvp-count`(MVP数) / `.all-time-stat` > `.stat` + `.description`(生涯战斗统计，旧版) / `.highlighted-stat` > `.stat` + `.description`(生涯概览，新版通用) / `.playerInfoRow.playerAge` / `.playerTop20`
+- **选手页**: `.playerNickname` / `.playerRealname` / `.playerTeam a[itemprop="text"]` / `.player-stat` > `.statsVal p b`(能力值) / `.stats-window`(maps数) / `.playerpage-matchbox`(近期比赛) / `.playerpage-match-result`(比分) / `.playerpage-match-date` / `.majorWinner b`(Major冠军数) / `.mvp-count`(MVP数) / `.all-time-stat` > `.stat` + `.description`(生涯战斗统计，旧版) / `.highlighted-stat` > `.stat` + `.description`(生涯概览，新版通用)
 - **队伍页**: `h1.profile-team-name` / `.value.h-rank` / `.bodyshot-team a[href*='/player/']`(队员) / `.trophySection .trophyDescription[title]` / `.highlighted-stat`(胜率/连胜)
 - **比赛链接**: `.playerpage-matchbox[href]` 正则 `/stats/matches/(\d+)/([^"\s]+)`
 - **赛果**: `.result-con` > `.line-align.team1 .team` / `.result-score` / `.event-name`
-- **赛程**: `.matches-list-headline` + `.match-wrapper` > `.match-top`(赛事) + `.match-teams`(队伍) + `.match-info`(时间)
+- **赛程**: `.matches-list-section` > `.matches-list-headline`(日期) + `.match`(比赛)
 - **新闻**: `.newstext` / `.news-block p`(正文) — 不可用 `.Text()` 取整个容器
 - **搜索**: `table tbody tr > a[href*='/player/']` 正则 `/player/(\d+)/(.+)`
 
-### HLTV 选手页 A/B 改版
-- **旧版**（s1mple/ZywOo）：`.all-time-stat` 包含 Matches / Win rate / Win streak / KDR(K/D) / Headshots
-- **新版**（sh1ro）：无 `.all-time-stat`，改用 `.highlighted-stat`（Teams / Days in team / Majors / LANs / Trophies / MVPs / EVPs）
-- **两者都有的**：`.player-stat`(3月能力值) / `.playerTop20` / `.majorWinner` / `.mvp-count`
-- **不存在独立"生涯 Rating"**：HLTV 页面只展示近 3 月 Rating 3.0，不可将 `.player-stat` 的 Rating 误当生涯 Rating
-
 ### CF 分层
 - **HTTP 直连可用**：`/player/`、`/team/`、`/search`、`/news/`
-- **Firecrawl 回退**：`/matches`（通过 Firecrawl API 绕过 CF，需 `FIRECRAWL_API_KEY`）
-- **被 Cloudflare 封锁 (403)**：`/matches`、`/results`、`/`（2026-05-29 起 HLTV 升级 CF 防护，Firecrawl 可突破）
-- **chromedp**：CF 挑战在 headless Chrome 中也无法绕过（`--headless=new` 同样被检测），仅保留框架代码
-
-### chromedp 关键配置
-- `chromedp.DefaultExecAllocatorOptions` 内置 `--headless`，headless-shell 需 `Flag("headless", false)` 覆盖
-- 反 CF：`UserDataDir`(持久化 profile) + `--disable-blink-features=AutomationControlled` + Chrome UA
-- 10s NewContext 超时保护
+- **Firecrawl 回退**：`/matches`（HTTP 403 时自动回退，需 `FIRECRAWL_API_KEY`）
+- **被 Cloudflare 封锁 (403)**：`/matches`、`/results`、`/`
 
 ### 缓存模式
 - `PlayerDetail` 不走 `withCache`，直接用 `cache.Get/Set`，key 格式 `player_detail:<id>`
@@ -77,23 +64,25 @@
 
 ### React Router 路由切换
 - 不同路由渲染同一组件类型时，React reconciliation 复用实例不重新挂载，内部 state 保留
-- 修复方式：给组件添加 `key` 区分不同路由实例（如 `key="teams"` / `key="players"`）
+- 修复方式：给组件添加 `key` 区分不同路由实例
 
-### Go embed 静态资源
-- `//go:embed dist/*` 只匹配 `dist/` 直接子文件，不递归子目录
-- Vite build 将 JS/CSS 放在 `dist/assets/`，需用 `//go:embed dist` 递归包含整个目录
-- `fs.Sub(embeddedFS, "dist")` 正常获取子文件系统
+### Go embed + Vite
+- `//go:embed dist` 递归包含整个 dist 目录（含 `dist/assets/`）
+- Vite build 将 JS/CSS 放在 `dist/assets/`，index.html 引用它们
+
+### 错误处理
+- `ToolError` 直接实现 `error` 接口，删除独立的 `internal/errors` 包
+- 错误创建直接 `&types.ToolError{Code: "...", Message: "..."}`
 
 ### 部署
-- Docker 三阶段构建 → `ghcr.io/arcdent/hltv-data:latest`
-- CI/CD：push main → GitHub Actions 自动构建 + Watchtower 自动拉取
+- Docker 三阶段构建 → `ghcr.io/arcdent/hltv-data:latest`（alpine 基础镜像，~15MB binary）
+- CI/CD：push main → GitHub Actions 自动构建
 - 前端变更需 `vite build` + `go build` + 重启服务
 
 ## 下一步
-- Firecrawl 集成已完成，赛程正常覆盖到科隆 Major
 - 考虑为 /results 页面也添加 Firecrawl 回退
 - 监控 Firecrawl API 配额消耗
 
 ## 进行中
-- 无（2026-05-29 搜索页面切换 bug 已修复）
+- 无（2026-05-29 依赖收敛已完成）
 

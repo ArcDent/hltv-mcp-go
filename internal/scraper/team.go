@@ -1,9 +1,9 @@
 package scraper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"bytes"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -55,19 +55,9 @@ func (s *TeamScraper) Search(ctx context.Context, name string) ([]types.Resolved
 }
 
 func (s *TeamScraper) GetTeam(ctx context.Context, id int, slug string) (*goquery.Document, error) {
-	path := fmt.Sprintf("/team/%d/%s", id, url.PathEscape(slug))
-	body, err := s.cli.FetchHTML(ctx, path, "team_detail")
-	if err != nil {
-		return nil, err
-	}
-	return goquery.NewDocumentFromReader(bytes.NewReader(body))
+	return fetchDoc(s.cli, ctx, fmt.Sprintf("/team/%d/%s", id, url.PathEscape(slug)), "team_detail")
 }
 
 func (s *TeamScraper) GetTeamMatches(ctx context.Context, id int) (*goquery.Document, error) {
-	path := fmt.Sprintf("/team/%d/matches", id)
-	body, err := s.cli.FetchHTML(ctx, path, "team_matches")
-	if err != nil {
-		return nil, err
-	}
-	return goquery.NewDocumentFromReader(bytes.NewReader(body))
+	return fetchDoc(s.cli, ctx, fmt.Sprintf("/team/%d/matches", id), "team_matches")
 }

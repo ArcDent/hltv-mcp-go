@@ -5,17 +5,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/arcdent/hltv-mcp/internal/config"
 	"github.com/arcdent/hltv-mcp/internal/facade"
 )
 
 type Handlers struct {
-	cfg *config.Config
-	f   *facade.HltvFacade
+	f *facade.HltvFacade
 }
 
-func New(cfg *config.Config, f *facade.HltvFacade) *Handlers {
-	return &Handlers{cfg: cfg, f: f}
+func New(f *facade.HltvFacade) *Handlers {
+	return &Handlers{f: f}
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

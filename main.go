@@ -52,17 +52,8 @@ func main() {
 		log.Printf("nickname overrides init note: %v", err)
 	}
 
-	// Chrome detection (spec: warn and degrade to direct if not available)
-	chromePath, chromeAvailable := client.CheckChromeAvailable(cfg)
-	if !chromeAvailable && cfg.DataSource != config.DataSourceDirect {
-		log.Printf("WARNING: Chrome/Chromium not found — degrading to direct HTTP mode only")
-	}
-	if chromeAvailable {
-		log.Printf("Chrome found at: %s", chromePath)
-	}
-
 	c := cache.New(cfg.CacheMaxEntries, cfg.CacheStaleWindowSec)
-	cli := client.NewHltvClient(cfg, chromeAvailable)
+	cli := client.NewHltvClient(cfg)
 	f := facade.New(cfg, c, cli)
 	r := renderer.New(summary.New())
 
@@ -80,7 +71,7 @@ func main() {
 	if cfg.HTTPPort > 0 {
 		frontendFS = embeddedFrontend
 	}
-	router := httppkg.NewRouter(cfg, f, frontendFS)
+	router := httppkg.NewRouter(f, frontendFS)
 	httpAddr := fmt.Sprintf("%s:%d", cfg.HTTPHost, cfg.HTTPPort)
 	httpServer := &http.Server{Addr: httpAddr, Handler: router}
 	go func() {

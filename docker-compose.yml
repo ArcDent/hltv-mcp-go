@@ -1,13 +1,15 @@
 services:
   hltv-mcp:
-    build: .
+    # Pull from GitHub Container Registry (recommended)
+    image: ghcr.io/arcdent/hltv-data:latest
+    pull_policy: always
+    # Or build from local source:
+    # build: .
     ports:
       - "8082:8082"
     environment:
       - HTTP_PORT=8082
       - HTTP_HOST=0.0.0.0
-      - HLTV_CHROME_PATH=/headless-shell/headless-shell
-      # ENCRYPTION_KEY is optional; if not set, auto-generated into ./data/.encryption_key
     volumes:
       - ./data:/data
     restart: unless-stopped

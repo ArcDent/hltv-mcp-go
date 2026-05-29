@@ -5,15 +5,6 @@ import (
 	"strconv"
 )
 
-// DataSource controls the scraper data source strategy
-type DataSource string
-
-const (
-	DataSourceAuto     DataSource = "auto"
-	DataSourceDirect   DataSource = "direct"
-	DataSourceChromedp DataSource = "chromedp"
-)
-
 // Config holds all application configuration loaded from environment variables
 type Config struct {
 	MCPServerName    string
@@ -21,8 +12,6 @@ type Config struct {
 	HTTPPort         int
 	HTTPHost         string
 
-	DataSource    DataSource
-	ChromePath    string
 	FirecrawlKey  string
 	HTTPTimeoutMs int
 	RetryCount    int
@@ -51,8 +40,6 @@ func LoadConfig() (*Config, error) {
 		HTTPPort:         envInt("HTTP_PORT", 8082),
 		HTTPHost:         envStr("HTTP_HOST", "0.0.0.0"),
 
-		DataSource:    DataSource(envStr("HLTV_DATA_SOURCE", "auto")),
-		ChromePath:    envStr("HLTV_CHROME_PATH", ""),
 		FirecrawlKey:  envStr("FIRECRAWL_API_KEY", ""),
 		HTTPTimeoutMs: envInt("HLTV_HTTP_TIMEOUT_MS", 8000),
 		RetryCount:    envInt("HLTV_RETRY_COUNT", 2),

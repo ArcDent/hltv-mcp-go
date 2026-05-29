@@ -10,7 +10,6 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/cache"
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/config"
-	"github.com/arcdent/hltv-mcp/internal/errors"
 	"github.com/arcdent/hltv-mcp/internal/normalizer"
 	"github.com/arcdent/hltv-mcp/internal/scraper"
 	"github.com/arcdent/hltv-mcp/internal/types"
@@ -57,9 +56,8 @@ func (f *HltvFacade) createMeta(ttlSec int) types.ToolMeta {
 }
 
 // withCache checks cache, then computes and caches the result
-func (f *HltvFacade) ClientIsChromeAvailable() bool { return f.client.IsChromeAvailable() }
 
-// GetPlayerDetailCached returns cached player detail, or scrapes via chromedp and caches for 7 days
+// GetPlayerDetailCached returns cached player detail, or scrapes and caches for 7 days
 func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {
 	if slug == "" {
 		slug = fmt.Sprintf("player-%d", id)
@@ -94,7 +92,7 @@ func (f *HltvFacade) GetNewsArticleCached(ctx context.Context, url string) (type
 	return article, nil
 }
 
-// GetTeamDetailCached returns cached team detail, or scrapes via chromedp and caches for 7 days
+// GetTeamDetailCached returns cached team detail, or scrapes and caches for 7 days
 func (f *HltvFacade) GetTeamDetailCached(ctx context.Context, id int, slug string) (types.TeamDetail, error) {
 	if slug == "" {
 		slug = fmt.Sprintf("team-%d", id)
@@ -176,25 +174,13 @@ func cloneResponse(r *types.ToolResponse) *types.ToolResponse {
 
 func (f *HltvFacade) errorResponse(query map[string]any, err error) *types.ToolResponse {
 	meta := f.createMeta(60)
-	if appErr, ok := err.(*errors.AppError); ok {
-		return &types.ToolResponse{
-			Query: query,
-			Meta:  meta,
-			Error: &types.ToolError{
-				Code:      string(appErr.Code),
-				Message:   appErr.Message,
-				Retryable: appErr.Retryable,
-				Details:   appErr.Details,
-			},
-		}
+	if toolErr, ok := err.(*types.ToolError); ok {
+		return &types.ToolResponse{Query: query, Meta: meta, Error: toolErr}
 	}
 	return &types.ToolResponse{
-		Query: query,
-		Meta:  meta,
+		Query: query, Meta: meta,
 		Error: &types.ToolError{
-			Code:      "INTERNAL_ERROR",
-			Message:   err.Error(),
-			Retryable: false,
+			Code: "INTERNAL_ERROR", Message: err.Error(),
 		},
 	}
 }

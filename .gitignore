@@ -7,3 +7,4 @@ hltv-mcp
 .env
 translate_config.json
 data/
+.clinerules-*

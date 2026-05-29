@@ -9,12 +9,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"github.com/arcdent/hltv-mcp/internal/config"
 	"github.com/arcdent/hltv-mcp/internal/facade"
 	"github.com/arcdent/hltv-mcp/internal/http/handlers"
 )
 
-func NewRouter(cfg *config.Config, f *facade.HltvFacade, frontendFS fs.FS) http.Handler {
+func NewRouter(f *facade.HltvFacade, frontendFS fs.FS) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -25,7 +24,7 @@ func NewRouter(cfg *config.Config, f *facade.HltvFacade, frontendFS fs.FS) http.
 		MaxAge:           300,
 	}))
 
-	h := handlers.New(cfg, f)
+	h := handlers.New(f)
 
 	r.Get("/api/health", h.Health)
 	r.Get("/api/status", h.Status)

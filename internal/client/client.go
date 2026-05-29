@@ -6,86 +6,29 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/arcdent/hltv-mcp/internal/config"
-	"github.com/arcdent/hltv-mcp/internal/errors"
+	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
 const hltvBaseURL = "https://www.hltv.org"
 
-// FallbackTracker remembers which endpoints recently needed chromedp
-type FallbackTracker struct {
-	mu       sync.RWMutex
-	failures map[string]time.Time
-	window   time.Duration
-}
-
-func NewFallbackTracker(windowSec int) *FallbackTracker {
-	return &FallbackTracker{
-		failures: make(map[string]time.Time),
-		window:   time.Duration(windowSec) * time.Second,
-	}
-}
-
-func (t *FallbackTracker) ShouldSkipHTTP(endpoint string) bool {
-	t.mu.RLock()
-	lastFail, ok := t.failures[endpoint]
-	t.mu.RUnlock()
-	return ok && time.Since(lastFail) < t.window
-}
-
-func (t *FallbackTracker) RecordFailure(endpoint string) {
-	t.mu.Lock()
-	t.failures[endpoint] = time.Now()
-	t.mu.Unlock()
-}
-
-// HltvClient handles HTTP requests to HLTV with chromedp fallback
+// HltvClient handles HTTP requests to HLTV
 type HltvClient struct {
-	cfg      *config.Config
-	httpCli  *http.Client
-	fallback *FallbackTracker
-	chromeOK bool
+	cfg     *config.Config
+	httpCli *http.Client
 }
 
-func NewHltvClient(cfg *config.Config, chromeAvailable bool) *HltvClient {
+func NewHltvClient(cfg *config.Config) *HltvClient {
 	return &HltvClient{
-		cfg:      cfg,
-		chromeOK: chromeAvailable,
-		httpCli:  &http.Client{Timeout: time.Duration(cfg.HTTPTimeoutMs) * time.Millisecond},
-		fallback: NewFallbackTracker(300), // 5 minutes
+		cfg:     cfg,
+		httpCli: &http.Client{Timeout: time.Duration(cfg.HTTPTimeoutMs) * time.Millisecond},
 	}
 }
 
-// FetchHTML returns the raw HTML body. Uses HTTP first, falls back to chromedp.
+// FetchHTML returns the raw HTML body from HLTV
 func (c *HltvClient) FetchHTML(ctx context.Context, path, endpointKey string) ([]byte, error) {
-	shouldTryChromedp := c.chromeOK && c.cfg.DataSource != config.DataSourceDirect
-
-	if shouldTryChromedp && c.fallback.ShouldSkipHTTP(endpointKey) {
-		return c.fetchChromedp(ctx, path)
-	}
-
-	body, err := c.fetchHTTP(ctx, path)
-	if err == nil && !isCloudflareBlock(body) {
-		return body, nil
-	}
-
-	if err != nil || isCloudflareBlock(body) {
-		c.fallback.RecordFailure(endpointKey)
-		if shouldTryChromedp {
-			return c.fetchChromedp(ctx, path)
-		}
-		if err != nil {
-			return nil, err
-		}
-		return body, nil // return block page if no fallback available
-	}
-	return body, nil
-}
-
-func (c *HltvClient) fetchHTTP(ctx context.Context, path string) ([]byte, error) {
 	url := hltvBaseURL + path
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -111,16 +54,29 @@ func (c *HltvClient) fetchHTTP(ctx context.Context, path string) ([]byte, error)
 			continue
 		}
 		if resp.StatusCode == 403 || resp.StatusCode == 404 {
-			return nil, errors.New(errors.CodeUpstreamNotFound, fmt.Sprintf("%d for %s", resp.StatusCode, path), false, nil)
+			return nil, &types.ToolError{
+				Code:    "UPSTREAM_NOT_FOUND",
+				Message: fmt.Sprintf("%d for %s", resp.StatusCode, path),
+			}
 		}
 		if resp.StatusCode >= 500 {
 			lastErr = fmt.Errorf("status %d", resp.StatusCode)
 			continue
 		}
+		if isCloudflareBlock(body) {
+			return nil, &types.ToolError{
+				Code:      "UPSTREAM_UNAVAILABLE",
+				Message:   "HLTV returned Cloudflare challenge page",
+				Retryable: true,
+			}
+		}
 		return body, nil
 	}
-	return nil, errors.New(errors.CodeUpstreamUnavailable,
-		fmt.Sprintf("failed after %d retries: %v", c.cfg.RetryCount, lastErr), true, nil)
+	return nil, &types.ToolError{
+		Code:      "UPSTREAM_UNAVAILABLE",
+		Message:   fmt.Sprintf("failed after %d retries: %v", c.cfg.RetryCount, lastErr),
+		Retryable: true,
+	}
 }
 
 func isCloudflareBlock(body []byte) bool {
@@ -130,5 +86,3 @@ func isCloudflareBlock(body []byte) bool {
 		strings.Contains(s, "Attention Required") ||
 		strings.Contains(s, "Cloudflare")
 }
-
-func (c *HltvClient) IsChromeAvailable() bool { return c.chromeOK }

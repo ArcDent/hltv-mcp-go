@@ -45,7 +45,7 @@ func NormalizeOverview(docs ...*goquery.Document) map[string]any {
 	return overview
 }
 
-// NormalizePlayerDetail extracts full player detail from HLTV player page (chromedp)
+// NormalizePlayerDetail extracts full player detail from HLTV player page 
 func NormalizePlayerDetail(doc *goquery.Document) types.PlayerDetail {
 	pd := types.PlayerDetail{}
 

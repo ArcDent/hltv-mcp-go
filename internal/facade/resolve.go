@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/arcdent/hltv-mcp/internal/errors"
 	"github.com/arcdent/hltv-mcp/internal/normalizer"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
@@ -24,8 +23,11 @@ func (f *HltvFacade) ResolveTeam(query types.ResolveQuery) *types.ToolResponse {
 			return nil, err
 		}
 		if len(items) == 0 {
-			return nil, errors.New(errors.CodeEntityNotFound,
-				fmt.Sprintf("No team matched '%s'", query.Name), false, q)
+			return nil, &types.ToolError{
+				Code: "ENTITY_NOT_FOUND",
+				Message: fmt.Sprintf("No team matched '%s'", query.Name),
+				Details: q,
+			}
 		}
 		if len(items) > query.Limit {
 			items = items[:query.Limit]
@@ -50,8 +52,11 @@ func (f *HltvFacade) ResolvePlayer(query types.ResolveQuery) *types.ToolResponse
 			return nil, err
 		}
 		if len(items) == 0 {
-			return nil, errors.New(errors.CodeEntityNotFound,
-				fmt.Sprintf("No player matched '%s'", query.Name), false, q)
+			return nil, &types.ToolError{
+				Code: "ENTITY_NOT_FOUND",
+				Message: fmt.Sprintf("No player matched '%s'", query.Name),
+				Details: q,
+			}
 		}
 		if len(items) > query.Limit {
 			items = items[:query.Limit]

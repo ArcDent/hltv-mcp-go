@@ -19,33 +19,11 @@ var monthMap = map[string]string{
 
 var resultsDateRe = regexp.MustCompile("Results for (\\w+) (\\d+)(?:st|nd|rd|th)? (\\d{4})")
 
-func parseResultsDate(headline string) string {
-	m := resultsDateRe.FindStringSubmatch(headline)
-	if len(m) != 4 {
-		return ""
-	}
-	month, ok := monthMap[m[1]]
-	if !ok {
-		return ""
-	}
-	day := m[2]
-	if len(day) == 1 {
-		day = "0" + day
-	}
-	return m[3] + "-" + month + "-" + day
-}
-
-// NormalizeMatches parses HLTV HTML result/match rows into NormalizedMatch slices.
-// Use ".result-con" for results, ".upcoming-match" or ".match-box" for upcoming.
+// NormalizeMatches parses HLTV "/results" page HTML into NormalizedMatch slices
 func NormalizeMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {
-	return normalizeResultsCon(doc, perspective)
-}
-
-// normalizeResultsCon handles the "/results" page structure
-func normalizeResultsCon(doc *goquery.Document, perspective string) []types.NormalizedMatch {
 	var matches []types.NormalizedMatch
 	doc.Find(".results-sublist").Each(func(_ int, sublist *goquery.Selection) {
-		date := parseResultsDate(cleanText(sublist.Find(".standard-headline").First().Text()))
+		date := parseDate(cleanText(sublist.Find(".standard-headline").First().Text()))
 		sublist.Find(".result-con").Each(func(_ int, s *goquery.Selection) {
 			m := types.NormalizedMatch{Result: types.OutcomeUnknown}
 
@@ -80,6 +58,22 @@ func normalizeResultsCon(doc *goquery.Document, perspective string) []types.Norm
 		})
 	})
 	return matches
+}
+
+func parseDate(headline string) string {
+	m := resultsDateRe.FindStringSubmatch(headline)
+	if len(m) != 4 {
+		return ""
+	}
+	month, ok := monthMap[m[1]]
+	if !ok {
+		return ""
+	}
+	day := m[2]
+	if len(day) == 1 {
+		day = "0" + day
+	}
+	return m[3] + "-" + month + "-" + day
 }
 
 func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types.NormalizedMatch {

@@ -1,9 +1,9 @@
 package scraper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"bytes"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -55,19 +55,9 @@ func (s *PlayerScraper) Search(ctx context.Context, name string) ([]types.Resolv
 }
 
 func (s *PlayerScraper) GetPlayer(ctx context.Context, id int, slug string) (*goquery.Document, error) {
-	path := fmt.Sprintf("/player/%d/%s", id, url.PathEscape(slug))
-	body, err := s.cli.FetchHTML(ctx, path, "player_detail")
-	if err != nil {
-		return nil, err
-	}
-	return goquery.NewDocumentFromReader(bytes.NewReader(body))
+	return fetchDoc(s.cli, ctx, fmt.Sprintf("/player/%d/%s", id, url.PathEscape(slug)), "player_detail")
 }
 
 func (s *PlayerScraper) GetPlayerOverview(ctx context.Context, id int, slug string) (*goquery.Document, error) {
-	path := fmt.Sprintf("/stats/players/%d/%s", id, url.PathEscape(slug))
-	body, err := s.cli.FetchHTML(ctx, path, "player_stats")
-	if err != nil {
-		return nil, err
-	}
-	return goquery.NewDocumentFromReader(bytes.NewReader(body))
+	return fetchDoc(s.cli, ctx, fmt.Sprintf("/stats/players/%d/%s", id, url.PathEscape(slug)), "player_stats")
 }
