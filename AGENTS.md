@@ -37,6 +37,7 @@
 ```
 
 ## 最近操作
+- 2026-05-29：修复 PlayerDetail React 条件渲染 bug — `{0 && <Component/>}` 返回数字 `0` 被 React 渲染为文字 "0"（而非 nothing），影响 `career.matches`/`career.kd`/`career.win_streak` 三个零值字段；改为 `{(value ?? 0) > 0 && ...}` 显式布尔比较
 - 2026-05-28：前端别名编辑 UX 改进 — TeamDetail/PlayerDetail 去掉 ✏️ 铅笔图标，改为点击别名文字本身触发编辑；PlayerDetail 的 country/age/team 移至别名同一行显示
 - 2026-05-28：deep convergence round 2 — 删 6 文件（`events.go`、`scraper/news_article.go`、`normalizer/news_article.go`、`localization/data/nicknames.json`、`frontend Teams.tsx/Players.tsx`）；去死代码（`match_command_parse` MCP tool、empty `EventCatalog`、`bytesReader` wrapper、`StartStdio` thin wrapper）；合并前端搜索页；修复 chromedp headless-shell `--headless` flag 冲突；源文件 40→35 个
 - 2026-05-28：修复 Docker 翻译 502 — `chromedp/headless-shell` 基础镜像缺少 `ca-certificates`，Go HTTP 客户端无法完成 TLS 验证；Dockerfile 新增 `apt-get install ca-certificates`；`PostTranslate` 连接错误路径新增 `log.Printf`；`PutTranslateConfig` 遮罩恢复失败时不再静默写入遮罩 key
@@ -124,6 +125,12 @@
 - **关键问题**：Windows `localhost:8082` 端口转发会缓存/代理旧 HTTP 响应（即使 WSL 进程已重启），导致前端显示过期数据。解决方案：使用 WSL IP（如 `172.21.32.31:8082`）直连，绕过 Windows 端口转发层
 - **验证方法**：`curl` 从 WSL 内部调用 API 对照浏览器网络请求，若两者返回不同数据（不同 `fetched_at`），则问题在 Windows 端口转发层而非 Go 代码
 - `strings` 命令无法找到 UTF-8 中文字符串（多字节序列），需用 `grep -a` 在二进制中搜索
+
+### React 条件渲染零值陷阱
+- **`{value && <Component/>}` 当 `value=0` 时返回 `0`（非 `false`/`null`），React 将数字 `0` 渲染为可见文字 "0"**
+- 受影响字段：`career.matches`、`career.kd`、`career.win_streak` — 均为可为零的数字类型
+- **修复模式**：`{(value ?? 0) > 0 && <Component/>}` — 先空值合并转为 0，再显式布尔比较
+- 字符串字段不受影响（`""` 渲染为 nothing），布尔字段不受影响
 
 ### 前端设计系统（参考 person-summon）
 - 主题：CSS 变量（`:root` 亮色 / `[data-theme="dark"]` 暗色）+ `transition: background-color 0.3s, color 0.2s, border-color 0.3s`

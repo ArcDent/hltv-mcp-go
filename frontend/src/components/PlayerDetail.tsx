@@ -122,9 +122,9 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
             {(data.career.rating || data.career.matches) && (
               <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:16,marginBottom:14,fontSize:13,color:'var(--text-secondary)'}}>
                 {data.career.rating && <><span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.rating}</span> 生涯 Rating</span><span style={{color:'var(--border)'}}>|</span></>}
-                {data.career.matches && <><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.matches}</span> 比赛</>}
+                {(data.career.matches ?? 0) > 0 && <><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.matches}</span> 比赛</>}
                 {data.career.win_rate && <><span style={{color:'var(--border)'}}>|</span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.win_rate}</span> 胜率</>}
-                {data.career.kd && <><span style={{color:'var(--border)'}}>|</span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.kd}</span> K/D</>}
+                {(data.career.kd ?? 0) > 0 && <><span style={{color:'var(--border)'}}>|</span><span style={{fontFamily:'var(--font-display)',fontSize:20,fontWeight:700,color:'var(--text)'}}>{data.career.kd}</span> K/D</>}
               </div>
             )}
 
@@ -134,7 +134,7 @@ export default function PlayerDetail({ id, onClose }: { id: number; onClose: () 
                   <span key={h.label} style={{fontSize:11,padding:'2px 10px',borderRadius:10,background:'rgba(196,138,10,0.06)',color:'var(--gold)',fontWeight:500}}>{h.label} {h.value}×</span>
                 ))}
                 {data.career.headshot_pct && <span style={{fontSize:11,padding:'2px 10px',borderRadius:10,background:'rgba(196,138,10,0.06)',color:'var(--gold)',fontWeight:500}}>爆头率 {data.career.headshot_pct}</span>}
-                {data.career.win_streak && data.career.win_streak > 0 && <span style={{fontSize:11,padding:'2px 10px',borderRadius:10,background:'rgba(196,138,10,0.06)',color:'var(--gold)',fontWeight:500}}>{data.career.win_streak} 连胜</span>}
+                {(data.career.win_streak ?? 0) > 0 && <span style={{fontSize:11,padding:'2px 10px',borderRadius:10,background:'rgba(196,138,10,0.06)',color:'var(--gold)',fontWeight:500}}>{data.career.win_streak} 连胜</span>}
               </div>
             )}
 

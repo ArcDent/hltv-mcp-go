@@ -185,6 +185,10 @@ docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 
 ## 最近更新
 
+### 2026-05-29
+
+- **PlayerDetail 显示修复**：修复 React 条件渲染零值陷阱 — `{0 && <Component/>}` 返回数字 `0` 被渲染为可见文字，影响选手生涯数据中零值字段的显示（`matches`、`kd`、`win_streak`）
+
 ### 2026-05-28
 
 - **前端别名编辑 UX 改进**：TeamDetail / PlayerDetail 去掉 ✏️ 铅笔图标，改为点击别名文字本身触发编辑；PlayerDetail 的国籍、年龄、队伍信息移至别名同一行显示
