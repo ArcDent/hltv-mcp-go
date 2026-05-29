@@ -32,7 +32,8 @@
 ```
 
 ## 最近操作
-- 2026-05-29：依赖收敛 — 删除 chromedp（115行+依赖）、`internal/errors` 包、4跳死参数链、空目录和过期文件；Docker 基础镜像从 headless-shell → alpine；scraper 提取共享 fetchDoc；normalizer 内联薄包装；ToolError 实现 error 接口
+- 2026-05-29：队名截断修复 — HLTV 更新 match 页面 HTML，队名移至 `.match-teamname` 子元素；旧 `strings.Fields` 解析器截断多词队名（Natus Vincere→Natus）；改用 goquery 选择器 `.match-team.team1/team2 .match-teamname` 直接提取
+- 2026-05-29：依赖收敛 — 删除 chromedp、`internal/errors` 包、4跳死参数链；Docker alpine；scraper fetchDoc；ToolError error 接口
 - 2026-05-29：搜索页面切换 bug 修复 — SearchableList 添加 `key={type}`；embed 指令 `dist/*` → `dist`
 - 2026-05-29：Firecrawl 集成 — MatchesScraper.GetUpcoming 403 时回退到 Firecrawl；重写 NormalizeUpcomingMatches
 - 2026-05-29：HLTV CF 封锁修复 — handler 超时；nil pointer panic 修复
