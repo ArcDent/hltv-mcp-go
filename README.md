@@ -22,6 +22,7 @@ docker run -d --name hltv-mcp `
   -p 8082:8082 `
   -e FIRECRAWL_API_KEY=fc-xxxxxxxxxxxxxxxx `
   -v hltv-chrome-data:/tmp `
+  -v hltv-data:/data `
   ghcr.io/arcdent/hltv-data:latest
 ```
 
@@ -36,6 +37,7 @@ docker run -d --name hltv-mcp \
   -p 8082:8082 \
   -e FIRECRAWL_API_KEY=fc-xxxxxxxxxxxxxxxx \
   -v hltv-chrome-data:/tmp \
+  -v hltv-data:/data \
   ghcr.io/arcdent/hltv-data:latest
 ```
 
@@ -62,10 +64,11 @@ docker rm -f hltv-mcp \
   && docker run -d --name hltv-mcp \
     -p 8082:8082 \
     -v hltv-chrome-data:/tmp \
+    -v hltv-data:/data \
     ghcr.io/arcdent/hltv-data:latest
 
 # 一行更新
-docker pull ghcr.io/arcdent/hltv-data:latest && docker rm -f hltv-mcp && docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp ghcr.io/arcdent/hltv-data:latest
+docker pull ghcr.io/arcdent/hltv-data:latest && docker rm -f hltv-mcp && docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp -v hltv-data:/data ghcr.io/arcdent/hltv-data:latest
 ```
 
 ### 自动同步
@@ -83,7 +86,7 @@ Register-ScheduledTask -TaskName "HLTV-Auto-Update" -Action $action -Trigger $tr
 **Linux（crontab）**
 
 ```bash
-*/5 * * * * docker pull ghcr.io/arcdent/hltv-data:latest && docker rm -f hltv-mcp && docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp ghcr.io/arcdent/hltv-data:latest
+*/5 * * * * docker pull ghcr.io/arcdent/hltv-data:latest && docker rm -f hltv-mcp && docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp -v hltv-data:/data ghcr.io/arcdent/hltv-data:latest
 ```
 
 ## 用法
@@ -136,6 +139,10 @@ Docker 部署后 MCP stdio 不可用（容器隔离）。如需 MCP 功能，使
 | `HTTP_PORT` | `8082` | HTTP 监听端口 |
 | `HTTP_HOST` | `0.0.0.0` | HTTP 监听地址 |
 | `FIRECRAWL_API_KEY` | — | Firecrawl API Key（赛程抓取绕过 Cloudflare） |
+| `HLTV_DB_PATH` | `data/hltv.db` | SQLite 数据库路径 |
+| `HLTV_DB_RETENTION_MATCHES` | `90` | 比赛数据保留天数 |
+| `HLTV_DB_RETENTION_NEWS` | `30` | 新闻数据保留天数 |
+| `HLTV_DB_RETENTION_REALTIME_NEWS` | `7` | 实时新闻数据保留天数 |
 | `HLTV_HTTP_TIMEOUT_MS` | `8000` | HTTP 超时（毫秒） |
 | `HLTV_RETRY_COUNT` | `2` | HTTP 重试次数 |
 | `DEFAULT_RESULT_LIMIT` | `5` | 默认查询结果数 |
@@ -207,6 +214,7 @@ docker run -d --name hltv-mcp -p 8082:8082 -v hltv-chrome-data:/tmp hltv-mcp
 
 ### 2026-05-29
 
+- **长期化存储**：SQLite 持久化存储（`data/hltv.db`），三层数据回退（内存缓存 → SQLite 历史 → HLTV 实时抓取）；SSE 推送前端自动刷新（`GET /api/sse`）；赛程三分类查询；5 张实体表 + 自动过期清理
 - **队伍简称编辑修复**：`PutTeamNickname` 强制 `LookupTeam` 门禁限制仅目录内 26 队可编辑简称，非目录队伍返回 400 后端错误（前端静默吞掉）；移除门禁改为直接保存，目录内队伍仍解析 canonical name；`BuildFullDict` 新增所有 override 直接 key-value 映射，确保非目录队伍昵称同步至赛程页面
 - **赛程覆盖面修复**：HLTV 新版 `.match` 嵌套两层导致选择器双重匹配、遗漏 6 月后赛程；改用 `.match-wrapper` 精确去重 + `data-match-id` 属性提取 ID；收录条件放宽为至少一方已知，覆盖范围从 36 场（5 天）扩展到 55 场（7 天，含淘汰赛待定对手）
 - **赛程多词队名截断修复**：HLTV 赛程 HTML 改为 `.match-teamname` 子元素结构，旧 `strings.Fields` 解析器截断 NaVi（Natus Vincere）、The MongolZ 等多词队名；改用 goquery 选择器直接提取
