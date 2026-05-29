@@ -55,7 +55,7 @@ func (f *HltvFacade) createMeta(ttlSec int) types.ToolMeta {
 	return types.ToolMeta{
 		Source:        "hltv-mcp",
 		FetchedAt:     time.Now().UTC().Format(time.RFC3339),
-		Timezone:      f.cfg.Timezone,
+		Timezone:      "Asia/Shanghai",
 		TTLSec:        ttlSec,
 		SchemaVersion: "1.0",
 	}

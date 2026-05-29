@@ -34,7 +34,6 @@ type Config struct {
 	DBRetentionRealtime int
 
 	DefaultResultLimit int
-	Timezone           string
 }
 
 // LoadConfig reads configuration from environment variables with defaults
@@ -67,7 +66,6 @@ func LoadConfig() (*Config, error) {
 		DBRetentionRealtime: envInt("HLTV_DB_RETENTION_REALTIME_NEWS", 7),
 
 		DefaultResultLimit: envInt("DEFAULT_RESULT_LIMIT", 5),
-		Timezone:           "Asia/Shanghai",
 	}, nil
 }
 

@@ -21,32 +21,32 @@ func TestInitOverrides_NoFile(t *testing.T) {
 	if err := InitOverrides(); err != nil {
 		t.Fatalf("InitOverrides: %v", err)
 	}
-	if n := GetTeamOverride("Vitality"); n != "" {
+	if n := getTeamOverride("Vitality"); n != "" {
 		t.Errorf("expected empty, got %q", n)
 	}
-	if n := GetPlayerOverride("donk"); n != "" {
+	if n := getPlayerOverride("donk"); n != "" {
 		t.Errorf("expected empty, got %q", n)
 	}
 }
 
-func TestSetAndGetTeamOverride(t *testing.T) {
+func TestSetAndgetTeamOverride(t *testing.T) {
 	InitOverrides()
 
 	if err := SetTeamOverride("Vitality", "蜜蜂"); err != nil {
 		t.Fatalf("SetTeamOverride: %v", err)
 	}
-	if n := GetTeamOverride("Vitality"); n != "蜜蜂" {
+	if n := getTeamOverride("Vitality"); n != "蜜蜂" {
 		t.Errorf("expected 蜜蜂, got %q", n)
 	}
 }
 
-func TestSetAndGetPlayerOverride(t *testing.T) {
+func TestSetAndgetPlayerOverride(t *testing.T) {
 	InitOverrides()
 
 	if err := SetPlayerOverride("donk", "小驴"); err != nil {
 		t.Fatalf("SetPlayerOverride: %v", err)
 	}
-	if n := GetPlayerOverride("donk"); n != "小驴" {
+	if n := getPlayerOverride("donk"); n != "小驴" {
 		t.Errorf("expected 小驴, got %q", n)
 	}
 }
@@ -58,7 +58,7 @@ func TestDeleteOverride_EmptyNickname(t *testing.T) {
 	if err := SetTeamOverride("Vitality", ""); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
-	if n := GetTeamOverride("Vitality"); n != "" {
+	if n := getTeamOverride("Vitality"); n != "" {
 		t.Errorf("expected empty after delete, got %q", n)
 	}
 }
@@ -70,7 +70,7 @@ func TestOverridePersistence(t *testing.T) {
 	if err := InitOverrides(); err != nil {
 		t.Fatalf("re-init: %v", err)
 	}
-	if n := GetTeamOverride("Vitality"); n != "蜜蜂" {
+	if n := getTeamOverride("Vitality"); n != "蜜蜂" {
 		t.Errorf("persistence failed, got %q", n)
 	}
 }
@@ -83,8 +83,8 @@ func TestConcurrentReadWrite(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			for j := 0; j < 100; j++ {
-				GetTeamOverride("Vitality")
-				GetPlayerOverride("donk")
+				getTeamOverride("Vitality")
+				getPlayerOverride("donk")
 			}
 			done <- true
 		}()
@@ -99,7 +99,7 @@ func TestConcurrentReadWrite(t *testing.T) {
 		<-done
 	}
 
-	if n := GetTeamOverride("Vitality"); n != "test" {
+	if n := getTeamOverride("Vitality"); n != "test" {
 		t.Errorf("expected 'test' after concurrent writes, got %q", n)
 	}
 }

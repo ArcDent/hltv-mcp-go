@@ -16,9 +16,6 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.HTTPPort != 8082 {
 		t.Errorf("port: %d", cfg.HTTPPort)
 	}
-	if cfg.Timezone != "Asia/Shanghai" {
-		t.Errorf("tz: %s", cfg.Timezone)
-	}
 }
 
 func TestLoadConfigOverride(t *testing.T) {

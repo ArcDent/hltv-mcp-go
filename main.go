@@ -22,7 +22,6 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/mcp"
 	"github.com/arcdent/hltv-mcp/internal/renderer"
 	"github.com/arcdent/hltv-mcp/internal/storage"
-	"github.com/arcdent/hltv-mcp/internal/summary"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -74,7 +73,7 @@ func main() {
 	}
 
 	f := facade.New(cfg, c, cli, store, notify)
-	r := renderer.New(summary.New())
+	r := renderer.New()
 
 	// MCP stdio goroutine
 	mcpServer := mcp.CreateServer(cfg, f, r)

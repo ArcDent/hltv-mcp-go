@@ -10,18 +10,16 @@ import (
 )
 
 // Renderer produces Chinese-formatted text output for MCP tool responses
-type Renderer struct {
-	summary *summary.Service
-}
+type Renderer struct{}
 
-func New(s *summary.Service) *Renderer { return &Renderer{summary: s} }
+func New() *Renderer { return &Renderer{} }
 
 func (r *Renderer) RenderTeamRecent(resp *types.ToolResponse) string {
 	if resp.Error != nil {
 		return r.renderError("队伍近况", resp)
 	}
 	data := resp.Data.(*types.TeamRecentData)
-	s := r.summary.SummarizeTeam(data)
+	s := summary.SummarizeTeam(data)
 	var b strings.Builder
 	fmt.Fprintf(&b, "【队伍近况】%s\n\n", localization.FormatTeamDisplay(data.Profile.Name))
 	fmt.Fprintf(&b, "【关键事实】\n排名：#%d  近况：%s\n", data.Profile.Rank, data.SummaryStats.RecentRecord)
@@ -48,7 +46,7 @@ func (r *Renderer) RenderPlayerRecent(resp *types.ToolResponse) string {
 		return r.renderError("选手近况", resp)
 	}
 	data := resp.Data.(*types.PlayerRecentData)
-	s := r.summary.SummarizePlayer(data)
+	s := summary.SummarizePlayer(data)
 	var b strings.Builder
 	fmt.Fprintf(&b, "【选手近况】%s\n\n", data.Profile.Name)
 	fmt.Fprintf(&b, "【关键事实】\n所属队伍：%s  国家：%s\n",
@@ -69,7 +67,7 @@ func (r *Renderer) RenderMatches(resp *types.ToolResponse) string {
 	if q, ok := resp.Query["today_only"].(bool); ok && q {
 		title = "今日比赛"
 	}
-	s := r.summary.SummarizeMatches(items, title == "今日比赛")
+	s := summary.SummarizeMatches(items, title == "今日比赛")
 	var b strings.Builder
 	fmt.Fprintf(&b, "【%s】\n\n", title)
 	for i, m := range items {
@@ -93,7 +91,7 @@ func (r *Renderer) RenderNews(resp *types.ToolResponse) string {
 		return r.renderError("新闻", resp)
 	}
 	items := resp.Items.([]types.NewsItem)
-	s := r.summary.SummarizeNews(items)
+	s := summary.SummarizeNews(items)
 	var b strings.Builder
 	fmt.Fprintf(&b, "【新闻集合】\n\n")
 	for i, item := range items {
@@ -108,7 +106,7 @@ func (r *Renderer) RenderRealtimeNews(resp *types.ToolResponse) string {
 		return r.renderError("实时新闻", resp)
 	}
 	items := resp.Items.([]types.RealtimeNewsItem)
-	s := r.summary.SummarizeRealtimeNews(items)
+	s := summary.SummarizeRealtimeNews(items)
 	var b strings.Builder
 	fmt.Fprintf(&b, "【实时新闻】\n\n")
 	for i, item := range items {

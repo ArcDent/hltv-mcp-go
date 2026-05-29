@@ -8,11 +8,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
-type Service struct{}
-
-func New() *Service { return &Service{} }
-
-func (s *Service) SummarizeTeam(data *types.TeamRecentData) string {
+func SummarizeTeam(data *types.TeamRecentData) string {
 	if data == nil {
 		return "无法生成队伍摘要。"
 	}
@@ -36,7 +32,7 @@ func (s *Service) SummarizeTeam(data *types.TeamRecentData) string {
 	return fmt.Sprintf("%s %s，近况 %s%s。", name, rank, record, nextMatch)
 }
 
-func (s *Service) SummarizePlayer(data *types.PlayerRecentData) string {
+func SummarizePlayer(data *types.PlayerRecentData) string {
 	if data == nil {
 		return "无法生成选手摘要。"
 	}
@@ -44,7 +40,7 @@ func (s *Service) SummarizePlayer(data *types.PlayerRecentData) string {
 	return fmt.Sprintf("%s（%s）近期状态概览。", data.Profile.Name, team)
 }
 
-func (s *Service) SummarizeMatches(items []types.NormalizedMatch, todayOnly bool) string {
+func SummarizeMatches(items []types.NormalizedMatch, todayOnly bool) string {
 	if len(items) == 0 {
 		return "暂无比赛数据。"
 	}
@@ -64,7 +60,7 @@ func (s *Service) SummarizeMatches(items []types.NormalizedMatch, todayOnly bool
 	return fmt.Sprintf("%s重点：%s。", prefix, strings.Join(parts, "；"))
 }
 
-func (s *Service) SummarizeNews(items []types.NewsItem) string {
+func SummarizeNews(items []types.NewsItem) string {
 	if len(items) == 0 {
 		return "暂无新闻。"
 	}
@@ -78,7 +74,7 @@ func (s *Service) SummarizeNews(items []types.NewsItem) string {
 	return fmt.Sprintf("重点新闻：%s。", strings.Join(parts, "；"))
 }
 
-func (s *Service) SummarizeRealtimeNews(items []types.RealtimeNewsItem) string {
+func SummarizeRealtimeNews(items []types.RealtimeNewsItem) string {
 	if len(items) == 0 {
 		return "暂无实时新闻。"
 	}
