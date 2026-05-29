@@ -25,7 +25,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/summary"
 )
 
-//go:embed dist/*
+//go:embed dist
 var embeddedFrontend embed.FS
 
 func main() {

@@ -33,10 +33,10 @@
 ```
 
 ## 最近操作
-- 2026-05-29：Firecrawl 集成 — 新增 `FIRECRAWL_API_KEY` 配置 + `internal/client/firecrawl.go`；MatchesScraper.GetUpcoming 在 HTTP 403 时自动回退到 Firecrawl；重写 NormalizeUpcomingMatches 遍历所有 .matches-list-section 容器（支持 26 个日期分区的 67+ 场赛程，覆盖 IEM Cologne Major 2026 Stage 1/2/Main Event）；GetUpcomingMatches 默认 limit 提升至 300
-- 2026-05-29：HLTV CF 封锁修复 — 所有 handler 超时；fetchHTTP 403 处理；nil pointer panic 修复；chromedp recover 防崩溃
+- 2026-05-29：搜索页面切换 bug 修复 — SearchableList 添加 `key={type}` 强制路由切换时重新挂载；embed 指令 `dist/*` → `dist` 修复子目录静态资源嵌入
+- 2026-05-29：Firecrawl 集成 — 新增 `FIRECRAWL_API_KEY` 配置 + `internal/client/firecrawl.go`；MatchesScraper.GetUpcoming 在 HTTP 403 时自动回退到 Firecrawl；重写 NormalizeUpcomingMatches
+- 2026-05-29：HLTV CF 封锁修复 — 所有 handler 超时；fetchHTTP 403 处理；nil pointer panic 修复
 - 2026-05-29：选手数据分层修复 — `PlayerSummary` 解析 `.highlighted-stat`
-- 2026-05-28：HLTV 选手页 A/B 改版适配 — React 零值渲染陷阱修复
 
 ## 关键发现
 
@@ -75,6 +75,15 @@
 - 空值语义 = 删除条目；写操作先更新内存再写磁盘
 - API：`PUT /api/nicknames/team` 先解析 canonical 名；`PUT /api/nicknames/player` 直接存储
 
+### React Router 路由切换
+- 不同路由渲染同一组件类型时，React reconciliation 复用实例不重新挂载，内部 state 保留
+- 修复方式：给组件添加 `key` 区分不同路由实例（如 `key="teams"` / `key="players"`）
+
+### Go embed 静态资源
+- `//go:embed dist/*` 只匹配 `dist/` 直接子文件，不递归子目录
+- Vite build 将 JS/CSS 放在 `dist/assets/`，需用 `//go:embed dist` 递归包含整个目录
+- `fs.Sub(embeddedFS, "dist")` 正常获取子文件系统
+
 ### 部署
 - Docker 三阶段构建 → `ghcr.io/arcdent/hltv-data:latest`
 - CI/CD：push main → GitHub Actions 自动构建 + Watchtower 自动拉取
@@ -86,5 +95,5 @@
 - 监控 Firecrawl API 配额消耗
 
 ## 进行中
-- 无（2026-05-29 Firecrawl 集成已完成）
+- 无（2026-05-29 搜索页面切换 bug 已修复）
 

@@ -83,8 +83,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/matches" element={<Matches />} />
-            <Route path="/teams" element={<SearchPage type="team" placeholder="搜索队伍 — 支持英文 / 中文 / 别名（如 Spirit、绿龙、小蜜蜂）" emptyHint="输入队名开始搜索" />} />
-            <Route path="/players" element={<SearchPage type="player" placeholder="搜索选手 — 如 ZywOo、载物、s1mple" emptyHint="输入选手名开始搜索" />} />
+            <Route path="/teams" element={<SearchPage key="teams" type="team" placeholder="搜索队伍 — 支持英文 / 中文 / 别名（如 Spirit、绿龙、小蜜蜂）" emptyHint="输入队名开始搜索" />} />
+            <Route path="/players" element={<SearchPage key="players" type="player" placeholder="搜索选手 — 如 ZywOo、载物、s1mple" emptyHint="输入选手名开始搜索" />} />
             <Route path="/news" element={<News />} />
             <Route path="/cache" element={<Cache />} />
           </Routes>

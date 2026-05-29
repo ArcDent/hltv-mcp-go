@@ -10,6 +10,7 @@ type SearchPageProps = {
 export default function SearchPage({ type, placeholder, emptyHint }: SearchPageProps) {
   return (
     <SearchableList
+      key={type}
       type={type}
       placeholder={placeholder}
       emptyHint={emptyHint}
