@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/arcdent/hltv-mcp/internal/cache"
@@ -12,6 +13,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/config"
 	"github.com/arcdent/hltv-mcp/internal/normalizer"
 	"github.com/arcdent/hltv-mcp/internal/scraper"
+	"github.com/arcdent/hltv-mcp/internal/storage"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
@@ -20,6 +22,8 @@ type HltvFacade struct {
 	cfg    *config.Config
 	cache  *cache.Cache
 	client *client.HltvClient
+	store  *storage.Store
+	notify func(entity string, id int, name string)
 	ts     *scraper.TeamScraper
 	ps     *scraper.PlayerScraper
 	rs     *scraper.ResultsScraper
@@ -30,11 +34,13 @@ type HltvFacade struct {
 }
 
 // New creates a new HltvFacade
-func New(cfg *config.Config, c *cache.Cache, cli *client.HltvClient) *HltvFacade {
+func New(cfg *config.Config, c *cache.Cache, cli *client.HltvClient, store *storage.Store, notify func(string, int, string)) *HltvFacade {
 	return &HltvFacade{
 		cfg:    cfg,
 		cache:  c,
 		client: cli,
+		store:  store,
+		notify: notify,
 		ts:     scraper.NewTeamScraper(cli),
 		ps:     scraper.NewPlayerScraper(cli),
 		rs:     scraper.NewResultsScraper(cli),
@@ -55,52 +61,143 @@ func (f *HltvFacade) createMeta(ttlSec int) types.ToolMeta {
 	}
 }
 
+func (f *HltvFacade) broadcast(entity string, id int, name string) {
+	if f.notify != nil {
+		f.notify(entity, id, name)
+	}
+}
+
 // withCache checks cache, then computes and caches the result
 
-// GetPlayerDetailCached returns cached player detail, or scrapes and caches for 7 days
+// GetPlayerDetailCached implements Type A three-tier fallback (Cache -> SQLite -> HLTV)
 func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {
 	if slug == "" {
 		slug = fmt.Sprintf("player-%d", id)
 	}
 	key := fmt.Sprintf("player_detail:%d", id)
+
 	if cached, ok := f.cache.Get(key); ok {
 		return cached.(types.PlayerDetail), nil
 	}
+
+	if f.store != nil {
+		if pd, ok, _ := f.store.GetPlayer(id); ok {
+			f.cache.Set(key, pd, 10)
+			go f.refreshPlayer(id, slug, key)
+			return pd, nil
+		}
+	}
+
+	pd, err := f.scrapePlayer(ctx, id, slug)
+	if err != nil {
+		return types.PlayerDetail{}, err
+	}
+	f.cache.Set(key, pd, f.cfg.CacheTTLPlayerDetail)
+	return pd, nil
+}
+
+func (f *HltvFacade) scrapePlayer(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {
 	doc, err := f.ps.GetPlayer(ctx, id, slug)
 	if err != nil {
 		return types.PlayerDetail{}, err
 	}
 	pd := normalizer.NormalizePlayerDetail(doc)
 	pd.Profile.ID = id
-	f.cache.Set(key, pd, f.cfg.CacheTTLPlayerDetail)
+	if f.store != nil {
+		if err := f.store.UpsertPlayer(pd); err != nil {
+			log.Printf("facade: upsert player %d: %v", id, err)
+		}
+	}
 	return pd, nil
 }
 
-// GetNewsArticleCached returns cached article body, or scrapes and caches indefinitely
+func (f *HltvFacade) refreshPlayer(id int, slug, key string) {
+	pd, err := f.scrapePlayer(context.Background(), id, slug)
+	if err != nil {
+		log.Printf("facade: refresh player %d: %v", id, err)
+		return
+	}
+	f.cache.Set(key, pd, f.cfg.CacheTTLPlayerDetail)
+	f.broadcast("player", pd.Profile.ID, pd.Profile.Name)
+}
+
+// GetNewsArticleCached implements Type A three-tier fallback
 func (f *HltvFacade) GetNewsArticleCached(ctx context.Context, url string) (types.NewsArticle, error) {
 	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
 	key := fmt.Sprintf("news_article:%s", hash)
+
 	if cached, ok := f.cache.Get(key); ok {
 		return cached.(types.NewsArticle), nil
 	}
+
+	if f.store != nil {
+		if article, ok, _ := f.store.GetNewsArticle(url); ok {
+			f.cache.Set(key, article, 10)
+			go f.refreshNewsArticle(url, key)
+			return article, nil
+		}
+	}
+
+	article, err := f.scrapeNewsArticle(ctx, url)
+	if err != nil {
+		return types.NewsArticle{}, err
+	}
+	f.cache.Set(key, article, f.cfg.CacheTTLNewsArticle)
+	return article, nil
+}
+
+func (f *HltvFacade) scrapeNewsArticle(ctx context.Context, url string) (types.NewsArticle, error) {
 	doc, err := f.nas.GetArticle(ctx, url)
 	if err != nil {
 		return types.NewsArticle{}, err
 	}
 	article := normalizer.NormalizeNewsArticle(doc, url)
-	f.cache.Set(key, article, f.cfg.CacheTTLNewsArticle)
+	if f.store != nil {
+		if err := f.store.UpsertNewsArticle(article); err != nil {
+			log.Printf("facade: upsert news article: %v", err)
+		}
+	}
 	return article, nil
 }
 
-// GetTeamDetailCached returns cached team detail, or scrapes and caches for 7 days
+func (f *HltvFacade) refreshNewsArticle(url, key string) {
+	article, err := f.scrapeNewsArticle(context.Background(), url)
+	if err != nil {
+		log.Printf("facade: refresh news article: %v", err)
+		return
+	}
+	f.cache.Set(key, article, f.cfg.CacheTTLNewsArticle)
+	f.broadcast("news", 0, article.Title)
+}
+
+// GetTeamDetailCached implements Type A three-tier fallback
 func (f *HltvFacade) GetTeamDetailCached(ctx context.Context, id int, slug string) (types.TeamDetail, error) {
 	if slug == "" {
 		slug = fmt.Sprintf("team-%d", id)
 	}
 	key := fmt.Sprintf("team_detail:%d", id)
+
 	if cached, ok := f.cache.Get(key); ok {
 		return cached.(types.TeamDetail), nil
 	}
+
+	if f.store != nil {
+		if td, ok, _ := f.store.GetTeam(id); ok {
+			f.cache.Set(key, td, 10)
+			go f.refreshTeam(id, slug, key)
+			return td, nil
+		}
+	}
+
+	td, err := f.scrapeTeam(ctx, id, slug)
+	if err != nil {
+		return types.TeamDetail{}, err
+	}
+	f.cache.Set(key, td, f.cfg.CacheTTLPlayerDetail)
+	return td, nil
+}
+
+func (f *HltvFacade) scrapeTeam(ctx context.Context, id int, slug string) (types.TeamDetail, error) {
 	doc, err := f.ts.GetTeam(ctx, id, slug)
 	if err != nil {
 		return types.TeamDetail{}, err
@@ -108,34 +205,48 @@ func (f *HltvFacade) GetTeamDetailCached(ctx context.Context, id int, slug strin
 	td := normalizer.NormalizeTeamDetail(doc)
 	td.Profile.ID = id
 	td.Profile.Slug = slug
-		// Fetch recent matches via standard results/matches pages, filter by team name
-		if td.Profile.Name != "" {
-			name := td.Profile.Name
-			if upcomingDoc, err := f.ms.GetUpcoming(ctx); err == nil {
-				allUpcoming := normalizer.NormalizeUpcomingMatches(upcomingDoc, name)
-				for _, m := range allUpcoming {
-					if m.Team1 == name || m.Team2 == name || m.Opponent == name {
-						td.RecentMatches = append(td.RecentMatches, m)
-					}
+
+	if td.Profile.Name != "" {
+		name := td.Profile.Name
+		if upcomingDoc, err := f.ms.GetUpcoming(ctx); err == nil {
+			allUpcoming := normalizer.NormalizeUpcomingMatches(upcomingDoc, name)
+			for _, m := range allUpcoming {
+				if m.Team1 == name || m.Team2 == name || m.Opponent == name {
+					td.RecentMatches = append(td.RecentMatches, m)
 				}
 			}
 		}
-		// Compute W/L/D + win rate from highlights (team page data)
-		if td.Highlights != nil {
-			for _, m := range td.Highlights.RecentMatches {
-				if m.Result == "won" {
-					td.Stats.Wins++
-				} else {
-					td.Stats.Losses++
-				}
-			}
-			total := td.Stats.Wins + td.Stats.Losses + td.Stats.Draws
-			if total > 0 {
-				td.Stats.WinRate = fmt.Sprintf("%.0f%%", float64(td.Stats.Wins)/float64(total)*100)
+	}
+	if td.Highlights != nil {
+		for _, m := range td.Highlights.RecentMatches {
+			if m.Result == "won" {
+				td.Stats.Wins++
+			} else {
+				td.Stats.Losses++
 			}
 		}
-	f.cache.Set(key, td, f.cfg.CacheTTLPlayerDetail) // reuse 7d TTL
+		total := td.Stats.Wins + td.Stats.Losses + td.Stats.Draws
+		if total > 0 {
+			td.Stats.WinRate = fmt.Sprintf("%.0f%%", float64(td.Stats.Wins)/float64(total)*100)
+		}
+	}
+
+	if f.store != nil {
+		if err := f.store.UpsertTeam(td); err != nil {
+			log.Printf("facade: upsert team %d: %v", id, err)
+		}
+	}
 	return td, nil
+}
+
+func (f *HltvFacade) refreshTeam(id int, slug, key string) {
+	td, err := f.scrapeTeam(context.Background(), id, slug)
+	if err != nil {
+		log.Printf("facade: refresh team %d: %v", id, err)
+		return
+	}
+	f.cache.Set(key, td, f.cfg.CacheTTLPlayerDetail)
+	f.broadcast("team", td.Profile.ID, td.Profile.Name)
 }
 
 func (f *HltvFacade) withCache(key string, ttlSec int, query map[string]any, compute func() (*types.ToolResponse, error)) *types.ToolResponse {
@@ -151,6 +262,66 @@ func (f *HltvFacade) withCache(key string, ttlSec int, query map[string]any, com
 		r.Meta.StaleAgeSec = sm.StaleAgeSec
 		return r
 	}
+	val, err := f.cache.RunOnce(key, func() (any, error) {
+		r, computeErr := compute()
+		if computeErr != nil {
+			return nil, computeErr
+		}
+		f.cache.Set(key, r, ttlSec)
+		return r, nil
+	})
+	if err != nil {
+		return f.errorResponse(query, err)
+	}
+	return val.(*types.ToolResponse)
+}
+
+// withCacheOrStore extends withCache with SQLite fallback for Type B methods.
+// storeHit queries SQLite; if it returns data, it's returned immediately
+// and compute runs in background to refresh.
+func (f *HltvFacade) withCacheOrStore(key string, ttlSec int, query map[string]any,
+	storeHit func() (*types.ToolResponse, bool),
+	compute func() (*types.ToolResponse, error)) *types.ToolResponse {
+
+	// Tier 1: memory cache
+	if cached, ok := f.cache.Get(key); ok {
+		r := cloneResponse(cached.(*types.ToolResponse))
+		r.Meta.CacheHit = true
+		return r
+	}
+	if stale, sm, ok := f.cache.GetStale(key); ok {
+		r := cloneResponse(stale.(*types.ToolResponse))
+		r.Meta.CacheHit = true
+		r.Meta.Stale = true
+		r.Meta.StaleAgeSec = sm.StaleAgeSec
+		return r
+	}
+
+	// Tier 2: SQLite
+	if f.store != nil {
+		if r, ok := storeHit(); ok {
+			f.cache.Set(key, r, 10)
+			go func() {
+				val, err := f.cache.RunOnce("refresh:"+key, func() (any, error) {
+					newR, computeErr := compute()
+					if computeErr != nil {
+						return nil, computeErr
+					}
+					f.cache.Set(key, newR, ttlSec)
+					return newR, nil
+				})
+				if err != nil {
+					log.Printf("facade: background refresh %s: %v", key, err)
+					return
+				}
+				_ = val
+				f.broadcast("matches", 0, "")
+			}()
+			return r
+		}
+	}
+
+	// Tier 3: compute fresh
 	val, err := f.cache.RunOnce(key, func() (any, error) {
 		r, computeErr := compute()
 		if computeErr != nil {

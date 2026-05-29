@@ -13,7 +13,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/http/handlers"
 )
 
-func NewRouter(f *facade.HltvFacade, frontendFS fs.FS) http.Handler {
+func NewRouter(f *facade.HltvFacade, frontendFS fs.FS, sseHub *SSEHub) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -25,6 +25,8 @@ func NewRouter(f *facade.HltvFacade, frontendFS fs.FS) http.Handler {
 	}))
 
 	h := handlers.New(f)
+
+	r.Get("/api/sse", SSEHandler(sseHub))
 
 	r.Get("/api/health", h.Health)
 	r.Get("/api/status", h.Status)

@@ -21,8 +21,9 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/localization"
 	"github.com/arcdent/hltv-mcp/internal/mcp"
 	"github.com/arcdent/hltv-mcp/internal/renderer"
-	"github.com/mark3labs/mcp-go/server"
+	"github.com/arcdent/hltv-mcp/internal/storage"
 	"github.com/arcdent/hltv-mcp/internal/summary"
+	"github.com/mark3labs/mcp-go/server"
 )
 
 //go:embed dist
@@ -54,7 +55,25 @@ func main() {
 
 	c := cache.New(cfg.CacheMaxEntries, cfg.CacheStaleWindowSec)
 	cli := client.NewHltvClient(cfg)
-	f := facade.New(cfg, c, cli)
+
+	// SSE hub for frontend live refresh
+	sseHub := httppkg.NewSSEHub()
+	notify := func(entity string, id int, name string) {
+		sseHub.Broadcast(httppkg.SSEEvent{Entity: entity, ID: id, Name: name})
+	}
+
+	// SQLite persistent storage (Tier 2, optional)
+	var store *storage.Store
+	if cfg.DBPath != "" {
+		s, err := storage.Open(cfg.DBPath, cfg.DBRetentionMatches, cfg.DBRetentionNews, cfg.DBRetentionRealtime)
+		if err != nil {
+			log.Printf("storage: %v (degraded: Cache-only)", err)
+		} else {
+			store = s
+		}
+	}
+
+	f := facade.New(cfg, c, cli, store, notify)
 	r := renderer.New(summary.New())
 
 	// MCP stdio goroutine
@@ -71,7 +90,7 @@ func main() {
 	if cfg.HTTPPort > 0 {
 		frontendFS = embeddedFrontend
 	}
-	router := httppkg.NewRouter(f, frontendFS)
+	router := httppkg.NewRouter(f, frontendFS, sseHub)
 	httpAddr := fmt.Sprintf("%s:%d", cfg.HTTPHost, cfg.HTTPPort)
 	httpServer := &http.Server{Addr: httpAddr, Handler: router}
 	go func() {

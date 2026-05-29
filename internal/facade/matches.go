@@ -3,6 +3,7 @@ package facade
 import (
 	"context"
 	"fmt"
+	"log"
 	"regexp"
 	"sort"
 	"strings"
@@ -54,38 +55,59 @@ func (f *HltvFacade) GetEvents(matchType string, limit int) *types.ToolResponse 
 	key := fmt.Sprintf("events:%s:%d", matchType, limit)
 	ttl := f.cfg.CacheTTLMatches
 
-	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
-		var items []types.NormalizedMatch
-		switch matchType {
-		case "today", "upcoming":
-			doc, err := f.ms.GetUpcoming(context.Background())
-			if err != nil {
-				return nil, err
+	return f.withCacheOrStore(key, ttl, q,
+		func() (*types.ToolResponse, bool) {
+			matches, err := f.store.QueryMatchesByTime(matchType, 0)
+			if err != nil || len(matches) == 0 {
+				return nil, false
 			}
-			items = normalizer.NormalizeUpcomingMatches(doc, "")
-			if matchType == "today" {
-				items = filterToday(items)
+			if len(matches) > limit {
+				matches = matches[:limit]
 			}
-		case "results":
-			doc, err := f.rs.GetResults(context.Background())
-			if err != nil {
-				return nil, err
+			resp := groupByEvent(matches)
+			meta := f.createMeta(ttl)
+			r := &types.ToolResponse{Query: q, Meta: meta}
+			r.Data = resp
+			return r, true
+		},
+		func() (*types.ToolResponse, error) {
+			var items []types.NormalizedMatch
+			switch matchType {
+			case "today", "upcoming":
+				doc, err := f.ms.GetUpcoming(context.Background())
+				if err != nil {
+					return nil, err
+				}
+				items = normalizer.NormalizeUpcomingMatches(doc, "")
+				if matchType == "today" {
+					items = filterToday(items)
+				}
+			case "results":
+				doc, err := f.rs.GetResults(context.Background())
+				if err != nil {
+					return nil, err
+				}
+				items = normalizer.NormalizeMatches(doc, "")
+				normalizer.SortByPlayedAtDesc(items)
+			default:
+				return nil, fmt.Errorf("invalid type: %s", matchType)
 			}
-			items = normalizer.NormalizeMatches(doc, "")
-			normalizer.SortByPlayedAtDesc(items)
-		default:
-			return nil, fmt.Errorf("invalid type: %s", matchType)
-		}
-		if len(items) > limit {
-			items = items[:limit]
-		}
 
-		resp := groupByEvent(items)
-		meta := f.createMeta(ttl)
-		r := &types.ToolResponse{Query: q, Meta: meta}
-		r.Data = resp
-		return r, nil
-	})
+			if f.store != nil {
+				if err := f.store.BatchUpsertMatches(items); err != nil {
+					log.Printf("facade: batch upsert %s matches: %v", matchType, err)
+				}
+			}
+
+			if len(items) > limit {
+				items = items[:limit]
+			}
+			resp := groupByEvent(items)
+			meta := f.createMeta(ttl)
+			r := &types.ToolResponse{Query: q, Meta: meta}
+			r.Data = resp
+			return r, nil
+		})
 }
 
 func groupByEvent(matches []types.NormalizedMatch) EventsResponse {
@@ -148,33 +170,62 @@ func (f *HltvFacade) GetUpcomingMatches(query types.UpcomingMatchesQuery) *types
 		event = ""
 	}
 	todayOnly := query.TodayOnly
-	userSetLimit := query.Limit // 0 means no explicit limit from user
+	userSetLimit := query.Limit
 	if query.Limit == 0 {
-		query.Limit = 300 // internal max to prevent unbounded response
+		query.Limit = 300
 	}
 	q := map[string]any{"team": team, "event": event, "today_only": todayOnly}
 	key := fmt.Sprintf("matches_upcoming:%s:%s:%v", team, event, todayOnly)
 	ttl := f.cfg.CacheTTLMatches
 
-	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
-		doc, err := f.ms.GetUpcoming(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		items := normalizer.NormalizeUpcomingMatches(doc, "")
-		normalizer.SortByScheduledAtAsc(items)
-		if todayOnly {
-			items = filterToday(items)
-		}
-		if userSetLimit > 0 && len(items) > userSetLimit {
-			items = items[:userSetLimit]
-		}
-		if !todayOnly && len(items) > query.Limit {
-			items = items[:query.Limit] // hard cap at 300
-		}
-		meta := f.createMeta(ttl)
-		return &types.ToolResponse{Query: q, Items: items, Meta: meta}, nil
-	})
+	return f.withCacheOrStore(key, ttl, q,
+		func() (*types.ToolResponse, bool) {
+			category := "upcoming"
+			if todayOnly {
+				category = "today"
+			}
+			matches, err := f.store.QueryMatchesByTime(category, 0)
+			if err != nil || len(matches) == 0 {
+				return nil, false
+			}
+			if team != "" {
+				matches = filterByTeam(matches, team)
+				if len(matches) == 0 {
+					return nil, false
+				}
+			}
+			if userSetLimit > 0 && len(matches) > userSetLimit {
+				matches = matches[:userSetLimit]
+			}
+			meta := f.createMeta(ttl)
+			return &types.ToolResponse{Query: q, Items: matches, Meta: meta}, true
+		},
+		func() (*types.ToolResponse, error) {
+			doc, err := f.ms.GetUpcoming(context.Background())
+			if err != nil {
+				return nil, err
+			}
+			items := normalizer.NormalizeUpcomingMatches(doc, "")
+
+			if f.store != nil {
+				if err := f.store.BatchUpsertMatches(items); err != nil {
+					log.Printf("facade: batch upsert upcoming matches: %v", err)
+				}
+			}
+
+			normalizer.SortByScheduledAtAsc(items)
+			if todayOnly {
+				items = filterToday(items)
+			}
+			if userSetLimit > 0 && len(items) > userSetLimit {
+				items = items[:userSetLimit]
+			}
+			if !todayOnly && len(items) > query.Limit {
+				items = items[:query.Limit]
+			}
+			meta := f.createMeta(ttl)
+			return &types.ToolResponse{Query: q, Items: items, Meta: meta}, nil
+		})
 }
 
 // GetResultsRecent fetches recent results with optional filters
@@ -191,19 +242,44 @@ func (f *HltvFacade) GetResultsRecent(query types.ResultsRecentQuery) *types.Too
 	key := fmt.Sprintf("results_recent:%s:%s:%d", team, event, query.Days)
 	ttl := f.cfg.CacheTTLResults
 
-	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
-		doc, err := f.rs.GetResults(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		items := normalizer.NormalizeMatches(doc, "")
-		normalizer.SortByPlayedAtDesc(items)
-		if len(items) > query.Limit {
-			items = items[:query.Limit]
-		}
-		meta := f.createMeta(ttl)
-		return &types.ToolResponse{Query: q, Items: items, Meta: meta}, nil
-	})
+	return f.withCacheOrStore(key, ttl, q,
+		func() (*types.ToolResponse, bool) {
+			matches, err := f.store.QueryMatchesByTime("results", 0)
+			if err != nil || len(matches) == 0 {
+				return nil, false
+			}
+			if team != "" {
+				matches = filterByTeam(matches, team)
+				if len(matches) == 0 {
+					return nil, false
+				}
+			}
+			if len(matches) > query.Limit {
+				matches = matches[:query.Limit]
+			}
+			meta := f.createMeta(ttl)
+			return &types.ToolResponse{Query: q, Items: matches, Meta: meta}, true
+		},
+		func() (*types.ToolResponse, error) {
+			doc, err := f.rs.GetResults(context.Background())
+			if err != nil {
+				return nil, err
+			}
+			items := normalizer.NormalizeMatches(doc, "")
+
+			if f.store != nil {
+				if err := f.store.BatchUpsertMatches(items); err != nil {
+					log.Printf("facade: batch upsert results matches: %v", err)
+				}
+			}
+
+			normalizer.SortByPlayedAtDesc(items)
+			if len(items) > query.Limit {
+				items = items[:query.Limit]
+			}
+			meta := f.createMeta(ttl)
+			return &types.ToolResponse{Query: q, Items: items, Meta: meta}, nil
+		})
 }
 
 func filterToday(matches []types.NormalizedMatch) []types.NormalizedMatch {
@@ -215,4 +291,15 @@ func filterToday(matches []types.NormalizedMatch) []types.NormalizedMatch {
 		}
 	}
 	return result
+}
+
+func filterByTeam(matches []types.NormalizedMatch, team string) []types.NormalizedMatch {
+	var out []types.NormalizedMatch
+	tl := strings.ToLower(team)
+	for _, m := range matches {
+		if strings.ToLower(m.Team1) == tl || strings.ToLower(m.Team2) == tl {
+			out = append(out, m)
+		}
+	}
+	return out
 }
