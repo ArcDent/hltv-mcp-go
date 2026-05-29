@@ -67,8 +67,6 @@ func (f *HltvFacade) broadcast(entity string, id int, name string) {
 	}
 }
 
-// withCache checks cache, then computes and caches the result
-
 // GetPlayerDetailCached implements Type A three-tier fallback (Cache -> SQLite -> HLTV)
 func (f *HltvFacade) GetPlayerDetailCached(ctx context.Context, id int, slug string) (types.PlayerDetail, error) {
 	if slug == "" {
@@ -249,34 +247,7 @@ func (f *HltvFacade) refreshTeam(id int, slug, key string) {
 	f.broadcast("team", td.Profile.ID, td.Profile.Name)
 }
 
-func (f *HltvFacade) withCache(key string, ttlSec int, query map[string]any, compute func() (*types.ToolResponse, error)) *types.ToolResponse {
-	if cached, ok := f.cache.Get(key); ok {
-		r := cloneResponse(cached.(*types.ToolResponse))
-		r.Meta.CacheHit = true
-		return r
-	}
-	if stale, sm, ok := f.cache.GetStale(key); ok {
-		r := cloneResponse(stale.(*types.ToolResponse))
-		r.Meta.CacheHit = true
-		r.Meta.Stale = true
-		r.Meta.StaleAgeSec = sm.StaleAgeSec
-		return r
-	}
-	val, err := f.cache.RunOnce(key, func() (any, error) {
-		r, computeErr := compute()
-		if computeErr != nil {
-			return nil, computeErr
-		}
-		f.cache.Set(key, r, ttlSec)
-		return r, nil
-	})
-	if err != nil {
-		return f.errorResponse(query, err)
-	}
-	return val.(*types.ToolResponse)
-}
-
-// withCacheOrStore extends withCache with SQLite fallback for Type B methods.
+// withCacheOrStore provides two-tier (Cache + optional SQLite) fallback for all facade methods.
 // storeHit queries SQLite; if it returns data, it's returned immediately
 // and compute runs in background to refresh.
 func (f *HltvFacade) withCacheOrStore(key string, ttlSec int, query map[string]any,

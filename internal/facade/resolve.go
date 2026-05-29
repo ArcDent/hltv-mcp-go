@@ -17,7 +17,7 @@ func (f *HltvFacade) ResolveTeam(query types.ResolveQuery) *types.ToolResponse {
 	key := fmt.Sprintf("resolve_team:%s:%v:%d", query.Name, query.Exact, query.Limit)
 	ttl := f.cfg.CacheTTLEntity
 
-	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
+	return f.withCacheOrStore(key, ttl, q, func() (*types.ToolResponse, bool) { return nil, false }, func() (*types.ToolResponse, error) {
 		items, err := f.ts.Search(context.Background(), query.Name)
 		if err != nil {
 			return nil, err
@@ -46,7 +46,7 @@ func (f *HltvFacade) ResolvePlayer(query types.ResolveQuery) *types.ToolResponse
 	key := fmt.Sprintf("resolve_player:%s:%v:%d", query.Name, query.Exact, query.Limit)
 	ttl := f.cfg.CacheTTLEntity
 
-	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
+	return f.withCacheOrStore(key, ttl, q, func() (*types.ToolResponse, bool) { return nil, false }, func() (*types.ToolResponse, error) {
 		items, err := f.ps.Search(context.Background(), query.Name)
 		if err != nil {
 			return nil, err
@@ -82,7 +82,7 @@ func (f *HltvFacade) GetTeamRecent(query types.TeamRecentQuery) *types.ToolRespo
 	key := fmt.Sprintf("team_recent:%d:%s", teamID, teamName)
 	ttl := f.cfg.CacheTTLTeam
 
-	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
+	return f.withCacheOrStore(key, ttl, q, func() (*types.ToolResponse, bool) { return nil, false }, func() (*types.ToolResponse, error) {
 		teamSearch := f.ResolveTeam(types.ResolveQuery{Name: teamName, Limit: 1})
 		if teamSearch.Error != nil {
 			return nil, fmt.Errorf("%s", teamSearch.Error.Message)
@@ -150,7 +150,7 @@ func (f *HltvFacade) GetPlayerRecent(query types.PlayerRecentQuery) *types.ToolR
 	key := fmt.Sprintf("player_recent:%d:%s", playerID, playerName)
 	ttl := f.cfg.CacheTTLPlayer
 
-	return f.withCache(key, ttl, q, func() (*types.ToolResponse, error) {
+	return f.withCacheOrStore(key, ttl, q, func() (*types.ToolResponse, bool) { return nil, false }, func() (*types.ToolResponse, error) {
 		playerSearch := f.ResolvePlayer(types.ResolveQuery{Name: playerName, Limit: 1})
 		if playerSearch.Error != nil {
 			return nil, fmt.Errorf("%s", playerSearch.Error.Message)
