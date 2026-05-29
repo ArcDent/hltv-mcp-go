@@ -32,6 +32,7 @@
 ```
 
 ## 最近操作
+- 2026-05-29：队伍简称修复 — `PutTeamNickname` 强制 `LookupTeam` 门禁导致非目录队伍无法保存；移除门禁改为直接保存（有 canonical 则解析）；`BuildFullDict` 新增 override 直接 key-value 映射确保赛程页面同步
 - 2026-05-29：赛程覆盖面修复 — HLTV 嵌套 `.match` div 导致 `section.Find(".match")` 双重计数且遗漏后期比赛；改用 `.match-wrapper` 选择器 + `data-match-id` 属性去重；收录条件放宽为至少一方已知（含淘汰赛待定对手），覆盖范围从 36 场/5 天扩展到 55 场/7 天
 - 2026-05-29：队名截断修复 — HLTV 更新 match 页面 HTML，队名移至 `.match-teamname` 子元素；旧 `strings.Fields` 解析器截断多词队名；改用 goquery 选择器 `.match-team.team1/team2 .match-teamname` 直接提取
 - 2026-05-29：依赖收敛 — 删除 chromedp、`internal/errors` 包、4跳死参数链；Docker alpine；scraper fetchDoc；ToolError error 接口
@@ -62,7 +63,8 @@
 ### nickname 覆盖层
 - `internal/localization/overrides.go`：线程安全内存缓存 + JSON 持久化
 - 空值语义 = 删除条目；写操作先更新内存再写磁盘
-- API：`PUT /api/nicknames/team` 先解析 canonical 名；`PUT /api/nicknames/player` 直接存储
+- API：`PUT /api/nicknames/team` 尝试解析 canonical（目录内队伍），否则直接按原始名称存储；`PUT /api/nicknames/player` 直接存储
+- `BuildFullDict` 对目录队伍做别名展开 + 所有 override 添加直接 key-value 映射（确保非目录队伍昵称出现在赛程页面）
 
 ### React Router 路由切换
 - 不同路由渲染同一组件类型时，React reconciliation 复用实例不重新挂载，内部 state 保留
