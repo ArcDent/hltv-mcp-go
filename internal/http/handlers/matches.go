@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -14,84 +13,31 @@ func (h *Handlers) GetTodayMatches(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetUpcomingMatches(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
-	defer cancel()
-
 	q := r.URL.Query()
-	team := q.Get("team")
-	event := q.Get("event")
-	limit := atoi(q.Get("limit"))
-	days := atoi(q.Get("days"))
-
-	resultCh := make(chan *types.ToolResponse, 1)
-	go func() {
-		resultCh <- h.f.GetUpcomingMatches(types.UpcomingMatchesQuery{
-			Team: team, Event: event, Limit: limit, Days: days,
-		})
-	}()
-
-	select {
-	case resp := <-resultCh:
-		writeJSON(w, resp)
-	case <-ctx.Done():
-		writeJSON(w, map[string]any{
-			"error": map[string]any{"code": "TIMEOUT", "message": "赛程请求超时，请重试"},
-			"meta":  map[string]any{"partial": true},
-		})
-	}
+	team, event := q.Get("team"), q.Get("event")
+	limit, days := atoi(q.Get("limit")), atoi(q.Get("days"))
+	h.withTimeout(w, r, 120*time.Second, "赛程请求超时，请重试", func() *types.ToolResponse {
+		return h.f.GetUpcomingMatches(types.UpcomingMatchesQuery{Team: team, Event: event, Limit: limit, Days: days})
+	})
 }
 
 func (h *Handlers) GetResults(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
-	defer cancel()
-
 	q := r.URL.Query()
-	team := q.Get("team")
-	event := q.Get("event")
-	limit := atoi(q.Get("limit"))
-	days := atoi(q.Get("days"))
-
-	resultCh := make(chan *types.ToolResponse, 1)
-	go func() {
-		resultCh <- h.f.GetResultsRecent(types.ResultsRecentQuery{
-			Team: team, Event: event, Limit: limit, Days: days,
-		})
-	}()
-
-	select {
-	case resp := <-resultCh:
-		writeJSON(w, resp)
-	case <-ctx.Done():
-		writeJSON(w, map[string]any{
-			"error": map[string]any{"code": "TIMEOUT", "message": "赛果请求超时，请重试"},
-			"meta":  map[string]any{"partial": true},
-		})
-	}
+	team, event := q.Get("team"), q.Get("event")
+	limit, days := atoi(q.Get("limit")), atoi(q.Get("days"))
+	h.withTimeout(w, r, 45*time.Second, "赛果请求超时，请重试", func() *types.ToolResponse {
+		return h.f.GetResultsRecent(types.ResultsRecentQuery{Team: team, Event: event, Limit: limit, Days: days})
+	})
 }
 
 func (h *Handlers) GetEvents(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
-	defer cancel()
-
 	q := r.URL.Query()
 	matchType := q.Get("type")
 	limit := atoi(q.Get("limit"))
 	if limit == 0 {
 		limit = 150
 	}
-
-	resultCh := make(chan *types.ToolResponse, 1)
-	go func() {
-		resultCh <- h.f.GetEvents(matchType, limit)
-	}()
-
-	select {
-	case resp := <-resultCh:
-		writeJSON(w, resp)
-	case <-ctx.Done():
-		writeJSON(w, map[string]any{
-			"error": map[string]any{"code": "TIMEOUT", "message": "赛事请求超时，请重试"},
-			"meta":  map[string]any{"partial": true},
-		})
-	}
+	h.withTimeout(w, r, 45*time.Second, "赛事请求超时，请重试", func() *types.ToolResponse {
+		return h.f.GetEvents(matchType, limit)
+	})
 }
