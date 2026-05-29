@@ -7,8 +7,7 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 2: Build Go binary
-FROM golang:1.24-alpine AS builder
-ENV GOTOOLCHAIN=auto
+FROM golang:1.26-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
@@ -30,5 +29,6 @@ EXPOSE 8082
 ENV HTTP_PORT=8082
 ENV HTTP_HOST=0.0.0.0
 ENV HLTV_CHROME_PATH=/headless-shell/headless-shell
+ENV FIRECRAWL_API_KEY=
 VOLUME ["/data"]
 ENTRYPOINT ["/hltv-mcp"]
