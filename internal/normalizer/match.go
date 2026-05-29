@@ -102,21 +102,17 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 				m.ScheduledAt = currentDate + " " + infoText
 			}
 
-			teamsText := cleanText(s.Find(".match-teams").First().Text())
-			teamsText = strings.ReplaceAll(teamsText, "\n", " ")
-			teamsText = strings.ReplaceAll(teamsText, "  ", " ")
-			if idx := strings.Index(teamsText, " vs "); idx > 0 {
-				m.Team1 = cleanText(teamsText[:idx])
-				m.Team2 = cleanText(teamsText[idx+4:])
-			} else {
-				parts := strings.Fields(teamsText)
-				if len(parts) >= 2 {
-					m.Team1 = parts[0]
-					if strings.ToLower(parts[len(parts)-2]) == "vs" {
-						m.Team2 = parts[len(parts)-1]
-					} else {
-						m.Team2 = parts[len(parts)-1]
-					}
+			m.Team1 = cleanText(s.Find(".match-team.team1 .match-teamname").First().Text())
+			m.Team2 = cleanText(s.Find(".match-team.team2 .match-teamname").First().Text())
+
+			// Fallback: parse .match-teams text for older HLTV page formats
+			if m.Team1 == "" || m.Team2 == "" {
+				teamsText := cleanText(s.Find(".match-teams").First().Text())
+				teamsText = strings.ReplaceAll(teamsText, "\n", " ")
+				teamsText = strings.ReplaceAll(teamsText, "  ", " ")
+				if idx := strings.Index(teamsText, " vs "); idx > 0 {
+					if m.Team1 == "" { m.Team1 = cleanText(teamsText[:idx]) }
+					if m.Team2 == "" { m.Team2 = cleanText(teamsText[idx+4:]) }
 				}
 			}
 
