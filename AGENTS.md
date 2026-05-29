@@ -91,7 +91,7 @@
 - 前端变更需 `vite build` + `go build` + 重启服务
 
 ## 下一步
-- push → CI/CD 构建新镜像 → `docker pull` 部署（补充 FIRECRAWL_API_KEY）
+- `docker pull + run` 部署新镜像（需要 FIRECRAWL_API_KEY）
 - 考虑为 /results 页面也添加 Firecrawl 回退
 
 ## 进行中

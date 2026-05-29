@@ -156,7 +156,6 @@ Docker 部署后 MCP stdio 不可用（容器隔离）。如需 MCP 功能，使
 ├── Dockerfile                 # 三阶段构建
 ├── internal/
 │   ├── types/         # 共享类型定义
-│   ├── errors/        # AppError 错误体系（8 错误码）
 │   ├── config/        # 环境变量配置
 │   ├── crypto/        # AES-256-GCM 加解密（API Key 持久化）
 │   ├── cache/         # 内存缓存（TTL + stale + 并发合并）
