@@ -22,6 +22,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/mcp"
 	"github.com/arcdent/hltv-mcp/internal/renderer"
 	"github.com/arcdent/hltv-mcp/internal/storage"
+	"github.com/arcdent/hltv-mcp/internal/translator"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -55,6 +56,11 @@ func main() {
 	c := cache.New(cfg.CacheMaxEntries, cfg.CacheStaleWindowSec)
 	cli := client.NewHltvClient(cfg)
 
+	// Translation config factory for hot-reload-safe background translation
+	translateCfgFn := func() (translator.TranslateConfig, error) {
+		return handlers.LoadTranslateConfig()
+	}
+
 	// SSE hub for frontend live refresh
 	sseHub := httppkg.NewSSEHub()
 	notify := func(entity string, id int, name string) {
@@ -72,7 +78,7 @@ func main() {
 		}
 	}
 
-	f := facade.New(cfg, c, cli, store, notify)
+	f := facade.New(cfg, c, cli, store, notify, translateCfgFn)
 	r := renderer.New()
 
 	// MCP stdio goroutine
@@ -89,7 +95,7 @@ func main() {
 	if cfg.HTTPPort > 0 {
 		frontendFS = embeddedFrontend
 	}
-	router := httppkg.NewRouter(f, frontendFS, sseHub)
+	router := httppkg.NewRouter(f, frontendFS, sseHub, store)
 	httpAddr := fmt.Sprintf("%s:%d", cfg.HTTPHost, cfg.HTTPPort)
 	httpServer := &http.Server{Addr: httpAddr, Handler: router}
 	go func() {
