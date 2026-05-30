@@ -24,7 +24,8 @@
 │   ├── renderer/            # 中文格式化 MCP 输出
 │   ├── mcp/                 # 9 MCP 工具
 │   ├── http/                # chi router + REST API + SSE + SPA fallback
-│   └── storage/             # SQLite 持久化（migration + Store + CRUD）
+│   ├── storage/             # SQLite 持久化（migration + Store + CRUD）
+│   └── translator/          # LLM 翻译（OpenAI 兼容 API）
 ├── frontend/                # React + Vite + Tailwind
 │   └── src/
 │       ├── api/client.ts    # API 客户端
@@ -33,11 +34,12 @@
 ```
 
 ## 最近操作
+- 2026-05-31：新闻翻译长效化存储全部完成 — 9 Task（translator 包 + migration v2 + types + storage + handlers + facade + main wiring），8 次 commit，全量测试通过，schema v2 验证通过
 - 2026-05-30：前端 SSE 集成 — `useSSE` hook（模块级单例 EventSource）+ 4 页面自动刷新（Matches/TeamDetail/PlayerDetail/News）；构建验证通过
 - 2026-05-30：长期化存储全部实现完成 — 7 Group（16 任务）编译通过 + 12 测试套件通过 + 端到端验证（health/SSE/SQLite）；6 次 commit
 - 2026-05-29：Group D facade + router 集成 — Type A/B 三层回退、withCacheOrStore、SSE 路由注册
 - 2026-05-29：Group B storage 包 — 6 文件（migration + Store + 4 CRUD）
-- 2026-05-29：Group C SSE hub — SSEHub + SSEHandler
+- 2026-05-29：Group B storage 包 — 6 文件（migration + Store + 4 CRUD）
 - 2026-05-29：赛程覆盖面修复 — `.match-wrapper` + `data-match-id` 去重
 
 ## 关键发现
@@ -91,7 +93,7 @@
 - 前端变更需 `vite build` + `go build` + 重启服务
 
 ## 下一步
-- `docker pull + run` 部署新镜像（需要 FIRECRAWL_API_KEY）
+- 部署新镜像测试翻译长效化存储功能
 - 考虑为 /results 页面也添加 Firecrawl 回退
 
 ## 进行中

@@ -167,7 +167,9 @@ Docker 部署后 MCP stdio 不可用（容器隔离）。如需 MCP 功能，使
 │   ├── summary/       # 中文摘要
 │   ├── renderer/      # 中文格式化输出
 │   ├── mcp/           # 9 MCP 工具注册 + stdio 传输
-│   └── http/          # chi router + REST API + SPA fallback
+│   ├── http/          # chi router + REST API + SPA fallback
+│   ├── storage/       # SQLite 持久化（migration + Store + CRUD）
+│   └── translator/    # LLM 翻译（OpenAI 兼容 API）
 ├── frontend/          # React + Vite + Tailwind
 │   └── src/pages/     # 6 个管理面板页面
 ```
