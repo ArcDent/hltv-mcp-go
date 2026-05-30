@@ -54,6 +54,10 @@ func (f *HltvFacade) GetRealtimeNews(query types.RealtimeNewsQuery) *types.ToolR
 				}
 			}
 
+			if f.store != nil {
+				go f.translateNewRealtimeTitles(allItems)
+			}
+
 			start := query.Offset
 			end := start + query.Limit
 			if end > len(allItems) {
@@ -107,6 +111,10 @@ func (f *HltvFacade) GetNewsDigest(query types.NewsDigestQuery) *types.ToolRespo
 				if err := f.store.BatchUpsertNews(allItems); err != nil {
 					log.Printf("facade: batch upsert news: %v", err)
 				}
+			}
+
+			if f.store != nil {
+				go f.translateNewTitles(allItems)
 			}
 
 			var filtered []types.NewsItem
