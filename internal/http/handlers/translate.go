@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/arcdent/hltv-mcp/internal/crypto"
+	"github.com/arcdent/hltv-mcp/internal/translator"
 )
 
 const (
@@ -18,7 +18,8 @@ const (
 	dataDir             = "data"
 )
 
-type TranslateConfig struct {
+// fileConfig is the on-disk format with encrypted flag for key detection.
+type fileConfig struct {
 	ProviderURL string `json:"provider_url"`
 	APIKey      string `json:"api_key"`
 	Model       string `json:"model"`
@@ -44,84 +45,92 @@ func oldConfigPath() string {
 // (next to the executable) to data/translate_config.json with encryption.
 func MigrateConfig() error {
 	if _, err := os.Stat(configPath()); err == nil {
-		return nil // new config already exists
+		return nil
 	}
 	oldPath := oldConfigPath()
 	data, err := os.ReadFile(oldPath)
 	if err != nil {
-		return nil // no old config to migrate
-	}
-	var cfg TranslateConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil
 	}
-	if cfg.APIKey == "" {
+	var fcfg fileConfig
+	if err := json.Unmarshal(data, &fcfg); err != nil {
+		return nil
+	}
+	if fcfg.APIKey == "" {
 		return nil
 	}
 	if err := os.MkdirAll(configDir(), 0700); err != nil {
 		return fmt.Errorf("create data dir: %w", err)
 	}
-	cfg.Encrypted = true
-	encryptedKey, err := crypto.Encrypt(cfg.APIKey)
+	fcfg.Encrypted = true
+	encryptedKey, err := crypto.Encrypt(fcfg.APIKey)
 	if err != nil {
 		return fmt.Errorf("encrypt key: %w", err)
 	}
-	cfg.APIKey = encryptedKey
-	data, err = json.MarshalIndent(cfg, "", "  ")
+	fcfg.APIKey = encryptedKey
+	data, err = json.MarshalIndent(fcfg, "", "  ")
 	if err != nil {
 		return err
 	}
 	if err := os.WriteFile(configPath(), data, 0600); err != nil {
 		return err
 	}
-	// Remove the old plaintext config so the key isn't left in two places
 	os.Remove(oldPath)
 	return nil
 }
 
-func loadTranslateConfig() (TranslateConfig, error) {
+func loadTranslateConfig() (translator.TranslateConfig, error) {
 	data, err := os.ReadFile(configPath())
 	if err != nil {
-		return TranslateConfig{}, err
+		return translator.TranslateConfig{}, err
 	}
-	var cfg TranslateConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return TranslateConfig{}, err
+	var fcfg fileConfig
+	if err := json.Unmarshal(data, &fcfg); err != nil {
+		return translator.TranslateConfig{}, err
 	}
-	if cfg.Encrypted {
-		key, err := crypto.Decrypt(cfg.APIKey)
+	if fcfg.Encrypted {
+		key, err := crypto.Decrypt(fcfg.APIKey)
 		if err != nil {
-			return TranslateConfig{}, fmt.Errorf("decrypt api key: %w", err)
+			return translator.TranslateConfig{}, fmt.Errorf("decrypt api key: %w", err)
 		}
-		cfg.APIKey = key
-	} else if cfg.APIKey != "" {
+		fcfg.APIKey = key
+	} else if fcfg.APIKey != "" {
 		// Auto-upgrade plaintext config to encrypted
-		cfg.Encrypted = true
-		encryptedKey, err := crypto.Encrypt(cfg.APIKey)
+		fcfg.Encrypted = true
+		encryptedKey, err := crypto.Encrypt(fcfg.APIKey)
 		if err == nil {
-			upgraded := cfg
-			upgraded.APIKey = encryptedKey
-			if data, err := json.MarshalIndent(upgraded, "", "  "); err == nil {
+			fcfg.APIKey = encryptedKey
+			if data, err := json.MarshalIndent(fcfg, "", "  "); err == nil {
 				os.WriteFile(configPath(), data, 0600)
 			}
 		}
 	}
-	return cfg, nil
+	return translator.TranslateConfig{
+		ProviderURL: fcfg.ProviderURL,
+		APIKey:      fcfg.APIKey,
+		Model:       fcfg.Model,
+	}, nil
 }
 
-func saveTranslateConfig(cfg TranslateConfig) error {
+func saveTranslateConfig(cfg translator.TranslateConfig) error {
+	fcfg := fileConfig{
+		ProviderURL: cfg.ProviderURL,
+		Model:       cfg.Model,
+		Encrypted:   true,
+	}
 	if cfg.APIKey != "" && !strings.Contains(cfg.APIKey, "***") {
 		encryptedKey, err := crypto.Encrypt(cfg.APIKey)
 		if err != nil {
 			return fmt.Errorf("encrypt: %w", err)
 		}
-		cfg.APIKey = encryptedKey
-		cfg.Encrypted = true
+		fcfg.APIKey = encryptedKey
+	} else {
+		fcfg.APIKey = cfg.APIKey
 	}
 	if err := os.MkdirAll(configDir(), 0700); err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(cfg, "", "  ")
+	data, err := json.MarshalIndent(fcfg, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -136,7 +145,7 @@ func maskKey(key string) string {
 }
 
 // LoadTranslateConfig exposes config loading for use by other packages.
-func LoadTranslateConfig() (TranslateConfig, error) {
+func LoadTranslateConfig() (translator.TranslateConfig, error) {
 	return loadTranslateConfig()
 }
 
@@ -162,7 +171,7 @@ func (h *Handlers) GetTranslateConfig(w http.ResponseWriter, r *http.Request) {
 
 // PutTranslateConfig saves the translation config.
 func (h *Handlers) PutTranslateConfig(w http.ResponseWriter, r *http.Request) {
-	var cfg TranslateConfig
+	var cfg translator.TranslateConfig
 	if err := json.NewDecoder(r.Body).Decode(&cfg); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
@@ -187,6 +196,7 @@ func (h *Handlers) PostTranslate(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Text string `json:"text"`
 		Type string `json:"type"`
+		URL  string `json:"url,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -203,64 +213,26 @@ func (h *Handlers) PostTranslate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	systemPrompt := "将以下CS电竞新闻正文翻译为简体中文"
+	t := translator.New(cfg)
+
+	var translated string
 	if req.Type == "title" {
-		systemPrompt = "将以下CS电竞新闻标题翻译为简体中文，只输出翻译结果，不要任何解释"
+		translated, err = t.TranslateTitle(r.Context(), req.Text)
+	} else {
+		translated, err = t.TranslateBody(r.Context(), req.Text)
 	}
-
-	llmReq := map[string]any{
-		"model": cfg.Model,
-		"messages": []map[string]string{
-			{"role": "system", "content": systemPrompt},
-			{"role": "user", "content": req.Text},
-		},
-		"temperature": 0.1,
-	}
-
-	body, _ := json.Marshal(llmReq)
-	url := strings.TrimRight(cfg.ProviderURL, "/") + "/chat/completions"
-	httpReq, err := http.NewRequest("POST", url, strings.NewReader(string(body)))
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "构造请求失败")
-		return
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+cfg.APIKey)
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		log.Printf("translate proxy: request failed: %v", err)
-		writeError(w, http.StatusBadGateway, "翻译服务请求失败: "+err.Error())
-		return
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		writeError(w, http.StatusBadGateway, "读取翻译响应失败")
-		return
-	}
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("translate proxy: LLM API returned %d: %s", resp.StatusCode, string(respBody))
-		writeError(w, http.StatusBadGateway, fmt.Sprintf("翻译服务返回错误(%d)", resp.StatusCode))
+		log.Printf("translate: %v", err)
+		writeError(w, http.StatusBadGateway, "翻译失败: "+err.Error())
 		return
 	}
 
-	var result struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		writeError(w, http.StatusBadGateway, "翻译结果解析失败")
-		return
-	}
-	if len(result.Choices) == 0 {
-		writeError(w, http.StatusBadGateway, "翻译服务未返回结果")
-		return
+	// Store body translation when URL is provided
+	if req.Type == "body" && req.URL != "" && h.store != nil {
+		if err := h.store.UpdateNewsBodyZh(req.URL, translated); err != nil {
+			log.Printf("translate: store body_zh: %v", err)
+		}
 	}
 
-	writeJSON(w, map[string]string{"translated": strings.TrimSpace(result.Choices[0].Message.Content)})
+	writeJSON(w, map[string]string{"translated": translated})
 }

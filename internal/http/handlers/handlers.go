@@ -8,15 +8,17 @@ import (
 	"time"
 
 	"github.com/arcdent/hltv-mcp/internal/facade"
+	"github.com/arcdent/hltv-mcp/internal/storage"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
 type Handlers struct {
-	f *facade.HltvFacade
+	f     *facade.HltvFacade
+	store *storage.Store
 }
 
-func New(f *facade.HltvFacade) *Handlers {
-	return &Handlers{f: f}
+func New(f *facade.HltvFacade, store *storage.Store) *Handlers {
+	return &Handlers{f: f, store: store}
 }
 
 func writeJSON(w http.ResponseWriter, v any) {

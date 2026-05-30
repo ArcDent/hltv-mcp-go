@@ -11,9 +11,10 @@ import (
 
 	"github.com/arcdent/hltv-mcp/internal/facade"
 	"github.com/arcdent/hltv-mcp/internal/http/handlers"
+	"github.com/arcdent/hltv-mcp/internal/storage"
 )
 
-func NewRouter(f *facade.HltvFacade, frontendFS fs.FS, sseHub *SSEHub) http.Handler {
+func NewRouter(f *facade.HltvFacade, frontendFS fs.FS, sseHub *SSEHub, store *storage.Store) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -24,7 +25,7 @@ func NewRouter(f *facade.HltvFacade, frontendFS fs.FS, sseHub *SSEHub) http.Hand
 		MaxAge:           300,
 	}))
 
-	h := handlers.New(f)
+	h := handlers.New(f, store)
 
 	r.Get("/api/sse", SSEHandler(sseHub))
 
