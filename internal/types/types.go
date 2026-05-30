@@ -71,6 +71,7 @@ type NormalizedMatch struct {
 // NewsItem is an archive news entry
 type NewsItem struct {
 	Title       string `json:"title"`
+	TitleZh     string `json:"title_zh,omitempty"`
 	Link        string `json:"link,omitempty"`
 	PublishedAt string `json:"published_at,omitempty"`
 	Tag         string `json:"tag,omitempty"`
@@ -81,6 +82,7 @@ type RealtimeNewsItem struct {
 	Section      string `json:"section"`
 	Category     string `json:"category,omitempty"`
 	Title        string `json:"title"`
+	TitleZh      string `json:"title_zh,omitempty"`
 	RelativeTime string `json:"relative_time,omitempty"`
 	Comments     string `json:"comments,omitempty"`
 	Link         string `json:"link,omitempty"`
@@ -349,8 +351,10 @@ type TeamRosterPlayer struct {
 // NewsArticle is the full text of a news article scraped from HLTV
 type NewsArticle struct {
 	Title       string `json:"title"`
+	TitleZh     string `json:"title_zh,omitempty"`
 	PublishedAt string `json:"published_at"`
 	Link        string `json:"link"`
 	BodyText    string `json:"body_text"`
+	BodyTextZh  string `json:"body_text_zh,omitempty"`
 	Author      string `json:"author,omitempty"`
 }
