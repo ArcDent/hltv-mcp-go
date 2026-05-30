@@ -14,6 +14,7 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/normalizer"
 	"github.com/arcdent/hltv-mcp/internal/scraper"
 	"github.com/arcdent/hltv-mcp/internal/storage"
+	"github.com/arcdent/hltv-mcp/internal/translator"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
@@ -22,8 +23,9 @@ type HltvFacade struct {
 	cfg    *config.Config
 	cache  *cache.Cache
 	client *client.HltvClient
-	store  *storage.Store
-	notify func(entity string, id int, name string)
+	store         *storage.Store
+	notify        func(entity string, id int, name string)
+	translateCfgFn func() (translator.TranslateConfig, error)
 	ts     *scraper.TeamScraper
 	ps     *scraper.PlayerScraper
 	rs     *scraper.ResultsScraper
@@ -34,14 +36,15 @@ type HltvFacade struct {
 }
 
 // New creates a new HltvFacade
-func New(cfg *config.Config, c *cache.Cache, cli *client.HltvClient, store *storage.Store, notify func(string, int, string)) *HltvFacade {
+func New(cfg *config.Config, c *cache.Cache, cli *client.HltvClient, store *storage.Store, notify func(string, int, string), translateCfgFn func() (translator.TranslateConfig, error)) *HltvFacade {
 	return &HltvFacade{
 		cfg:    cfg,
 		cache:  c,
 		client: cli,
 		store:  store,
-		notify: notify,
-		ts:     scraper.NewTeamScraper(cli),
+		notify:         notify,
+		translateCfgFn: translateCfgFn,
+		ts:             scraper.NewTeamScraper(cli),
 		ps:     scraper.NewPlayerScraper(cli),
 		rs:     scraper.NewResultsScraper(cli),
 		ms:     scraper.NewMatchesScraper(cli),
@@ -338,3 +341,80 @@ func (f *HltvFacade) CacheMisses() int64 { return f.cache.Misses() }
 
 // ClearCache clears all cached entries and resets counters
 func (f *HltvFacade) ClearCache() { f.cache.Clear() }
+
+// translateNewTitles translates titles for archive news items that don't yet
+// have a translation stored, then pushes an SSE notification.
+func (f *HltvFacade) translateNewTitles(items []types.NewsItem) {
+	if f.translateCfgFn == nil || f.store == nil {
+		return
+	}
+	cfg, err := f.translateCfgFn()
+	if err != nil {
+		log.Printf("facade: translate config: %v", err)
+		return
+	}
+	t := translator.New(cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	translated := 0
+	for _, item := range items {
+		if item.Title == "" || item.Link == "" {
+			continue
+		}
+		if has, _ := f.store.HasNewsTitleZh(item.Link); has {
+			continue
+		}
+		zh, err := t.TranslateTitle(ctx, item.Title)
+		if err != nil {
+			log.Printf("facade: translate title %q: %v", item.Title, err)
+			continue
+		}
+		if err := f.store.UpdateNewsTitleZh(item.Link, zh); err != nil {
+			log.Printf("facade: store title_zh: %v", err)
+			continue
+		}
+		translated++
+	}
+	if translated > 0 {
+		f.broadcast("news", 0, "")
+	}
+}
+
+// translateNewRealtimeTitles translates titles for realtime news items.
+func (f *HltvFacade) translateNewRealtimeTitles(items []types.RealtimeNewsItem) {
+	if f.translateCfgFn == nil || f.store == nil {
+		return
+	}
+	cfg, err := f.translateCfgFn()
+	if err != nil {
+		log.Printf("facade: translate config: %v", err)
+		return
+	}
+	t := translator.New(cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	translated := 0
+	for _, item := range items {
+		if item.Title == "" || item.Link == "" {
+			continue
+		}
+		if has, _ := f.store.HasRealtimeTitleZh(item.Link); has {
+			continue
+		}
+		zh, err := t.TranslateTitle(ctx, item.Title)
+		if err != nil {
+			log.Printf("facade: translate realtime title %q: %v", item.Title, err)
+			continue
+		}
+		if err := f.store.UpdateRealtimeTitleZh(item.Link, zh); err != nil {
+			log.Printf("facade: store realtime title_zh: %v", err)
+			continue
+		}
+		translated++
+	}
+	if translated > 0 {
+		f.broadcast("news", 0, "")
+	}
+}
