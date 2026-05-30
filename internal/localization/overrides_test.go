@@ -21,33 +21,33 @@ func TestInitOverrides_NoFile(t *testing.T) {
 	if err := InitOverrides(); err != nil {
 		t.Fatalf("InitOverrides: %v", err)
 	}
-	if n := getTeamOverride("Vitality"); n != "" {
-		t.Errorf("expected empty, got %q", n)
-	}
-	if n := getPlayerOverride("donk"); n != "" {
-		t.Errorf("expected empty, got %q", n)
+	teams, _ := BuildFullDict()
+	if teams["Vitality"] != "小蜜蜂" {
+		t.Errorf("expected catalog default 小蜜蜂, got %q", teams["Vitality"])
 	}
 }
 
-func TestSetAndgetTeamOverride(t *testing.T) {
+func TestSetAndGetTeamOverride(t *testing.T) {
 	InitOverrides()
 
 	if err := SetTeamOverride("Vitality", "蜜蜂"); err != nil {
 		t.Fatalf("SetTeamOverride: %v", err)
 	}
-	if n := getTeamOverride("Vitality"); n != "蜜蜂" {
-		t.Errorf("expected 蜜蜂, got %q", n)
+	teams, _ := BuildFullDict()
+	if teams["Vitality"] != "蜜蜂" {
+		t.Errorf("expected 蜜蜂, got %q", teams["Vitality"])
 	}
 }
 
-func TestSetAndgetPlayerOverride(t *testing.T) {
+func TestSetAndGetPlayerOverride(t *testing.T) {
 	InitOverrides()
 
 	if err := SetPlayerOverride("donk", "小驴"); err != nil {
 		t.Fatalf("SetPlayerOverride: %v", err)
 	}
-	if n := getPlayerOverride("donk"); n != "小驴" {
-		t.Errorf("expected 小驴, got %q", n)
+	_, players := BuildFullDict()
+	if players["donk"] != "小驴" {
+		t.Errorf("expected 小驴, got %q", players["donk"])
 	}
 }
 
@@ -58,8 +58,9 @@ func TestDeleteOverride_EmptyNickname(t *testing.T) {
 	if err := SetTeamOverride("Vitality", ""); err != nil {
 		t.Fatalf("delete: %v", err)
 	}
-	if n := getTeamOverride("Vitality"); n != "" {
-		t.Errorf("expected empty after delete, got %q", n)
+	teams, _ := BuildFullDict()
+	if teams["Vitality"] != "小蜜蜂" {
+		t.Errorf("expected catalog default 小蜜蜂 after delete, got %q", teams["Vitality"])
 	}
 }
 
@@ -70,8 +71,9 @@ func TestOverridePersistence(t *testing.T) {
 	if err := InitOverrides(); err != nil {
 		t.Fatalf("re-init: %v", err)
 	}
-	if n := getTeamOverride("Vitality"); n != "蜜蜂" {
-		t.Errorf("persistence failed, got %q", n)
+	teams, _ := BuildFullDict()
+	if teams["Vitality"] != "蜜蜂" {
+		t.Errorf("persistence failed, got %q", teams["Vitality"])
 	}
 }
 
@@ -83,8 +85,7 @@ func TestConcurrentReadWrite(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			for j := 0; j < 100; j++ {
-				getTeamOverride("Vitality")
-				getPlayerOverride("donk")
+				BuildFullDict()
 			}
 			done <- true
 		}()
@@ -99,7 +100,8 @@ func TestConcurrentReadWrite(t *testing.T) {
 		<-done
 	}
 
-	if n := getTeamOverride("Vitality"); n != "test" {
-		t.Errorf("expected 'test' after concurrent writes, got %q", n)
+	teams, _ := BuildFullDict()
+	if teams["Vitality"] != "test" {
+		t.Errorf("expected 'test' after concurrent writes, got %q", teams["Vitality"])
 	}
 }

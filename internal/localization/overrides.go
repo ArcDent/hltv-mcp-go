@@ -63,18 +63,6 @@ func saveOverrides() error {
 	return os.WriteFile(overridesFile, data, 0600)
 }
 
-func getTeamOverride(name string) string {
-	ov.mu.RLock()
-	defer ov.mu.RUnlock()
-	return ov.teams[name]
-}
-
-func getPlayerOverride(name string) string {
-	ov.mu.RLock()
-	defer ov.mu.RUnlock()
-	return ov.players[name]
-}
-
 func SetTeamOverride(name, nickname string) error {
 	ov.mu.Lock()
 	defer ov.mu.Unlock()

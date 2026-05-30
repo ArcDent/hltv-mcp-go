@@ -34,8 +34,7 @@ func stripGenericFilter(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// EventGroup holds matches grouped under one event name
-type EventGroup struct {
+type eventGroup struct {
 	Name       string                  `json:"name"`
 	DateStart  string                  `json:"date_start"`
 	DateEnd    string                  `json:"date_end"`
@@ -43,9 +42,8 @@ type EventGroup struct {
 	Matches    []types.NormalizedMatch `json:"matches"`
 }
 
-// EventsResponse is the response for /api/events
-type EventsResponse struct {
-	Events []EventGroup            `json:"events"`
+type eventsResponse struct {
+	Events []eventGroup            `json:"events"`
 	Other  []types.NormalizedMatch `json:"other,omitempty"`
 }
 
@@ -110,8 +108,8 @@ func (f *HltvFacade) GetEvents(matchType string, limit int) *types.ToolResponse 
 		})
 }
 
-func groupByEvent(matches []types.NormalizedMatch) EventsResponse {
-	groups := make(map[string]*EventGroup)
+func groupByEvent(matches []types.NormalizedMatch) eventsResponse {
+	groups := make(map[string]*eventGroup)
 	var other []types.NormalizedMatch
 
 	for _, m := range matches {
@@ -122,7 +120,7 @@ func groupByEvent(matches []types.NormalizedMatch) EventsResponse {
 		}
 		g, exists := groups[event]
 		if !exists {
-			g = &EventGroup{Name: event}
+			g = &eventGroup{Name: event}
 			groups[event] = g
 		}
 		g.Matches = append(g.Matches, m)
@@ -144,7 +142,7 @@ func groupByEvent(matches []types.NormalizedMatch) EventsResponse {
 		}
 	}
 
-	var events []EventGroup
+	var events []eventGroup
 	for _, g := range groups {
 		events = append(events, *g)
 	}
@@ -152,7 +150,7 @@ func groupByEvent(matches []types.NormalizedMatch) EventsResponse {
 		return events[i].DateStart < events[j].DateStart
 	})
 
-	return EventsResponse{Events: events, Other: other}
+	return eventsResponse{Events: events, Other: other}
 }
 
 // GetTodayMatches delegates to GetUpcomingMatches with empty query

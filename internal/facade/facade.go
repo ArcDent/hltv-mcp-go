@@ -22,7 +22,6 @@ import (
 type HltvFacade struct {
 	cfg    *config.Config
 	cache  *cache.Cache
-	client *client.HltvClient
 	store         *storage.Store
 	notify        func(entity string, id int, name string)
 	translateCfgFn func() (translator.TranslateConfig, error)
@@ -40,7 +39,6 @@ func New(cfg *config.Config, c *cache.Cache, cli *client.HltvClient, store *stor
 	return &HltvFacade{
 		cfg:    cfg,
 		cache:  c,
-		client: cli,
 		store:  store,
 		notify:         notify,
 		translateCfgFn: translateCfgFn,

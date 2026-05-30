@@ -13,7 +13,7 @@ import (
 )
 
 // CreateServer registers all 9 MCP tools and returns the configured server
-func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer) *server.MCPServer {
+func CreateServer(cfg *config.Config, f *facade.HltvFacade) *server.MCPServer {
 	s := server.NewMCPServer(cfg.MCPServerName, cfg.MCPServerVersion)
 
 	// 1. resolve_team
@@ -29,7 +29,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Limit: req.GetInt("limit", 0),
 		}
 		resp := f.ResolveTeam(q)
-		return toolResult(r.RenderResolveResult("队伍候选", resp)), nil
+		return toolResult(renderer.RenderResolveResult("队伍候选", resp)), nil
 	})
 
 	// 2. resolve_player
@@ -45,7 +45,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Limit: req.GetInt("limit", 0),
 		}
 		resp := f.ResolvePlayer(q)
-		return toolResult(r.RenderResolveResult("选手候选", resp)), nil
+		return toolResult(renderer.RenderResolveResult("选手候选", resp)), nil
 	})
 
 	// 3. hltv_team_recent
@@ -61,7 +61,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Limit:    req.GetInt("limit", 0),
 		}
 		resp := f.GetTeamRecent(q)
-		return toolResult(r.RenderTeamRecent(resp)), nil
+		return toolResult(renderer.RenderTeamRecent(resp)), nil
 	})
 
 	// 4. hltv_player_recent
@@ -77,7 +77,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Limit:      req.GetInt("limit", 0),
 		}
 		resp := f.GetPlayerRecent(q)
-		return toolResult(r.RenderPlayerRecent(resp)), nil
+		return toolResult(renderer.RenderPlayerRecent(resp)), nil
 	})
 
 	// 5. hltv_results_recent
@@ -95,7 +95,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Days:  req.GetInt("days", 0),
 		}
 		resp := f.GetResultsRecent(q)
-		return toolResult(r.RenderMatches(resp)), nil
+		return toolResult(renderer.RenderMatches(resp)), nil
 	})
 
 	// 6. hltv_matches_upcoming
@@ -115,7 +115,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Days:   req.GetInt("days", 0),
 		}
 		resp := f.GetUpcomingMatches(q)
-		return toolResult(r.RenderMatches(resp)), nil
+		return toolResult(renderer.RenderMatches(resp)), nil
 	})
 
 	// 7. hltv_matches_today
@@ -123,7 +123,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 		mcp.WithDescription("Get today's HLTV matches in fixed Asia/Shanghai time."),
 	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		resp := f.GetTodayMatches()
-		return toolResult(r.RenderMatches(resp)), nil
+		return toolResult(renderer.RenderMatches(resp)), nil
 	})
 
 // 8. hltv_realtime_news
@@ -139,7 +139,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Offset: req.GetInt("offset", 0),
 		}
 		resp := f.GetRealtimeNews(q)
-		return toolResult(r.RenderRealtimeNews(resp)), nil
+		return toolResult(renderer.RenderRealtimeNews(resp)), nil
 	})
 
 // 9. hltv_news_digest
@@ -161,7 +161,7 @@ func CreateServer(cfg *config.Config, f *facade.HltvFacade, r *renderer.Renderer
 			Offset: req.GetInt("offset", 0),
 		}
 		resp := f.GetNewsDigest(q)
-		return toolResult(r.RenderNews(resp)), nil
+		return toolResult(renderer.RenderNews(resp)), nil
 	})
 
 	return s

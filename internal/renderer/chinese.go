@@ -9,14 +9,9 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
-// Renderer produces Chinese-formatted text output for MCP tool responses
-type Renderer struct{}
-
-func New() *Renderer { return &Renderer{} }
-
-func (r *Renderer) RenderTeamRecent(resp *types.ToolResponse) string {
+func RenderTeamRecent(resp *types.ToolResponse) string {
 	if resp.Error != nil {
-		return r.renderError("队伍近况", resp)
+		return renderError("队伍近况", resp)
 	}
 	data := resp.Data.(*types.TeamRecentData)
 	s := summary.SummarizeTeam(data)
@@ -41,9 +36,9 @@ func (r *Renderer) RenderTeamRecent(resp *types.ToolResponse) string {
 	return b.String()
 }
 
-func (r *Renderer) RenderPlayerRecent(resp *types.ToolResponse) string {
+func RenderPlayerRecent(resp *types.ToolResponse) string {
 	if resp.Error != nil {
-		return r.renderError("选手近况", resp)
+		return renderError("选手近况", resp)
 	}
 	data := resp.Data.(*types.PlayerRecentData)
 	s := summary.SummarizePlayer(data)
@@ -58,9 +53,9 @@ func (r *Renderer) RenderPlayerRecent(resp *types.ToolResponse) string {
 	return b.String()
 }
 
-func (r *Renderer) RenderMatches(resp *types.ToolResponse) string {
+func RenderMatches(resp *types.ToolResponse) string {
 	if resp.Error != nil {
-		return r.renderError("比赛", resp)
+		return renderError("比赛", resp)
 	}
 	items := resp.Items.([]types.NormalizedMatch)
 	title := "未来比赛"
@@ -86,9 +81,9 @@ func (r *Renderer) RenderMatches(resp *types.ToolResponse) string {
 	return b.String()
 }
 
-func (r *Renderer) RenderNews(resp *types.ToolResponse) string {
+func RenderNews(resp *types.ToolResponse) string {
 	if resp.Error != nil {
-		return r.renderError("新闻", resp)
+		return renderError("新闻", resp)
 	}
 	items := resp.Items.([]types.NewsItem)
 	s := summary.SummarizeNews(items)
@@ -101,9 +96,9 @@ func (r *Renderer) RenderNews(resp *types.ToolResponse) string {
 	return b.String()
 }
 
-func (r *Renderer) RenderRealtimeNews(resp *types.ToolResponse) string {
+func RenderRealtimeNews(resp *types.ToolResponse) string {
 	if resp.Error != nil {
-		return r.renderError("实时新闻", resp)
+		return renderError("实时新闻", resp)
 	}
 	items := resp.Items.([]types.RealtimeNewsItem)
 	s := summary.SummarizeRealtimeNews(items)
@@ -116,9 +111,9 @@ func (r *Renderer) RenderRealtimeNews(resp *types.ToolResponse) string {
 	return b.String()
 }
 
-func (r *Renderer) RenderResolveResult(title string, resp *types.ToolResponse) string {
+func RenderResolveResult(title string, resp *types.ToolResponse) string {
 	if resp.Error != nil {
-		return r.renderError(title, resp)
+		return renderError(title, resp)
 	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "【%s】\n\n", title)
@@ -136,6 +131,6 @@ func (r *Renderer) RenderResolveResult(title string, resp *types.ToolResponse) s
 	return b.String()
 }
 
-func (r *Renderer) renderError(title string, resp *types.ToolResponse) string {
+func renderError(title string, resp *types.ToolResponse) string {
 	return fmt.Sprintf("【%s】\n请求失败：%s\n%s\n", title, resp.Error.Code, resp.Error.Message)
 }

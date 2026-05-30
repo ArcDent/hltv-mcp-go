@@ -4,10 +4,53 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/client"
 )
+
+type searchHit struct {
+	id   int
+	name string
+	slug string
+}
+
+func searchHLTV(ctx context.Context, cli *client.HltvClient, query, entity, label string) ([]searchHit, error) {
+	path := fmt.Sprintf("/search?query=%s", url.QueryEscape(query))
+	body, err := cli.FetchHTML(ctx, path, label)
+	if err != nil {
+		return nil, err
+	}
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	re := regexp.MustCompile(fmt.Sprintf(`/%s/(\d+)/(.+)`, entity))
+	selPattern := fmt.Sprintf("a[href*='/%s/']", entity)
+	var hits []searchHit
+	doc.Find("table tbody tr").Each(func(_ int, sel *goquery.Selection) {
+		link := sel.Find(selPattern)
+		if link.Length() == 0 {
+			return
+		}
+		href, _ := link.Attr("href")
+		m := re.FindStringSubmatch(href)
+		if len(m) < 3 {
+			return
+		}
+		id, _ := strconv.Atoi(m[1])
+		name := strings.TrimSpace(link.Text())
+		if name == "" || id == 0 {
+			return
+		}
+		hits = append(hits, searchHit{id: id, name: name, slug: m[2]})
+	})
+	return hits, nil
+}
 
 func fetchDoc(cli *client.HltvClient, ctx context.Context, path, key string) (*goquery.Document, error) {
 	body, err := cli.FetchHTML(ctx, path, key)

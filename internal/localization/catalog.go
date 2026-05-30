@@ -7,13 +7,12 @@ type TeamEntry struct {
 	Aliases                                   []string
 }
 
-// PlayerEntry represents a player nickname mapping.
-type PlayerEntry struct {
+type playerEntry struct {
 	Canonical  string
 	Colloquial string
 }
 
-var TeamCatalog = []TeamEntry{
+var teamCatalog = []TeamEntry{
 	{Canonical: "Team Spirit", Display: "Spirit", Official: "", Colloquial: "绿龙", Aliases: []string{"Spirit", "Team Spirit", "绿龙"}},
 	{Canonical: "Vitality", Display: "Vitality", Official: "", Colloquial: "小蜜蜂", Aliases: []string{"Vitality", "Team Vitality", "小蜜蜂", "蜜蜂"}},
 	{Canonical: "Natus Vincere", Display: "Natus Vincere", Official: "", Colloquial: "NaVi", Aliases: []string{"Natus Vincere", "NaVi", "NAVI", "天生赢家"}},
@@ -42,7 +41,7 @@ var TeamCatalog = []TeamEntry{
 	{Canonical: "3DMAX", Display: "3DMAX", Official: "", Colloquial: "3DMAX", Aliases: []string{"3DMAX"}},
 }
 
-var PlayerCatalog = []PlayerEntry{
+var playerCatalog = []playerEntry{
 	{Canonical: "ZywOo", Colloquial: "载物"},
 	{Canonical: "s1mple", Colloquial: "森破"},
 	{Canonical: "m0NESY", Colloquial: "小孩"},
@@ -143,13 +142,13 @@ var PlayerCatalog = []PlayerEntry{
 var playerCatalogMap map[string]string
 
 func init() {
-	playerCatalogMap = make(map[string]string, len(PlayerCatalog))
-	for _, e := range PlayerCatalog {
+	playerCatalogMap = make(map[string]string, len(playerCatalog))
+	for _, e := range playerCatalog {
 		playerCatalogMap[e.Canonical] = e.Colloquial
 	}
 }
 
-var teamLookup = buildLookup(TeamCatalog)
+var teamLookup = buildLookup(teamCatalog)
 
 func buildLookup(catalog []TeamEntry) map[string]*TeamEntry {
 	m := make(map[string]*TeamEntry)
@@ -197,7 +196,7 @@ func FormatTeamDisplay(name string) string {
 // with all variants expanded and user overrides applied on top.
 func BuildFullDict() (teams, players map[string]string) {
 	teams = make(map[string]string)
-	for _, e := range TeamCatalog {
+	for _, e := range teamCatalog {
 		if e.Colloquial == "" {
 			continue
 		}

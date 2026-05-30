@@ -139,9 +139,9 @@ func NormalizeUpcomingMatches(doc *goquery.Document, perspective string) []types
 					m.Opponent = m.Team1
 				}
 			}
-			m.Team1 = TranslatePlaceholder(m.Team1)
-			m.Team2 = TranslatePlaceholder(m.Team2)
-			m.Opponent = TranslatePlaceholder(m.Opponent)
+			m.Team1 = translatePlaceholder(m.Team1)
+			m.Team2 = translatePlaceholder(m.Team2)
+			m.Opponent = translatePlaceholder(m.Opponent)
 
 			if m.Team1 != "" || m.Team2 != "" {
 				if m.MatchID > 0 {
@@ -189,8 +189,7 @@ func SortByPlayedAtDesc(matches []types.NormalizedMatch) {
 	})
 }
 
-// TranslatePlaceholder maps HLTV bracket placeholder team names to Chinese
-func TranslatePlaceholder(s string) string {
+func translatePlaceholder(s string) string {
 	lower := strings.ToLower(strings.TrimSpace(s))
 	if lower == "" {
 		return s

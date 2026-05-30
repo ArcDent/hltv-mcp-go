@@ -20,7 +20,6 @@ import (
 	"github.com/arcdent/hltv-mcp/internal/http/handlers"
 	"github.com/arcdent/hltv-mcp/internal/localization"
 	"github.com/arcdent/hltv-mcp/internal/mcp"
-	"github.com/arcdent/hltv-mcp/internal/renderer"
 	"github.com/arcdent/hltv-mcp/internal/storage"
 	"github.com/arcdent/hltv-mcp/internal/translator"
 	"github.com/mark3labs/mcp-go/server"
@@ -79,10 +78,9 @@ func main() {
 	}
 
 	f := facade.New(cfg, c, cli, store, notify, translateCfgFn)
-	r := renderer.New()
 
 	// MCP stdio goroutine
-	mcpServer := mcp.CreateServer(cfg, f, r)
+	mcpServer := mcp.CreateServer(cfg, f)
 	go func() {
 		log.Println("MCP stdio server starting")
 		if err := server.ServeStdio(mcpServer); err != nil {
@@ -111,5 +109,10 @@ func main() {
 	sig := <-sigCh
 	log.Printf("Received %v, shutting down...", sig)
 	httpServer.Shutdown(context.Background())
+	if store != nil {
+		if err := store.Close(); err != nil {
+			log.Printf("storage close: %v", err)
+		}
+	}
 	log.Println("HLTV MCP stopped")
 }

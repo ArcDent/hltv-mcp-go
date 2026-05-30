@@ -1,56 +1,28 @@
 package scraper
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/arcdent/hltv-mcp/internal/client"
 	"github.com/arcdent/hltv-mcp/internal/types"
 )
 
-var playerLinkRE = regexp.MustCompile(`/player/(\d+)/(.+)`)
-
 type PlayerScraper struct{ cli *client.HltvClient }
 
 func NewPlayerScraper(cli *client.HltvClient) *PlayerScraper { return &PlayerScraper{cli: cli} }
 
 func (s *PlayerScraper) Search(ctx context.Context, name string) ([]types.ResolvedPlayer, error) {
-	path := fmt.Sprintf("/search?query=%s", url.QueryEscape(name))
-	body, err := s.cli.FetchHTML(ctx, path, "player_search")
+	hits, err := searchHLTV(ctx, s.cli, name, "player", "player_search")
 	if err != nil {
 		return nil, err
 	}
-	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
-	if err != nil {
-		return nil, err
+	players := make([]types.ResolvedPlayer, len(hits))
+	for i, h := range hits {
+		players[i] = types.ResolvedPlayer{Type: "player", ID: h.id, Name: h.name, Slug: h.slug}
 	}
-	var players []types.ResolvedPlayer
-	doc.Find("table tbody tr").Each(func(_ int, sel *goquery.Selection) {
-		link := sel.Find("a[href*='/player/']")
-		if link.Length() == 0 {
-			return
-		}
-		href, _ := link.Attr("href")
-		m := playerLinkRE.FindStringSubmatch(href)
-		if len(m) < 3 {
-			return
-		}
-		id, _ := strconv.Atoi(m[1])
-		slug := m[2]
-		name := strings.TrimSpace(link.Text())
-		if name == "" || id == 0 {
-			return
-		}
-		players = append(players, types.ResolvedPlayer{
-			Type: "player", ID: id, Name: name, Slug: slug,
-		})
-	})
 	return players, nil
 }
 

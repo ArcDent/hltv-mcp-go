@@ -38,7 +38,7 @@ func TestNormalizeNews(t *testing.T) {
 	}
 }
 
-func TestTranslatePlaceholder(t *testing.T) {
+func TestPlaceholderTranslation(t *testing.T) {
 	tests := []struct{ in, want string }{
 		{"winner", "胜者"},
 		{"Winner", "胜者"},
@@ -53,8 +53,8 @@ func TestTranslatePlaceholder(t *testing.T) {
 		{"FaZe Clan", "FaZe Clan"},
 	}
 	for _, tt := range tests {
-		if got := TranslatePlaceholder(tt.in); got != tt.want {
-			t.Errorf("TranslatePlaceholder(%q) = %q, want %q", tt.in, got, tt.want)
+		if got := translatePlaceholder(tt.in); got != tt.want {
+			t.Errorf("translatePlaceholder(%q) = %q, want %q", tt.in, got, tt.want)
 		}
 	}
 }

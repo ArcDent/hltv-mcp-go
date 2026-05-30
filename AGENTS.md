@@ -8,7 +8,7 @@
 
 ## 项目静态结构
 ```
-├── main.go                  # MCP stdio + HTTP :8082 双 goroutine
+├── main.go                  # MCP stdio + HTTP :8082 双 goroutine + graceful shutdown
 ├── Dockerfile               # 三阶段：frontend → Go → alpine
 ├── internal/
 │   ├── types/               # 共享类型 + ToolError
@@ -16,12 +16,12 @@
 │   ├── crypto/              # AES-256-GCM 加解密
 │   ├── cache/               # TTL + stale + 并发合并
 │   ├── client/              # HTTP + Firecrawl 客户端
-│   ├── scraper/             # fetchDoc 共享 + 7 爬虫模块
+│   ├── scraper/             # fetchDoc + searchHLTV 共享 + 7 爬虫模块
 │   ├── localization/        # 26 队伍 + 98 选手中英映射
 │   ├── normalizer/          # HLTV HTML → 标准化类型
-│   ├── facade/              # 核心编排层
+│   ├── facade/              # 核心编排层（三层回退）
 │   ├── summary/             # 中文摘要
-│   ├── renderer/            # 中文格式化 MCP 输出
+│   ├── renderer/            # 中文格式化 MCP 输出（包级函数）
 │   ├── mcp/                 # 9 MCP 工具
 │   ├── http/                # chi router + REST API + SSE + SPA fallback
 │   ├── storage/             # SQLite 持久化（migration + Store + CRUD）
@@ -34,15 +34,23 @@
 ```
 
 ## 最近操作
+- 2026-05-31：代码瘦身收敛 — 删除冗余文件（stale 二进制、历史 docs、未引用图标）；收敛导出符号（facade/mcp/normalizer/localization 各包）；消除空 Renderer struct → 包级函数；合并 team/player 搜索重复逻辑为 searchHLTV；修复 Store.Close() 资源泄漏；删除 dead getTeamOverride/getPlayerOverride 函数
+- 2026-05-31：修复 API Key 保存失效 — `TranslateConfig` 缺少 JSON 标签导致 `provider_url`/`api_key` 解码为空；修复 `loadTranslateConfig` 自动升级路径覆盖明文密钥的缺陷
 - 2026-05-31：新闻翻译长效化存储全部完成 — 9 Task（translator 包 + migration v2 + types + storage + handlers + facade + main wiring），8 次 commit，全量测试通过，schema v2 验证通过
 - 2026-05-30：前端 SSE 集成 — `useSSE` hook（模块级单例 EventSource）+ 4 页面自动刷新（Matches/TeamDetail/PlayerDetail/News）；构建验证通过
 - 2026-05-30：长期化存储全部实现完成 — 7 Group（16 任务）编译通过 + 12 测试套件通过 + 端到端验证（health/SSE/SQLite）；6 次 commit
-- 2026-05-29：Group D facade + router 集成 — Type A/B 三层回退、withCacheOrStore、SSE 路由注册
-- 2026-05-29：Group B storage 包 — 6 文件（migration + Store + 4 CRUD）
-- 2026-05-29：Group B storage 包 — 6 文件（migration + Store + 4 CRUD）
-- 2026-05-29：赛程覆盖面修复 — `.match-wrapper` + `data-match-id` 去重
 
 ## 关键发现
+
+### JSON 标签强制要求（2026-05-31 踩坑）
+- Go `encoding/json` 对驼峰下划线混合字段匹配不可靠：`provider_url` 无法匹配 `ProviderURL`（`providerurl` ≠ `provider_url`），但 `model` 能匹配 `Model`
+- 所有用于 JSON 编解码的结构体必须加 `json:"snake_case"` 标签，不可依赖默认匹配
+
+### 代码收敛原则（2026-05-31）
+- 不导出仅包内使用的符号（EventGroup/EventsResponse/TranslatePlaceholder 等）
+- 空 struct 仅用于持有方法 = 应转为包级函数
+- 两个 Search 函数结构相同仅差类型 = 提取通用 searchHLTV
+- 仅测试调用的函数 = 死代码，删除并用公开 API 重写测试
 
 ### HLTV HTML 选择器（核心参考）
 - **选手页**: `.playerNickname` / `.playerRealname` / `.playerTeam a[itemprop="text"]` / `.player-stat` > `.statsVal p b`(能力值) / `.stats-window`(maps数) / `.playerpage-matchbox`(近期比赛) / `.playerpage-match-result`(比分) / `.playerpage-match-date` / `.majorWinner b`(Major冠军数) / `.mvp-count`(MVP数) / `.all-time-stat` > `.stat` + `.description`(生涯战斗统计，旧版) / `.highlighted-stat` > `.stat` + `.description`(生涯概览，新版通用)
@@ -92,10 +100,13 @@
 - CI/CD：push main → GitHub Actions 自动构建
 - 前端变更需 `vite build` + `go build` + 重启服务
 
+### 资源管理
+- `Store.Close()` 在 graceful shutdown 中调用，停止 cleanup loop 并关闭 SQLite
+- store 为 nil（降级模式）时跳过 Close
+
 ## 下一步
 - 部署新镜像测试翻译长效化存储功能
 - 考虑为 /results 页面也添加 Firecrawl 回退
 
 ## 进行中
 - 无
-
