@@ -96,11 +96,15 @@ func loadTranslateConfig() (translator.TranslateConfig, error) {
 		fcfg.APIKey = key
 	} else if fcfg.APIKey != "" {
 		// Auto-upgrade plaintext config to encrypted
-		fcfg.Encrypted = true
 		encryptedKey, err := crypto.Encrypt(fcfg.APIKey)
 		if err == nil {
-			fcfg.APIKey = encryptedKey
-			if data, err := json.MarshalIndent(fcfg, "", "  "); err == nil {
+			upgraded := fileConfig{
+				ProviderURL: fcfg.ProviderURL,
+				APIKey:      encryptedKey,
+				Model:       fcfg.Model,
+				Encrypted:   true,
+			}
+			if data, err := json.MarshalIndent(upgraded, "", "  "); err == nil {
 				os.WriteFile(configPath(), data, 0600)
 			}
 		}

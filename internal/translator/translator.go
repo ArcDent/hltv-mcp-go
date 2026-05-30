@@ -13,9 +13,9 @@ import (
 
 // TranslateConfig holds LLM translation provider configuration.
 type TranslateConfig struct {
-	ProviderURL string
-	APIKey      string
-	Model       string
+	ProviderURL string `json:"provider_url"`
+	APIKey      string `json:"api_key"`
+	Model       string `json:"model"`
 }
 
 // Translator proxies translation requests to a configured LLM API.
