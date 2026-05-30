@@ -63,11 +63,11 @@ func (s *Store) UpsertNewsArticle(article types.NewsArticle) error {
 
 func (s *Store) GetNewsArticle(url string) (types.NewsArticle, bool, error) {
 	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
-	row := s.db.QueryRow("SELECT title, link, published_at, body_text, author FROM news WHERE url_hash=?", hash)
+	row := s.db.QueryRow("SELECT title, link, published_at, body_text, author, title_zh, body_text_zh FROM news WHERE url_hash=?", hash)
 
 	var article types.NewsArticle
-	var bodyText, author sql.NullString
-	err := row.Scan(&article.Title, &article.Link, &article.PublishedAt, &bodyText, &author)
+	var bodyText, author, titleZh, bodyTextZh sql.NullString
+	err := row.Scan(&article.Title, &article.Link, &article.PublishedAt, &bodyText, &author, &titleZh, &bodyTextZh)
 	if err == sql.ErrNoRows {
 		return article, false, nil
 	}
@@ -76,11 +76,13 @@ func (s *Store) GetNewsArticle(url string) (types.NewsArticle, bool, error) {
 	}
 	article.BodyText = bodyText.String
 	article.Author = author.String
+	article.TitleZh = titleZh.String
+	article.BodyTextZh = bodyTextZh.String
 	return article, true, nil
 }
 
 func (s *Store) QueryNews(limit int) ([]types.NewsItem, error) {
-	query := "SELECT title, link, published_at, tag FROM news ORDER BY published_at DESC"
+	query := "SELECT title, link, published_at, tag, title_zh FROM news ORDER BY published_at DESC"
 	if limit > 0 {
 		query += fmt.Sprintf(" LIMIT %d", limit)
 	}
@@ -93,9 +95,11 @@ func (s *Store) QueryNews(limit int) ([]types.NewsItem, error) {
 	var items []types.NewsItem
 	for rows.Next() {
 		var n types.NewsItem
-		if err := rows.Scan(&n.Title, &n.Link, &n.PublishedAt, &n.Tag); err != nil {
+		var titleZh sql.NullString
+		if err := rows.Scan(&n.Title, &n.Link, &n.PublishedAt, &n.Tag, &titleZh); err != nil {
 			return nil, err
 		}
+		n.TitleZh = titleZh.String
 		items = append(items, n)
 	}
 	if items == nil {
@@ -141,7 +145,7 @@ func (s *Store) BatchUpsertRealtimeNews(items []types.RealtimeNewsItem) error {
 }
 
 func (s *Store) QueryRealtimeNews(limit int) ([]types.RealtimeNewsItem, error) {
-	query := "SELECT section, category, title, link, relative_time, comments FROM realtime_news"
+	query := "SELECT section, category, title, link, relative_time, comments, title_zh FROM realtime_news"
 	if limit > 0 {
 		query += fmt.Sprintf(" LIMIT %d", limit)
 	}
@@ -154,13 +158,66 @@ func (s *Store) QueryRealtimeNews(limit int) ([]types.RealtimeNewsItem, error) {
 	var items []types.RealtimeNewsItem
 	for rows.Next() {
 		var n types.RealtimeNewsItem
-		if err := rows.Scan(&n.Section, &n.Category, &n.Title, &n.Link, &n.RelativeTime, &n.Comments); err != nil {
+		var titleZh sql.NullString
+		if err := rows.Scan(&n.Section, &n.Category, &n.Title, &n.Link, &n.RelativeTime, &n.Comments, &titleZh); err != nil {
 			return nil, err
 		}
+		n.TitleZh = titleZh.String
 		items = append(items, n)
 	}
 	if items == nil {
 		items = []types.RealtimeNewsItem{}
 	}
 	return items, rows.Err()
+}
+
+// --- Translation helpers ---
+
+// HasNewsTitleZh returns true if the news item already has a translated title.
+func (s *Store) HasNewsTitleZh(url string) (bool, error) {
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
+	var titleZh sql.NullString
+	err := s.db.QueryRow("SELECT title_zh FROM news WHERE url_hash=?", hash).Scan(&titleZh)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return titleZh.String != "", nil
+}
+
+// HasRealtimeTitleZh returns true if the realtime news item already has a translated title.
+func (s *Store) HasRealtimeTitleZh(url string) (bool, error) {
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
+	var titleZh sql.NullString
+	err := s.db.QueryRow("SELECT title_zh FROM realtime_news WHERE url_hash=?", hash).Scan(&titleZh)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return titleZh.String != "", nil
+}
+
+// UpdateNewsTitleZh stores a translated title for an archive news item.
+func (s *Store) UpdateNewsTitleZh(url string, titleZh string) error {
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
+	_, err := s.db.Exec("UPDATE news SET title_zh=? WHERE url_hash=?", titleZh, hash)
+	return err
+}
+
+// UpdateNewsBodyZh stores a translated body for an archive news article.
+func (s *Store) UpdateNewsBodyZh(url string, bodyZh string) error {
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
+	_, err := s.db.Exec("UPDATE news SET body_text_zh=? WHERE url_hash=?", bodyZh, hash)
+	return err
+}
+
+// UpdateRealtimeTitleZh stores a translated title for a realtime news item.
+func (s *Store) UpdateRealtimeTitleZh(url string, titleZh string) error {
+	hash := fmt.Sprintf("%x", md5.Sum([]byte(url)))
+	_, err := s.db.Exec("UPDATE realtime_news SET title_zh=? WHERE url_hash=?", titleZh, hash)
+	return err
 }
