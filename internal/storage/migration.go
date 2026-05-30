@@ -24,6 +24,11 @@ func migrate(db *sql.DB) error {
 			return err
 		}
 	}
+	if v < 2 {
+		if err := applyV2(db); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -111,6 +116,21 @@ func applyV1(db *sql.DB) error {
 		return err
 	}
 	_, err := db.Exec("INSERT INTO schema_version(version) VALUES(1)")
+	return err
+}
+
+func applyV2(db *sql.DB) error {
+	stmts := []string{
+		"ALTER TABLE news ADD COLUMN title_zh TEXT",
+		"ALTER TABLE news ADD COLUMN body_text_zh TEXT",
+		"ALTER TABLE realtime_news ADD COLUMN title_zh TEXT",
+	}
+	for _, stmt := range stmts {
+		if _, err := db.Exec(stmt); err != nil {
+			return err
+		}
+	}
+	_, err := db.Exec("INSERT INTO schema_version(version) VALUES(2)")
 	return err
 }
 
